@@ -3756,7 +3756,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
         }
 
-        const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
+        const CLOUD_FUNCTION_URL = 'https://generate-certificate-980517620937.us-central1.run.app';
         const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
         const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
 
@@ -4023,43 +4023,55 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         async function loadMapSites() {
-            try {
-                // Get all assets with GPS coordinates
-                const response = await fetch(`${GOOGLE_SHEET_URL}?action=getAssetDB`);
-                const data = await response.json();
-                
-                if (data.success && data.data) {
-                    mapSites = data.data.filter(site => {
-                        const gps = site['GPS Coordinates'] || site.gpsCoordinates;
-                        return gps && gps.includes(',');
-                    }).map(site => {
-                        const gps = (site['GPS Coordinates'] || site.gpsCoordinates || '').split(',');
-                        return {
-                            name: site['Location'] || site.location || 'Unknown',
-                            customer: site['Customer'] || site.customer || '',
-                            serial: site['Serial Number'] || site.serialNumber || '',
-                            lat: parseFloat(gps[0]?.trim()),
-                            lng: parseFloat(gps[1]?.trim()),
-                            lastTest: site['Last Test Date'] || '',
-                            status: getTestStatus(site),
-                            serviceType: site['Service Type'] || ''
-                        };
-                    }).filter(s => !isNaN(s.lat) && !isNaN(s.lng));
-                    
-                    // Populate customer filter
-                    populateMapCustomerFilter();
-                    
-                    // Add markers
-                    updateMapMarkers();
-                    
-                    // Fit bounds if we have sites
-                    if (mapSites.length > 0) {
-                        const bounds = L.latLngBounds(mapSites.map(s => [s.lat, s.lng]));
-                        siteMap.fitBounds(bounds, { padding: [30, 30] });
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading map sites:', error);
+            // Use the already-loaded assetDB
+            if (!assetDB || assetDB.length === 0) {
+                console.log('AssetDB not loaded yet, waiting...');
+                // Try to load it
+                await loadAssetDB();
+            }
+            
+            if (assetDB && assetDB.length > 0) {
+                processMapData(assetDB);
+            } else {
+                console.log('No AssetDB data available for map');
+            }
+        }
+        
+        function processMapData(data) {
+            if (!data || !Array.isArray(data)) {
+                console.log('No valid map data received');
+                return;
+            }
+            
+            mapSites = data.filter(site => {
+                const gps = site['GPS Coordinates'] || site.gpsCoordinates || '';
+                return gps && gps.toString().includes(',');
+            }).map(site => {
+                const gps = (site['GPS Coordinates'] || site.gpsCoordinates || '').toString().split(',');
+                return {
+                    name: site['Location'] || site.location || 'Unknown',
+                    customer: site['Customer'] || site.customer || '',
+                    serial: site['Serial Number'] || site.serialNumber || '',
+                    lat: parseFloat(gps[0]?.trim()),
+                    lng: parseFloat(gps[1]?.trim()),
+                    lastTest: site['Last Test Date'] || site['Last Tested'] || '',
+                    status: getTestStatus(site),
+                    serviceType: site['Service Type'] || ''
+                };
+            }).filter(s => !isNaN(s.lat) && !isNaN(s.lng));
+            
+            console.log('Map sites loaded:', mapSites.length);
+            
+            // Populate customer filter
+            populateMapCustomerFilter();
+            
+            // Add markers
+            updateMapMarkers();
+            
+            // Fit bounds if we have sites
+            if (mapSites.length > 0 && siteMap) {
+                const bounds = L.latLngBounds(mapSites.map(s => [s.lat, s.lng]));
+                siteMap.fitBounds(bounds, { padding: [30, 30] });
             }
         }
 
