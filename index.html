@@ -4159,10 +4159,18 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
 
         function startTestFromMap(serial) {
             siteMap.closePopup();
-            showScreen('formScreen');
-            resetForm();
-            document.getElementById('formSerial').value = serial;
-            searchAssetDB(serial);
+            
+            // Find the asset in assetDB
+            const asset = assetDB.find(a => a['Serial Number'] === serial);
+            
+            if (asset) {
+                populateFromAsset(asset);
+            } else {
+                // Fallback - just open form with serial
+                showScreen('formScreen');
+                resetForm();
+                document.getElementById('formSerial').value = serial;
+            }
         }
 
         function navigateToSite(lat, lng) {
