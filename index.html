@@ -909,7 +909,7 @@
                     <div class="action-title">Find Nearby Meter</div>
                     <div class="action-subtitle">Locate meter by GPS</div>
                 </div>
-                <div class="action-card" onclick="showScreen('formScreen'); resetForm();">
+                <div class="action-card" onclick="startManualEntry()">
                     <div class="action-icon">📝</div>
                     <div class="action-title">Manual Entry</div>
                     <div class="action-subtitle">Enter details manually</div>
@@ -2968,6 +2968,11 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 updateRecentActivity();
             }
             
+            // Check for auto-saved form when entering form screen
+            if (screenId === 'formScreen' && !editingTestId) {
+                setTimeout(() => restoreAutoSavedForm(), 100);
+            }
+            
             // Update pending count
             updatePendingCount();
         }
@@ -3515,6 +3520,37 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
 
         function clearAutoSavedForm() {
             localStorage.removeItem(FORM_AUTOSAVE_KEY);
+        }
+
+        function startManualEntry() {
+            // Check if there's saved form data
+            const saved = localStorage.getItem(FORM_AUTOSAVE_KEY);
+            
+            if (saved) {
+                try {
+                    const formData = JSON.parse(saved);
+                    const saveTime = new Date(formData.timestamp);
+                    const hoursSinceSave = (new Date() - saveTime) / (1000 * 60 * 60);
+                    
+                    // Check if save is recent and has data
+                    if (hoursSinceSave < 24) {
+                        const hasData = Object.values(formData.fields).some(v => v && v !== 'Mick Bartlett' && v !== 'Annual');
+                        
+                        if (hasData) {
+                            showScreen('formScreen');
+                            // Don't reset - let restore happen
+                            restoreAutoSavedForm();
+                            return;
+                        }
+                    }
+                } catch(e) {
+                    console.error('Error checking saved form:', e);
+                }
+            }
+            
+            // No saved data - just reset and show form
+            showScreen('formScreen');
+            resetForm();
         }
 
         // Attach auto-save listeners to form fields
