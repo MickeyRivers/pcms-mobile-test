@@ -1809,6 +1809,16 @@
             // Setup photo input handler
             document.getElementById('photoInput').addEventListener('change', handlePhotoCapture);
             document.getElementById('photoInputCamera').addEventListener('change', handlePhotoCapture);
+            
+            // Initialize auto-save for form
+            initAutoSave();
+            
+            // Check for auto-saved form data on load
+            setTimeout(() => {
+                if (currentScreen === 'formScreen') {
+                    restoreAutoSavedForm();
+                }
+            }, 500);
         });
 
         // ============================================
@@ -3209,6 +3219,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Clear editing state
             editingTestId = null;
             
+            // Clear auto-saved form data
+            clearAutoSavedForm();
+            
             // Hide match card
             document.getElementById('matchCard').style.display = 'none';
             
@@ -3343,6 +3356,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     <img src="${e.target.result}" alt="Photo ${currentPhotoIndex + 1}">
                     <button class="remove-photo" onclick="removePhoto(${currentPhotoIndex}, event)">×</button>
                 `;
+                
+                // Auto-save after photo added
+                autoSaveForm();
             };
             reader.readAsDataURL(file);
             
@@ -3355,6 +3371,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             photos[index] = null;
             const slot = document.querySelectorAll('.photo-slot')[index];
             slot.innerHTML = '<span class="add-icon">+</span>';
+            
+            // Auto-save after photo removed
+            autoSaveForm();
         }
 
         // ============================================
@@ -3399,6 +3418,118 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     maximumAge: 60000
                 }
             );
+        }
+
+        // ============================================
+        // AUTO-SAVE FORM (prevents data loss on reload)
+        // ============================================
+        const FORM_AUTOSAVE_KEY = 'pcms_form_autosave';
+        let autoSaveTimeout = null;
+
+        function autoSaveForm() {
+            // Debounce - wait 500ms after last change before saving
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                const formData = {
+                    timestamp: new Date().toISOString(),
+                    serviceType: selectedServiceType,
+                    isStartup: isStartup,
+                    photos: photos,
+                    fields: {}
+                };
+                
+                // Save all form fields
+                document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(input => {
+                    if (input.id) {
+                        formData.fields[input.id] = input.value;
+                    }
+                });
+                
+                localStorage.setItem(FORM_AUTOSAVE_KEY, JSON.stringify(formData));
+                console.log('Form auto-saved');
+            }, 500);
+        }
+
+        function restoreAutoSavedForm() {
+            const saved = localStorage.getItem(FORM_AUTOSAVE_KEY);
+            if (!saved) return false;
+            
+            try {
+                const formData = JSON.parse(saved);
+                
+                // Check if save is less than 24 hours old
+                const saveTime = new Date(formData.timestamp);
+                const hoursSinceSave = (new Date() - saveTime) / (1000 * 60 * 60);
+                if (hoursSinceSave > 24) {
+                    clearAutoSavedForm();
+                    return false;
+                }
+                
+                // Check if there's actual data
+                const hasData = Object.values(formData.fields).some(v => v && v !== 'Mick Bartlett' && v !== 'Annual');
+                if (!hasData) return false;
+                
+                // Ask user if they want to restore
+                if (confirm('You have unsaved form data from earlier. Would you like to restore it?')) {
+                    // Restore service type
+                    if (formData.serviceType) {
+                        const serviceBtn = document.querySelector(`.service-type-option[data-type="${formData.serviceType}"]`);
+                        if (serviceBtn) selectServiceType(serviceBtn);
+                    }
+                    
+                    // Restore startup toggle
+                    if (formData.isStartup) {
+                        document.getElementById('formStartup').checked = true;
+                        isStartup = true;
+                        toggleStartup();
+                    }
+                    
+                    // Restore all fields
+                    Object.entries(formData.fields).forEach(([id, value]) => {
+                        const input = document.getElementById(id);
+                        if (input) input.value = value;
+                    });
+                    
+                    // Restore photos
+                    if (formData.photos) {
+                        photos = formData.photos;
+                        photos.forEach((photo, i) => {
+                            if (photo) {
+                                const slot = document.querySelectorAll('.photo-slot')[i];
+                                slot.innerHTML = `
+                                    <img src="${photo}" alt="Photo ${i + 1}">
+                                    <button class="remove-photo" onclick="removePhoto(${i}, event)">×</button>
+                                `;
+                            }
+                        });
+                    }
+                    
+                    showToast('Form data restored!', 'success');
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error restoring form:', e);
+            }
+            return false;
+        }
+
+        function clearAutoSavedForm() {
+            localStorage.removeItem(FORM_AUTOSAVE_KEY);
+        }
+
+        // Attach auto-save listeners to form fields
+        function initAutoSave() {
+            document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(input => {
+                input.addEventListener('input', autoSaveForm);
+                input.addEventListener('change', autoSaveForm);
+            });
+            
+            // Also save when photos change or service type changes
+            const originalSelectServiceType = selectServiceType;
+            window.selectServiceType = function(element) {
+                originalSelectServiceType(element);
+                autoSaveForm();
+            };
         }
 
         // ============================================
