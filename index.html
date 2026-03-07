@@ -16,6 +16,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- jsPDF for local PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1381,6 +1384,9 @@
                 <button class="btn btn-gold btn-block" onclick="syncPending()" id="syncBtn">
                     ↑ Sync All to Cloud
                 </button>
+                <button class="btn btn-block" style="background: var(--navy); color: white; margin-top: 8px;" onclick="saveAllToPhone()">
+                    📱 Save All to Phone
+                </button>
             </div>
             
             <div id="failedCertsSection" style="margin-top: 16px; display: none;">
@@ -1390,6 +1396,9 @@
                 </div>
                 <button class="btn btn-block" style="background: var(--teal); color: white;" onclick="retryFailedCerts()">
                     🔄 Retry Failed Uploads
+                </button>
+                <button class="btn btn-block" style="background: var(--navy); color: white; margin-top: 8px;" onclick="saveFailedToPhone()">
+                    📱 Save Failed to Phone
                 </button>
                 <button class="btn btn-block" style="background: #dc3545; color: white; margin-top: 8px;" onclick="clearFailedCerts()">
                     🗑️ Clear Failed
@@ -2991,7 +3000,12 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         async function startCamera() {
             try {
                 const video = document.getElementById('video-preview');
-                videoStream = await navigator.mediaDevices.getUserMedia({
+                
+                // Stop any existing stream first
+                stopCamera();
+                
+                // Add timeout for camera access
+                const cameraPromise = navigator.mediaDevices.getUserMedia({
                     video: { 
                         facingMode: 'environment', 
                         width: { ideal: 1920 }, 
@@ -2999,20 +3013,49 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         focusMode: 'continuous'
                     }
                 });
+                
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Camera timeout')), 10000);
+                });
+                
+                videoStream = await Promise.race([cameraPromise, timeoutPromise]);
                 video.srcObject = videoStream;
+                
                 // Reset scan result
                 document.getElementById('scanResult').style.display = 'none';
                 document.getElementById('scannerControls').style.display = 'block';
             } catch (err) {
                 console.error('Camera error:', err);
-                showToast('Could not access camera', 'error');
+                if (err.message === 'Camera timeout') {
+                    showToast('Camera took too long - try again', 'error');
+                } else if (err.name === 'NotAllowedError') {
+                    showToast('Camera permission denied', 'error');
+                } else if (err.name === 'NotFoundError') {
+                    showToast('No camera found', 'error');
+                } else {
+                    showToast('Camera error - try Manual Entry', 'error');
+                }
+                // Go back to home if camera fails
+                setTimeout(() => showScreen('homeScreen'), 1500);
             }
         }
 
         function stopCamera() {
             if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
+                try {
+                    videoStream.getTracks().forEach(track => {
+                        track.stop();
+                        track.enabled = false;
+                    });
+                } catch (e) {
+                    console.error('Error stopping camera:', e);
+                }
                 videoStream = null;
+            }
+            // Also clear video source
+            const video = document.getElementById('video-preview');
+            if (video) {
+                video.srcObject = null;
             }
         }
 
@@ -3050,6 +3093,12 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             const canvas = document.getElementById('scanCanvas');
             const ctx = canvas.getContext('2d');
             
+            // Check if video is ready
+            if (!video.videoWidth || !video.videoHeight) {
+                showToast('Camera not ready - try again', 'error');
+                return;
+            }
+            
             // Set canvas size to video size
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -3065,6 +3114,21 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             
             let allMatches = new Set();
             
+            // Helper function for fetch with timeout
+            async function fetchWithTimeout(url, options, timeout = 15000) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                
+                try {
+                    const response = await fetch(url, { ...options, signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    return response;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
+                }
+            }
+            
             try {
                 // OCR.space API call - Engine 2 (better for photos)
                 const formData = new FormData();
@@ -3077,10 +3141,10 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 
                 document.getElementById('loadingText').textContent = 'Scanning with Engine 2...';
                 
-                let response = await fetch(OCR_API_URL, {
+                let response = await fetchWithTimeout(OCR_API_URL, {
                     method: 'POST',
                     body: formData
-                });
+                }, 15000);
                 
                 let result = await response.json();
                 
@@ -3092,10 +3156,10 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 document.getElementById('loadingText').textContent = 'Scanning with Engine 1...';
                 formData.set('OCREngine', '1');
                 
-                response = await fetch(OCR_API_URL, {
+                response = await fetchWithTimeout(OCR_API_URL, {
                     method: 'POST',
                     body: formData
-                });
+                }, 15000);
                 
                 result = await response.json();
                 
@@ -3119,7 +3183,11 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             } catch (err) {
                 hideLoading();
                 console.error('OCR error:', err);
-                showToast('Scan failed. Please try again.', 'error');
+                if (err.name === 'AbortError') {
+                    showToast('Scan timed out - check your connection', 'error');
+                } else {
+                    showToast('Scan failed - try Manual Entry', 'error');
+                }
             }
         }
         
@@ -3861,6 +3929,205 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             return failedCerts;
         }
 
+        // ============================================
+        // SAVE TO PHONE (Local PDF + JSON)
+        // ============================================
+        function generateLocalPDF(test) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'letter');
+            
+            // Format date
+            const testDate = new Date(test.timestamp);
+            const dateStr = testDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            // Blue border
+            doc.setDrawColor(0, 102, 204);
+            doc.setLineWidth(1.2);
+            doc.rect(5, 5, 200, 267);
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PCMS - Precision Calibration Mobile Services', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('YOUR GO-TO FLOW PROS', 105, 28, { align: 'center' });
+            
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text('342 Waxwood Ln. San Antonio, TX 78216', 105, 34, { align: 'center' });
+            doc.text('Mick@flow-cert.com | (210) 601-9318', 105, 38, { align: 'center' });
+            
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Testing and Calibration Report', 105, 48, { align: 'center' });
+            
+            // Service type badge
+            doc.setFillColor(0, 102, 204);
+            const serviceType = test.serviceType || 'Calibration';
+            const badgeWidth = doc.getTextWidth(serviceType) + 10;
+            doc.roundedRect((210 - badgeWidth) / 2, 52, badgeWidth, 8, 2, 2, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.text(serviceType, 105, 57, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            
+            // Info fields
+            let y = 70;
+            const addField = (label, value) => {
+                if (!value) return;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(`${label}:`, 15, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(String(value), 60, y);
+                y += 7;
+            };
+            
+            addField('Date', dateStr);
+            addField('Customer', test.customer);
+            addField('Location', test.location);
+            addField('Serial Number', test.serialNumber);
+            addField('Manufacturer', test.manufacturer);
+            addField('Tested By', test.testedBy);
+            if (test.waterWastewater) addField('Water/Wastewater', test.waterWastewater);
+            if (test.gpsCoordinates) addField('GPS', test.gpsCoordinates);
+            
+            // Calibration data table
+            y += 5;
+            const testPoints = test.testPoints || test.closedPipeTestPoints || test.openChannelTestPoints || [];
+            if (testPoints.length > 0) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('Calibration Data', 105, y, { align: 'center' });
+                y += 8;
+                
+                // Table header
+                doc.setFillColor(0, 102, 204);
+                doc.rect(20, y, 170, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.text('Test Point', 35, y + 5.5, { align: 'center' });
+                doc.text('Desired', 75, y + 5.5, { align: 'center' });
+                doc.text('Measured', 115, y + 5.5, { align: 'center' });
+                doc.text('Accuracy', 155, y + 5.5, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                y += 8;
+                
+                // Table rows
+                doc.setFont('helvetica', 'normal');
+                testPoints.forEach((point, i) => {
+                    if (i % 2 === 0) {
+                        doc.setFillColor(240, 240, 240);
+                        doc.rect(20, y, 170, 7, 'F');
+                    }
+                    doc.text(String(point.testPoint || point.level || i + 1), 35, y + 5, { align: 'center' });
+                    doc.text(String(point.desired || point.actual || '-'), 75, y + 5, { align: 'center' });
+                    doc.text(String(point.measured || point.displayed || '-'), 115, y + 5, { align: 'center' });
+                    doc.text(String(point.accuracy || point.pctDiff || '-'), 155, y + 5, { align: 'center' });
+                    y += 7;
+                });
+            }
+            
+            // Notes
+            if (test.notes) {
+                y += 10;
+                doc.setFont('helvetica', 'bold');
+                doc.text('Notes:', 15, y);
+                y += 6;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const splitNotes = doc.splitTextToSize(test.notes, 180);
+                doc.text(splitNotes, 15, y);
+            }
+            
+            // Footer
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'italic');
+            doc.text('Generated locally by PCMS Mobile', 105, 265, { align: 'center' });
+            
+            return doc;
+        }
+        
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function saveTestToPhone(test) {
+            const customer = (test.customer || 'Unknown').replace(/[^a-zA-Z0-9]/g, '_');
+            const serial = (test.serialNumber || 'NoSerial').replace(/[^a-zA-Z0-9]/g, '_');
+            const date = new Date(test.timestamp).toISOString().split('T')[0];
+            const baseFilename = `PCMS_${date}_${customer}_${serial}`;
+            
+            // Generate and download PDF
+            try {
+                const pdf = generateLocalPDF(test);
+                pdf.save(`${baseFilename}.pdf`);
+            } catch (e) {
+                console.error('PDF generation error:', e);
+                showToast('PDF generation failed', 'error');
+            }
+            
+            // Download JSON backup
+            try {
+                const jsonData = JSON.stringify(test, null, 2);
+                downloadFile(jsonData, `${baseFilename}.json`, 'application/json');
+            } catch (e) {
+                console.error('JSON download error:', e);
+            }
+        }
+        
+        function saveAllToPhone() {
+            if (pendingTests.length === 0) {
+                showToast('No pending tests to save', 'info');
+                return;
+            }
+            
+            showLoading('Saving to phone...');
+            
+            let savedCount = 0;
+            pendingTests.forEach((test, i) => {
+                setTimeout(() => {
+                    saveTestToPhone(test);
+                    savedCount++;
+                    if (savedCount === pendingTests.length) {
+                        hideLoading();
+                        showToast(`${savedCount} test(s) saved to Downloads!`, 'success');
+                    }
+                }, i * 500); // Stagger downloads
+            });
+        }
+        
+        function saveFailedToPhone() {
+            if (failedCerts.length === 0) {
+                showToast('No failed certificates to save', 'info');
+                return;
+            }
+            
+            showLoading('Saving failed certs to phone...');
+            
+            let savedCount = 0;
+            failedCerts.forEach((cert, i) => {
+                setTimeout(() => {
+                    saveTestToPhone(cert);
+                    savedCount++;
+                    if (savedCount === failedCerts.length) {
+                        hideLoading();
+                        showToast(`${savedCount} certificate(s) saved to Downloads!`, 'success');
+                    }
+                }, i * 500);
+            });
+        }
+
         async function retryFailedCerts() {
             if (failedCerts.length === 0) {
                 showToast('No failed certificates to retry', 'info');
@@ -3923,9 +4190,67 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
         }
 
-        const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
+        const CLOUD_FUNCTION_URL = 'https://generate-certificate-980517620937.us-central1.run.app';
         const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
         const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+
+        // Auto-retry interval (check every 2 minutes when online)
+        let autoRetryInterval = null;
+        
+        function startAutoRetry() {
+            if (autoRetryInterval) return;
+            
+            autoRetryInterval = setInterval(async () => {
+                if (navigator.onLine && failedCerts.length > 0) {
+                    console.log('Auto-retrying failed certificates...');
+                    await silentRetryFailedCerts();
+                }
+            }, 120000); // Every 2 minutes
+        }
+        
+        // Start auto-retry when page loads
+        startAutoRetry();
+        
+        // Also retry when coming back online
+        window.addEventListener('online', () => {
+            console.log('Back online - retrying failed uploads...');
+            setTimeout(() => silentRetryFailedCerts(), 3000);
+        });
+
+        async function silentRetryFailedCerts() {
+            if (failedCerts.length === 0) return;
+            
+            let successCount = 0;
+            const stillFailed = [];
+            
+            for (const cert of failedCerts) {
+                try {
+                    const response = await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cert)
+                    });
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        successCount++;
+                        console.log(`Auto-retry success: ${result.dropbox_path}`);
+                    } else {
+                        stillFailed.push(cert);
+                    }
+                } catch (error) {
+                    stillFailed.push(cert);
+                }
+            }
+            
+            failedCerts = stillFailed;
+            localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
+            
+            if (successCount > 0) {
+                showToast(`${successCount} certificate(s) uploaded!`, 'success');
+                updateFailedCertsUI();
+            }
+        }
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -3933,8 +4258,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 return;
             }
             
+            // Check connection with timeout
             if (!navigator.onLine) {
-                showToast('No internet connection', 'error');
+                showToast('No connection - tests saved for later', 'info');
                 return;
             }
             
@@ -3953,11 +4279,17 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 
                 // 1. Generate PDF certificate
                 try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                    
                     const pdfResponse = await fetch(CLOUD_FUNCTION_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(test)
+                        body: JSON.stringify(test),
+                        signal: controller.signal
                     });
+                    
+                    clearTimeout(timeoutId);
                     
                     const pdfResult = await pdfResponse.json();
                     
@@ -3970,9 +4302,13 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         saveFailedCert(test, pdfResult.error || 'Unknown error');
                     }
                 } catch (error) {
-                    console.error(`Error creating PDF: ${error}`);
-                    // Save to failed certs for retry later
-                    saveFailedCert(test, error.message || 'Network error');
+                    if (error.name === 'AbortError') {
+                        console.error('PDF generation timed out');
+                        saveFailedCert(test, 'Request timed out - will retry automatically');
+                    } else {
+                        console.error(`Error creating PDF: ${error}`);
+                        saveFailedCert(test, error.message || 'Network error');
+                    }
                 }
                 
                 // 2. Sync to Google Sheets using hidden iframe form (without photos - too large)
@@ -4125,14 +4461,15 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             hideLoading();
             
             if (failCount === 0) {
-                showToast(`${successCount} test${successCount !== 1 ? 's' : ''} synced successfully!`, 'success');
+                showToast(`${successCount} test${successCount !== 1 ? 's' : ''} synced!`, 'success');
             } else if (successCount === 0) {
-                showToast(`Sync failed. Check your connection.`, 'error');
+                showToast(`Connection issue - will auto-retry when online`, 'info');
             } else {
-                showToast(`${successCount} synced, ${failCount} failed. Retry later.`, 'info');
+                showToast(`${successCount} synced, ${failCount} pending retry`, 'info');
             }
             
             updatePendingList();
+            updateFailedCertsUI();
         }
 
         // ============================================
