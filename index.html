@@ -3302,7 +3302,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
                     <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
                 </div>
-            \`;
+            `;
             sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
             document.body.appendChild(sheet);
         }
