@@ -1470,6 +1470,7 @@
             </div>
             
             <div style="display: flex; gap: 8px;">
+                <button onclick="locateMeOnMap()" style="padding: 14px 16px; background: var(--navy); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">🎯 Find Me</button>
                 <button onclick="planMapRoute('due')" style="flex: 1; padding: 14px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">📍 Route to Due</button>
                 <button onclick="planMapRoute('overdue')" style="flex: 1; padding: 14px; background: var(--teal); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">🚨 Route to Overdue</button>
             </div>
@@ -4215,6 +4216,41 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             document.getElementById('routeInfoBanner').style.display = 'block';
             document.getElementById('routeStopsCount').textContent = `${routeSites.length} stops planned`;
             document.getElementById('routeDistance').textContent = 'Route: North → South (ending near home)';
+        }
+
+        let myLocationMarker = null;
+
+        function locateMeOnMap() {
+            if (!siteMap) return;
+            if (!navigator.geolocation) {
+                showToast("GPS not supported on this device", "error");
+                return;
+            }
+            showToast("Getting your location...", "info");
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    routeStartCoords = { lat, lng };
+                    // Remove old marker if exists
+                    if (myLocationMarker) siteMap.removeLayer(myLocationMarker);
+                    // Blue pulsing marker
+                    const icon = L.divIcon({
+                        className: "map-marker-wrapper",
+                        html: `<div style="width:20px;height:20px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,0.3);"></div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+                    myLocationMarker = L.marker([lat, lng], { icon })
+                        .addTo(siteMap)
+                        .bindPopup("<b>📍 You are here</b>")
+                        .openPopup();
+                    siteMap.setView([lat, lng], 13);
+                    showToast("Location found!", "success");
+                },
+                () => showToast("Could not get location", "error"),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
         }
 
         function openRouteInGoogleMaps() {
