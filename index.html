@@ -3859,11 +3859,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 for (const t of pendingTests) { store.put(t); }
                 await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
 
-                // Register background sync if supported
-                if ('serviceWorker' in navigator && 'SyncManager' in window) {
-                    const reg = await navigator.serviceWorker.ready;
-                    await reg.sync.register('pcms-sync').catch(() => {});
-                }
+                // Background sync intentionally NOT auto-triggered on save.
+                // Sync only runs when user taps "Sync All to Cloud".
             } catch (e) {
                 console.warn('IndexedDB save failed, using localStorage:', e);
                 localStorage.setItem('pendingTests', JSON.stringify(pendingTests));
@@ -3996,6 +3993,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
 
                 // 1. Generate PDF certificate
                 try {
+                    console.log('Attempting Cloud Run:', CLOUD_FUNCTION_URL);
                     const pdfAbort = new AbortController();
                     const pdfTimeout = setTimeout(() => pdfAbort.abort(), 30000);
                     const res = await fetch(CLOUD_FUNCTION_URL, {
@@ -4005,14 +4003,19 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         signal: pdfAbort.signal
                     });
                     clearTimeout(pdfTimeout);
+                    console.log('Cloud Run response status:', res.status);
                     if (res.ok) {
                         const json = await res.json();
+                        console.log('Cloud Run response body:', json);
                         pdfOk = !!json.success;
                         if (!pdfOk) saveFailedCert(test, json.error || 'Unknown error');
                     } else {
-                        saveFailedCert(test, `HTTP ${res.status}`);
+                        const errText = await res.text().catch(() => '');
+                        console.error('Cloud Run HTTP error:', res.status, errText);
+                        saveFailedCert(test, `HTTP ${res.status}: ${errText.slice(0,100)}`);
                     }
                 } catch (e) {
+                    console.error('Cloud Run fetch error:', e.name, e.message);
                     if (e.name === 'AbortError') {
                         saveFailedCert(test, 'Timeout - Cloud Run took too long');
                         showToast('PDF generation timed out - saved to retry later', 'warning');
