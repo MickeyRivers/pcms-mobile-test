@@ -593,6 +593,20 @@
             font-size: 14px;
         }
 
+        /* Unit badges on field labels */
+        .unit-badge {
+            display: inline-block;
+            background: var(--teal);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            margin-left: 4px;
+            vertical-align: middle;
+            letter-spacing: 0.5px;
+        }
+
         /* Conditional Fields */
         .conditional-fields {
             display: none;
@@ -1078,6 +1092,9 @@
                     <div class="service-type-option" data-type="Chart Recorder" onclick="selectServiceType(this)">
                         Chart Recorder
                     </div>
+                    <div class="service-type-option" data-type="Mechanical" onclick="selectServiceType(this)" style="grid-column: span 2;">
+                        ⚙️ Mechanical Meter
+                    </div>
                 </div>
 
                 <div class="startup-toggle" onclick="document.getElementById('formStartup').click()">
@@ -1123,24 +1140,34 @@
                     </select>
                 </div>
 
-                <div class="form-group before-field">
-                    <label class="form-label">Flow Rate - Validating Meter (Before)</label>
-                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="GPM">
+                <div class="form-group">
+                    <label class="form-label">Flow Units</label>
+                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
+                        <option value="GPM">GPM</option>
+                        <option value="MGD">MGD</option>
+                        <option value="CFS">CFS</option>
+                        <option value="GPD">GPD</option>
+                    </select>
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Customer Meter - Flow Rate (Before)</label>
-                    <input type="number" step="0.1" class="form-input" id="formCusFlowBefore" placeholder="GPM">
+                    <label class="form-label">Flow Rate - Validating Meter (Before) <span class="unit-badge" id="unitBadgeCPValBefore">GPM</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formValFlowBefore" placeholder="0.00">
+                </div>
+
+                <div class="form-group before-field">
+                    <label class="form-label">Customer Meter - Flow Rate (Before) <span class="unit-badge" id="unitBadgeCPCusBefore">GPM</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formCusFlowBefore" placeholder="0.00">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Flow Rate - Validating Meter (After)</label>
-                    <input type="number" step="0.1" class="form-input" id="formValFlowAfter" placeholder="GPM">
+                    <label class="form-label">Flow Rate - Validating Meter (After) <span class="unit-badge" id="unitBadgeCPValAfter">GPM</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formValFlowAfter" placeholder="0.00">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Customer Meter - Flow Rate (After)</label>
-                    <input type="number" step="0.1" class="form-input" id="formCusFlowAfter" placeholder="GPM">
+                    <label class="form-label">Customer Meter - Flow Rate (After) <span class="unit-badge" id="unitBadgeCPCusAfter">GPM</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formCusFlowAfter" placeholder="0.00">
                 </div>
             </div>
 
@@ -1170,12 +1197,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Units</label>
-                    <select class="form-select" id="formUnitsOC">
-                        <option value="">Select...</option>
+                    <label class="form-label">Flow Units</label>
+                    <select class="form-select" id="formUnitsOC" onchange="updateUnitLabels('OC')">
                         <option value="MGD">MGD</option>
                         <option value="GPM">GPM</option>
                         <option value="CFS">CFS</option>
+                        <option value="GPD">GPD</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Level Units</label>
+                    <select class="form-select" id="formLevelUnitsOC" onchange="updateUnitLabels('OC')">
+                        <option value="Inches">Inches (in)</option>
+                        <option value="Feet">Feet (ft)</option>
+                        <option value="mm">Millimeters (mm)</option>
+                        <option value="cm">Centimeters (cm)</option>
                     </select>
                 </div>
 
@@ -1189,30 +1226,51 @@
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Level in Channel (Before)</label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelChannelBefore" placeholder="Inches">
+                    <label class="form-label">Level in Channel (Before) <span class="unit-badge" id="unitBadgeOCChanBefore">in</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formLevelChannelBefore" placeholder="0.00">
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Level on Meter (Before)</label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelMeterBefore" placeholder="Inches">
+                    <label class="form-label">Level on Meter (Before) <span class="unit-badge" id="unitBadgeOCMeterBefore">in</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formLevelMeterBefore" placeholder="0.00">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Level in Channel (After)</label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelChannelAfter" placeholder="Inches">
+                    <label class="form-label">Level in Channel (After) <span class="unit-badge" id="unitBadgeOCChanAfter">in</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formLevelChannelAfter" placeholder="0.00">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Level on Meter (After)</label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelMeterAfter" placeholder="Inches">
+                    <label class="form-label">Level on Meter (After) <span class="unit-badge" id="unitBadgeOCMeterAfter">in</span></label>
+                    <input type="number" step="0.01" class="form-input" id="formLevelMeterAfter" placeholder="0.00">
                 </div>
             </div>
 
             <!-- Loop Test Fields -->
             <div class="form-section conditional-fields" id="loopTestFields">
                 <div class="form-section-title">⚡ Loop Test Data</div>
-                
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Flow Units</label>
+                        <select class="form-select" id="formFlowUnitsLT" onchange="updateUnitLabels('LT')">
+                            <option value="GPM">GPM</option>
+                            <option value="MGD">MGD</option>
+                            <option value="CFS">CFS</option>
+                            <option value="GPD">GPD</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Level Units</label>
+                        <select class="form-select" id="formLevelUnitsLT" onchange="updateUnitLabels('LT')">
+                            <option value="Inches">Inches</option>
+                            <option value="Feet">Feet</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Desired Output - Low (mA)</label>
                     <input type="number" step="0.01" class="form-input" id="formLowDesired" placeholder="4.00">
@@ -1247,36 +1305,119 @@
             <!-- Chart Recorder Fields -->
             <div class="form-section conditional-fields" id="chartRecorderFields">
                 <div class="form-section-title">📈 Chart Recorder Data</div>
-                
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Flow Units</label>
+                        <select class="form-select" id="formFlowUnitsCR" onchange="updateUnitLabels('CR')">
+                            <option value="GPM">GPM</option>
+                            <option value="MGD">MGD</option>
+                            <option value="CFS">CFS</option>
+                            <option value="GPD">GPD</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Level Units</label>
+                        <select class="form-select" id="formLevelUnitsCR" onchange="updateUnitLabels('CR')">
+                            <option value="Inches">Inches</option>
+                            <option value="Feet">Feet</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Measurement Type</label>
-                    <select class="form-select" id="formMeasurementType">
-                        <option value="">Select...</option>
-                        <option value="Inches">Inches (Level)</option>
-                        <option value="Feet">Feet (Level)</option>
-                        <option value="GPM">GPM (Flow)</option>
-                        <option value="MGD">MGD (Flow)</option>
+                    <select class="form-select" id="formMeasurementType" onchange="updateUnitLabels('CR')">
+                        <option value="Flow">Flow</option>
+                        <option value="Level">Level</option>
                     </select>
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Value on Meter (Before)</label>
+                    <label class="form-label">Value on Meter (Before) <span class="unit-badge" id="unitBadgeCRMeterBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterBefore">
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Value on Chart Recorder (Before)</label>
+                    <label class="form-label">Value on Chart Recorder (Before) <span class="unit-badge" id="unitBadgeCRChartBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartBefore">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Value on Meter (After)</label>
+                    <label class="form-label">Value on Meter (After) <span class="unit-badge" id="unitBadgeCRMeterAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterAfter">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Value on Chart Recorder (After)</label>
+                    <label class="form-label">Value on Chart Recorder (After) <span class="unit-badge" id="unitBadgeCRChartAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartAfter">
+                </div>
+            </div>
+
+            <!-- Mechanical Meter Fields -->
+            <div class="form-section conditional-fields" id="mechanicalFields">
+                <div class="form-section-title">⚙️ Mechanical Meter — Timed Flow Test</div>
+
+                <div class="form-group">
+                    <label class="form-label">Register Multiplier</label>
+                    <select class="form-select" id="mechMultiplier" onchange="calcMechFlow()">
+                        <option value="1">×1 — reads actual gallons</option>
+                        <option value="10">×10 — last digit = 10 gal</option>
+                        <option value="100">×100 — last digit = 100 gal</option>
+                        <option value="1000">×1,000 — last digit = 1,000 gal</option>
+                        <option value="10000">×10,000 — last digit = 10,000 gal</option>
+                    </select>
+                    <div class="form-hint">Check the meter face — some dials show "Multiply Register by ___"</div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Start Reading</label>
+                        <input type="number" step="0.1" class="form-input" id="mechStart" placeholder="0.0" oninput="calcMechFlow()">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">End Reading</label>
+                        <input type="number" step="0.1" class="form-input" id="mechEnd" placeholder="0.0" oninput="calcMechFlow()">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:12px;">
+                    <label class="form-label">Elapsed Time</label>
+                    <select class="form-select" id="mechTime" onchange="calcMechFlow()">
+                        <option value="0.5">30 seconds</option>
+                        <option value="1" selected>1 minute</option>
+                        <option value="2">2 minutes</option>
+                        <option value="3">3 minutes</option>
+                        <option value="5">5 minutes</option>
+                        <option value="10">10 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                    </select>
+                </div>
+
+                <!-- Result card -->
+                <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
+                    <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
+                    <div id="mechGPM" style="font-size:36px; font-weight:700; letter-spacing:-1px;">—</div>
+                    <div style="font-size:13px; opacity:0.85;">GPM</div>
+                    <div style="display:flex; justify-content:center; gap:24px; margin-top:12px; font-size:12px; opacity:0.85;">
+                        <span>= <span id="mechMGD">—</span> MGD</span>
+                        <span>= <span id="mechGPH">—</span> GPH</span>
+                    </div>
+                    <div style="margin-top:12px; font-size:11px; opacity:0.7;" id="mechCalcDetail">—</div>
+                </div>
+
+                <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                    ✓ Use This Flow Rate in Test Record
+                </button>
+
+                <div class="form-group" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
+                    <label class="form-label">Meter Reading (Totalizer at end)</label>
+                    <input type="text" class="form-input" id="mechTotalizerReading" placeholder="e.g. 0045231">
+                    <div class="form-hint">This will populate the Meter Reading field in the test record</div>
                 </div>
             </div>
 
@@ -1770,7 +1911,7 @@
                                 showToast(`${success} synced, ${failed} will retry automatically.`, 'info');
                             }
                             loadPendingTests();
-                            updateFailedCertsUI();
+                            if (typeof updateFailedCertsUI === 'function') updateFailedCertsUI();
                         }
                     });
 
@@ -3241,6 +3382,83 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             });
         }
 
+        // ============================================
+        // MECHANICAL METER CALCULATOR
+        // ============================================
+        function calcMechFlow() {
+            const start     = parseFloat(document.getElementById('mechStart').value);
+            const end       = parseFloat(document.getElementById('mechEnd').value);
+            const minutes   = parseFloat(document.getElementById('mechTime').value);
+            const mult      = parseFloat(document.getElementById('mechMultiplier').value);
+
+            const resultEl  = document.getElementById('mechResult');
+            const useBtn    = document.getElementById('mechUseBtn');
+
+            if (isNaN(start) || isNaN(end) || end <= start) {
+                resultEl.style.display = 'none';
+                useBtn.style.display   = 'none';
+                return;
+            }
+
+            const gallons = (end - start) * mult;        // actual gallons that passed
+            const gpm     = gallons / minutes;           // gallons per minute
+            const mgd     = gpm * 1440 / 1000000;       // million gallons per day
+            const gph     = gpm * 60;                   // gallons per hour
+
+            document.getElementById('mechGPM').textContent  = gpm.toFixed(2);
+            document.getElementById('mechMGD').textContent  = mgd.toFixed(4);
+            document.getElementById('mechGPH').textContent  = Math.round(gph).toLocaleString();
+            document.getElementById('mechCalcDetail').textContent =
+                `(${end} − ${start}) × ${mult.toLocaleString()} gal = ${gallons.toLocaleString()} gal ÷ ${minutes} min`;
+
+            resultEl.style.display = 'block';
+            useBtn.style.display   = 'block';
+        }
+
+        function useMechResult() {
+            const gpm = document.getElementById('mechGPM').textContent;
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+
+            // Populate meter reading field
+            if (totalizer) {
+                document.getElementById('formMeterReading').value = totalizer;
+            }
+
+            // Populate notes with the calculated result
+            const existing = document.getElementById('formNotes').value;
+            const note = `Mechanical timed test: ${gpm} GPM (timed flow calculation)`;
+            document.getElementById('formNotes').value = existing
+                ? existing + '\n' + note
+                : note;
+
+            showToast(`${gpm} GPM added to notes`, 'success');
+        }
+
+        // Updates unit badge labels whenever a units dropdown changes
+        function updateUnitLabels(section) {
+            if (section === 'CP') {
+                const fu = document.getElementById('formFlowUnitsCP')?.value || 'GPM';
+                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter']
+                    .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = fu; });
+            }
+            if (section === 'OC') {
+                const fu = document.getElementById('formUnitsOC')?.value || 'MGD';
+                const lu = document.getElementById('formLevelUnitsOC')?.value || 'Inches';
+                const luShort = lu === 'Inches' ? 'in' : lu === 'Feet' ? 'ft' : lu;
+                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter']
+                    .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = luShort; });
+            }
+            if (section === 'CR') {
+                const type = document.getElementById('formMeasurementType')?.value || 'Flow';
+                const fu = document.getElementById('formFlowUnitsCR')?.value || 'GPM';
+                const lu = document.getElementById('formLevelUnitsCR')?.value || 'Inches';
+                const luShort = lu === 'Inches' ? 'in' : lu === 'Feet' ? 'ft' : lu;
+                const unit = type === 'Flow' ? fu : luShort;
+                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter']
+                    .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = unit; });
+            }
+        }
+
         function selectServiceType(element) {
             // Update selection
             document.querySelectorAll('.service-type-option').forEach(o => o.classList.remove('selected'));
@@ -3262,6 +3480,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     break;
                 case 'Chart Recorder':
                     document.getElementById('chartRecorderFields').classList.add('visible');
+                    break;
+                case 'Mechanical':
+                    document.getElementById('mechanicalFields').classList.add('visible');
                     break;
             }
             
