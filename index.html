@@ -1878,8 +1878,12 @@
             const pinLockScreen = document.getElementById('pinLockScreen');
             const mainContainer = document.getElementById('mainContainer');
 
-            // If PIN exists this is Mick's device — go straight to PIN screen
-            if (storedPin) {
+            // If PIN exists OR is being set up — this is Mick's device
+            // Also treat no-PIN as PIN setup (admin device) if no auth token stored
+            // Admin devices always go to PIN screen
+            const isAdminDevice = storedPin || localStorage.getItem('pcms_is_admin') === 'true';
+
+            if (isAdminDevice) {
                 document.getElementById('pinMessage').textContent = 'Enter your 4-digit PIN';
                 document.getElementById('pinSetupLink').style.display = 'block';
                 document.getElementById('emailSetup').style.display = 'none';
@@ -2169,6 +2173,14 @@
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
+            // Secret admin setup: visit URL with ?admin=setup to mark this as admin device
+            if (window.location.search.includes('admin=setup')) {
+                localStorage.setItem('pcms_is_admin', 'true');
+                localStorage.removeItem('pcms_auth_email');
+                localStorage.removeItem('pcms_auth_token');
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+
             // Register service worker
             if ('serviceWorker' in navigator) {
                 try {
