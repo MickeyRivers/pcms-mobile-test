@@ -947,6 +947,11 @@
                     <div class="action-title">Site Map</div>
                     <div class="action-subtitle">View sites & plan routes</div>
                 </div>
+                <div class="action-card" onclick="showScreen('flowCalcScreen')">
+                    <div class="action-icon">🧮</div>
+                    <div class="action-title">Flow Calculator</div>
+                    <div class="action-subtitle">Parshall, V-Notch, Palmer-Bowlus, Rectangular Weir</div>
+                </div>
             </div>
 
             <div class="section-title">Recent Activity</div>
@@ -1005,7 +1010,10 @@
         <section class="screen" id="formScreen">
             <!-- Match Card (shown when asset found) -->
             <div class="match-card" id="matchCard" style="display: none;">
-                <h3>METER FOUND</h3>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h3>METER FOUND</h3>
+                    <button onclick="showMeterOptions(document.getElementById('matchSerial').textContent, document.getElementById('matchLocation').textContent)" style="background:rgba(255,255,255,0.2); border:none; color:white; border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer;">⚙️ Settings</button>
+                </div>
                 <div class="serial" id="matchSerial">-</div>
                 <div class="details">
                     <div class="detail-item">
@@ -1092,9 +1100,7 @@
                     <div class="service-type-option" data-type="Chart Recorder" onclick="selectServiceType(this)">
                         Chart Recorder
                     </div>
-                    <div class="service-type-option" data-type="Mechanical" onclick="selectServiceType(this)" style="grid-column: span 2;">
-                        ⚙️ Mechanical Meter
-                    </div>
+
                 </div>
 
                 <div class="startup-toggle" onclick="document.getElementById('formStartup').click()">
@@ -1168,6 +1174,69 @@
                 <div class="form-group after-field">
                     <label class="form-label">Customer Meter - Flow Rate (After) <span class="unit-badge" id="unitBadgeCPCusAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formCusFlowAfter" placeholder="0.00">
+                </div>
+
+                <!-- Mechanical meter timed flow calculator -->
+                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
+                    <div onclick="toggleMechCalc()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+                        <span style="font-weight:600; font-size:14px; color:var(--navy);">⚙️ Mechanical Meter Calculator</span>
+                        <span id="mechCalcToggleIcon" style="font-size:18px; color:var(--gray-500);">＋</span>
+                    </div>
+                    <div id="mechCalcPanel" style="display:none; margin-top:14px;">
+                        <div class="form-group">
+                            <label class="form-label">Register Multiplier</label>
+                            <select class="form-select" id="mechMultiplier" onchange="calcMechFlow()">
+                                <option value="1">×1 — reads actual gallons</option>
+                                <option value="10">×10 — last digit = 10 gal</option>
+                                <option value="100">×100 — last digit = 100 gal</option>
+                                <option value="1000">×1,000 — last digit = 1,000 gal</option>
+                                <option value="10000">×10,000 — last digit = 10,000 gal</option>
+                            </select>
+                            <div class="form-hint">Check the meter face for "Multiply Register by ___"</div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label">Start Reading</label>
+                                <input type="number" step="0.1" class="form-input" id="mechStart" placeholder="0.0" oninput="calcMechFlow()">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label">End Reading</label>
+                                <input type="number" step="0.1" class="form-input" id="mechEnd" placeholder="0.0" oninput="calcMechFlow()">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Elapsed Time</label>
+                            <select class="form-select" id="mechTime" onchange="calcMechFlow()">
+                                <option value="0.5">30 seconds</option>
+                                <option value="1" selected>1 minute</option>
+                                <option value="2">2 minutes</option>
+                                <option value="3">3 minutes</option>
+                                <option value="5">5 minutes</option>
+                                <option value="10">10 minutes</option>
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                            </select>
+                        </div>
+                        <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
+                            <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
+                            <div id="mechGPM" style="font-size:36px; font-weight:700; letter-spacing:-1px;">—</div>
+                            <div style="font-size:13px; opacity:0.85;">GPM</div>
+                            <div style="display:flex; justify-content:center; gap:24px; margin-top:12px; font-size:12px; opacity:0.85;">
+                                <span>= <span id="mechMGD">—</span> MGD</span>
+                                <span>= <span id="mechGPH">—</span> GPH</span>
+                            </div>
+                            <div style="margin-top:8px; font-size:11px; opacity:0.7;" id="mechCalcDetail">—</div>
+                        </div>
+                        <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                            ✓ Use This Flow Rate in Test Record
+                        </button>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Totalizer Reading (at end)</label>
+                            <input type="text" class="form-input" id="mechTotalizerReading" placeholder="e.g. 0045231">
+                            <div class="form-hint">Populates the Meter Reading field</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1353,71 +1422,6 @@
                 <div class="form-group after-field">
                     <label class="form-label">Value on Chart Recorder (After) <span class="unit-badge" id="unitBadgeCRChartAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartAfter">
-                </div>
-            </div>
-
-            <!-- Mechanical Meter Fields -->
-            <div class="form-section conditional-fields" id="mechanicalFields">
-                <div class="form-section-title">⚙️ Mechanical Meter — Timed Flow Test</div>
-
-                <div class="form-group">
-                    <label class="form-label">Register Multiplier</label>
-                    <select class="form-select" id="mechMultiplier" onchange="calcMechFlow()">
-                        <option value="1">×1 — reads actual gallons</option>
-                        <option value="10">×10 — last digit = 10 gal</option>
-                        <option value="100">×100 — last digit = 100 gal</option>
-                        <option value="1000">×1,000 — last digit = 1,000 gal</option>
-                        <option value="10000">×10,000 — last digit = 10,000 gal</option>
-                    </select>
-                    <div class="form-hint">Check the meter face — some dials show "Multiply Register by ___"</div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Start Reading</label>
-                        <input type="number" step="0.1" class="form-input" id="mechStart" placeholder="0.0" oninput="calcMechFlow()">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">End Reading</label>
-                        <input type="number" step="0.1" class="form-input" id="mechEnd" placeholder="0.0" oninput="calcMechFlow()">
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-top:12px;">
-                    <label class="form-label">Elapsed Time</label>
-                    <select class="form-select" id="mechTime" onchange="calcMechFlow()">
-                        <option value="0.5">30 seconds</option>
-                        <option value="1" selected>1 minute</option>
-                        <option value="2">2 minutes</option>
-                        <option value="3">3 minutes</option>
-                        <option value="5">5 minutes</option>
-                        <option value="10">10 minutes</option>
-                        <option value="15">15 minutes</option>
-                        <option value="30">30 minutes</option>
-                        <option value="60">1 hour</option>
-                    </select>
-                </div>
-
-                <!-- Result card -->
-                <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
-                    <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
-                    <div id="mechGPM" style="font-size:36px; font-weight:700; letter-spacing:-1px;">—</div>
-                    <div style="font-size:13px; opacity:0.85;">GPM</div>
-                    <div style="display:flex; justify-content:center; gap:24px; margin-top:12px; font-size:12px; opacity:0.85;">
-                        <span>= <span id="mechMGD">—</span> MGD</span>
-                        <span>= <span id="mechGPH">—</span> GPH</span>
-                    </div>
-                    <div style="margin-top:12px; font-size:11px; opacity:0.7;" id="mechCalcDetail">—</div>
-                </div>
-
-                <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
-                    ✓ Use This Flow Rate in Test Record
-                </button>
-
-                <div class="form-group" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
-                    <label class="form-label">Meter Reading (Totalizer at end)</label>
-                    <input type="text" class="form-input" id="mechTotalizerReading" placeholder="e.g. 0045231">
-                    <div class="form-hint">This will populate the Meter Reading field in the test record</div>
                 </div>
             </div>
 
@@ -1627,6 +1631,142 @@
                     <button onclick="openRouteInGoogleMaps()" style="background: white; color: var(--teal); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600;">Open in Maps</button>
                 </div>
             </div>
+        </section>
+
+        <!-- Flow Calculator Screen -->
+        <section class="screen" id="flowCalcScreen">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div class="section-title" style="margin:0;">🧮 Flow Calculator</div>
+            </div>
+
+            <!-- Device selector -->
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label">Primary Device</label>
+                    <select class="form-select" id="fcDevice" onchange="fcDeviceChanged()">
+                        <optgroup label="Parshall Flumes">
+                            <option value="parshall_3">3" Parshall Flume</option>
+                            <option value="parshall_6">6" Parshall Flume</option>
+                            <option value="parshall_9">9" Parshall Flume</option>
+                            <option value="parshall_12" selected>12" Parshall Flume</option>
+                            <option value="parshall_18">18" Parshall Flume</option>
+                            <option value="parshall_24">24" Parshall Flume</option>
+                            <option value="parshall_36">36" Parshall Flume</option>
+                            <option value="parshall_48">48" Parshall Flume</option>
+                            <option value="parshall_60">60" Parshall Flume</option>
+                            <option value="parshall_72">72" Parshall Flume</option>
+                        </optgroup>
+                        <optgroup label="V-Notch Weirs">
+                            <option value="vnotch_22.5">22.5° V-Notch Weir</option>
+                            <option value="vnotch_30">30° V-Notch Weir</option>
+                            <option value="vnotch_45">45° V-Notch Weir</option>
+                            <option value="vnotch_60">60° V-Notch Weir</option>
+                            <option value="vnotch_90">90° V-Notch Weir</option>
+                            <option value="vnotch_120">120° V-Notch Weir</option>
+                            <option value="vnotch_custom">Custom Angle V-Notch</option>
+                        </optgroup>
+                        <optgroup label="Palmer-Bowlus Flumes">
+                            <option value="pb_4">4" Palmer-Bowlus</option>
+                            <option value="pb_6">6" Palmer-Bowlus</option>
+                            <option value="pb_8">8" Palmer-Bowlus</option>
+                            <option value="pb_10">10" Palmer-Bowlus</option>
+                            <option value="pb_12">12" Palmer-Bowlus</option>
+                            <option value="pb_15">15" Palmer-Bowlus</option>
+                            <option value="pb_18">18" Palmer-Bowlus</option>
+                            <option value="pb_24">24" Palmer-Bowlus</option>
+                        </optgroup>
+                        <optgroup label="Rectangular Weirs">
+                            <option value="rect_suppressed">Suppressed Rectangular Weir</option>
+                            <option value="rect_contracted">Contracted Rectangular Weir</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Custom V-notch angle input -->
+                <div class="form-group" id="fcCustomAngleGroup" style="display:none;">
+                    <label class="form-label">Notch Angle (degrees)</label>
+                    <input type="number" class="form-input" id="fcCustomAngle" placeholder="e.g. 76.6" min="20" max="120" oninput="fcCalculate()">
+                </div>
+
+                <!-- Rectangular weir length input -->
+                <div class="form-group" id="fcWeirLengthGroup" style="display:none;">
+                    <label class="form-label">Weir Crest Length (ft)</label>
+                    <input type="number" class="form-input" id="fcWeirLength" placeholder="e.g. 2.0" step="0.01" oninput="fcCalculate()">
+                </div>
+            </div>
+
+            <!-- Input / Output mode toggle -->
+            <div class="form-section">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+                    <button id="fcModeH" onclick="fcSetMode('H')" style="padding:12px; background:var(--teal); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                        Head → Flow
+                    </button>
+                    <button id="fcModeQ" onclick="fcSetMode('Q')" style="padding:12px; background:var(--gray-200); color:var(--gray-700); border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                        Flow → Head
+                    </button>
+                </div>
+
+                <!-- Head input -->
+                <div id="fcHeadInputGroup">
+                    <div class="form-group">
+                        <label class="form-label">Head / Level (H)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" class="form-input" id="fcHeadIn" placeholder="0.00" step="0.001" oninput="fcCalculate()" style="flex:1;">
+                            <select class="form-select" id="fcHeadUnit" onchange="fcCalculate()" style="width:90px;">
+                                <option value="ft">ft</option>
+                                <option value="in">inches</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flow input (reverse calc) -->
+                <div id="fcFlowInputGroup" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">Flow Rate (Q)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" class="form-input" id="fcFlowIn" placeholder="0.00" step="0.001" oninput="fcCalculate()" style="flex:1;">
+                            <select class="form-select" id="fcFlowUnitIn" onchange="fcCalculate()" style="width:90px;">
+                                <option value="cfs">CFS</option>
+                                <option value="gpm">GPM</option>
+                                <option value="mgd">MGD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result card -->
+            <div id="fcResult" style="display:none; background:linear-gradient(135deg,var(--navy),var(--navy-light)); border-radius:16px; padding:24px; text-align:center; color:white; margin-bottom:16px;">
+                <div style="font-size:12px; opacity:0.8; margin-bottom:4px;" id="fcResultLabel">Flow Rate</div>
+                <div id="fcPrimary" style="font-size:40px; font-weight:700; letter-spacing:-1px; margin-bottom:4px;">—</div>
+                <div id="fcPrimaryUnit" style="font-size:14px; opacity:0.85; margin-bottom:16px;">—</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                        <div style="font-size:10px; opacity:0.7; margin-bottom:2px;">CFS</div>
+                        <div id="fcCFS" style="font-size:15px; font-weight:600;">—</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                        <div style="font-size:10px; opacity:0.7; margin-bottom:2px;">GPM</div>
+                        <div id="fcGPM" style="font-size:15px; font-weight:600;">—</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                        <div style="font-size:10px; opacity:0.7; margin-bottom:2px;">MGD</div>
+                        <div id="fcMGD" style="font-size:15px; font-weight:600;">—</div>
+                    </div>
+                </div>
+                <div id="fcEquation" style="margin-top:12px; font-size:11px; opacity:0.6; font-style:italic;">—</div>
+            </div>
+
+            <div id="fcError" style="display:none; background:#fee2e2; border-radius:10px; padding:14px; color:#991b1b; font-size:13px; margin-bottom:16px;"></div>
+
+            <!-- Equation reference -->
+            <div class="form-section" style="font-size:12px; color:var(--gray-500);">
+                <div style="font-weight:600; color:var(--gray-700); margin-bottom:6px;">📐 Equation Reference</div>
+                <div id="fcEquationRef">Select a device to see the equation used.</div>
+            </div>
+
+            <div class="bottom-spacer"></div>
         </section>
 
     <!-- Bottom Nav for Form -->
@@ -2088,17 +2228,34 @@
         
         function showHistoryDetail(record) {
             const date = record['Date'] ? new Date(record['Date']).toLocaleDateString() : 'Unknown';
-            const details = `
-Serial Number: ${record['Serial Number'] || 'N/A'}
-Customer: ${record['Customer'] || 'N/A'}
-Location: ${record['Facility/Location'] || 'N/A'}
-Date Tested: ${date}
-Tested By: ${record['Tested By'] || 'N/A'}
-Manufacturer: ${record['Manufacturer/Model'] || 'N/A'}
-Accuracy: ${record['Accuracy (%)'] || 'N/A'}%
-GPS: ${record['GPS Coordinates'] || 'N/A'}
+            const serial = record['Serial Number'] || 'N/A';
+            const location = record['Facility/Location'] || 'N/A';
+            const modalHTML = `
+                <div id="historyDetailModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;display:flex;align-items:center;justify-content:center;">
+                    <div style="background:white;margin:20px;border-radius:16px;overflow:hidden;width:100%;max-width:380px;">
+                        <div style="background:var(--navy);color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;">${serial}</div>
+                                <div style="font-size:12px;opacity:0.8;">${location}</div>
+                            </div>
+                            <button onclick="document.getElementById('historyDetailModal').remove()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">×</button>
+                        </div>
+                        <div style="padding:16px;font-size:13px;line-height:1.8;">
+                            <div><b>Customer:</b> ${record['Customer'] || 'N/A'}</div>
+                            <div><b>Date Tested:</b> ${date}</div>
+                            <div><b>Tested By:</b> ${record['Tested By'] || 'N/A'}</div>
+                            <div><b>Manufacturer:</b> ${record['Manufacturer/Model'] || 'N/A'}</div>
+                            <div><b>Accuracy:</b> ${record['Accuracy (%)'] || 'N/A'}%</div>
+                            <div><b>GPS:</b> ${record['GPS Coordinates'] || 'N/A'}</div>
+                        </div>
+                        <div style="padding:0 16px 16px;display:flex;gap:8px;">
+                            <button onclick="document.getElementById('historyDetailModal').remove(); showMeterOptions('${serial.replace(/'/g,"\\'")}', '${location.replace(/'/g,"\\'")}');" style="flex:1;padding:12px;background:var(--gray-100);border:none;border-radius:8px;font-size:13px;cursor:pointer;">⚙️ Meter Settings</button>
+                            <button onclick="document.getElementById('historyDetailModal').remove(); lookupSerial('${serial.replace(/'/g,"\\'")}');" style="flex:1;padding:12px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📝 Start Test</button>
+                        </div>
+                    </div>
+                </div>
             `;
-            alert(details);
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
         }
 
         // ============================================
@@ -3105,7 +3262,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -3383,8 +3540,213 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         // ============================================
+        // FLOW CALCULATOR
+        // ============================================
+
+        // USBR Parshall flume constants: { C, n } where Q(cfs) = C * Ha(ft)^n
+        const PARSHALL = {
+            'parshall_3':  { C: 0.992,  n: 1.547, label: '3" Parshall Flume',  rangeHft: [0.05, 1.5] },
+            'parshall_6':  { C: 2.06,   n: 1.58,  label: '6" Parshall Flume',  rangeHft: [0.05, 1.9] },
+            'parshall_9':  { C: 3.07,   n: 1.53,  label: '9" Parshall Flume',  rangeHft: [0.05, 2.0] },
+            'parshall_12': { C: 4.00,   n: 1.52,  label: '12" Parshall Flume', rangeHft: [0.05, 2.0] },
+            'parshall_18': { C: 6.00,   n: 1.53,  label: '18" Parshall Flume', rangeHft: [0.05, 2.5] },
+            'parshall_24': { C: 8.00,   n: 1.53,  label: '24" Parshall Flume', rangeHft: [0.05, 2.6] },
+            'parshall_36': { C: 12.00,  n: 1.56,  label: '36" Parshall Flume', rangeHft: [0.10, 3.0] },
+            'parshall_48': { C: 16.00,  n: 1.56,  label: '48" Parshall Flume', rangeHft: [0.10, 3.5] },
+            'parshall_60': { C: 20.00,  n: 1.58,  label: '60" Parshall Flume', rangeHft: [0.10, 4.0] },
+            'parshall_72': { C: 24.00,  n: 1.59,  label: '72" Parshall Flume', rangeHft: [0.10, 4.5] },
+        };
+
+        // Palmer-Bowlus: Q(cfs) = C * (H + k)^n  (short formula, H in feet)
+        const PALMER_BOWLUS = {
+            'pb_4':  { C: 1.73,  k: 0.00588,  n: 1.9573, label: '4" Palmer-Bowlus',  Dft: 4/12 },
+            'pb_6':  { C: 2.071, k: 0.005421, n: 1.9025, label: '6" Palmer-Bowlus',  Dft: 6/12 },
+            'pb_8':  { C: 2.537, k: 0.01456,  n: 1.9724, label: '8" Palmer-Bowlus',  Dft: 8/12 },
+            'pb_10': { C: 2.843, k: 0.01610,  n: 1.9530, label: '10" Palmer-Bowlus', Dft: 10/12 },
+            'pb_12': { C: 3.372, k: 0.01656,  n: 1.9540, label: '12" Palmer-Bowlus', Dft: 12/12 },
+            'pb_15': { C: 4.151, k: 0.02016,  n: 1.9479, label: '15" Palmer-Bowlus', Dft: 15/12 },
+            'pb_18': { C: 4.932, k: 0.02435,  n: 1.9398, label: '18" Palmer-Bowlus', Dft: 18/12 },
+            'pb_24': { C: 6.573, k: 0.02891,  n: 1.9411, label: '24" Palmer-Bowlus', Dft: 24/12 },
+        };
+
+        // Kindsvater-Shen V-notch: Q(cfs) = 4.28 * Ce * tan(θ/2) * (H + k)^2.5
+        // Ce and k from LMNO curve fits: valid 20° ≤ θ ≤ 120°
+        function vnotchCe(theta) {
+            return 0.607165052 - 0.000874466963*theta + 6.10393334e-6*theta*theta;
+        }
+        function vnotchK(theta) {
+            return 0.0144902648 - 0.00033955535*theta + 3.29819003e-6*theta*theta - 1.06215442e-8*theta*theta*theta;
+        }
+
+        let fcMode = 'H'; // 'H' = head→flow, 'Q' = flow→head
+
+        function fcSetMode(mode) {
+            fcMode = mode;
+            document.getElementById('fcModeH').style.background = mode === 'H' ? 'var(--teal)' : 'var(--gray-200)';
+            document.getElementById('fcModeH').style.color = mode === 'H' ? 'white' : 'var(--gray-700)';
+            document.getElementById('fcModeQ').style.background = mode === 'Q' ? 'var(--teal)' : 'var(--gray-200)';
+            document.getElementById('fcModeQ').style.color = mode === 'Q' ? 'white' : 'var(--gray-700)';
+            document.getElementById('fcHeadInputGroup').style.display = mode === 'H' ? 'block' : 'none';
+            document.getElementById('fcFlowInputGroup').style.display = mode === 'Q' ? 'block' : 'none';
+            document.getElementById('fcResult').style.display = 'none';
+            document.getElementById('fcError').style.display = 'none';
+        }
+
+        function fcDeviceChanged() {
+            const dev = document.getElementById('fcDevice').value;
+            document.getElementById('fcCustomAngleGroup').style.display = dev === 'vnotch_custom' ? 'block' : 'none';
+            document.getElementById('fcWeirLengthGroup').style.display = (dev === 'rect_suppressed' || dev === 'rect_contracted') ? 'block' : 'none';
+            fcUpdateEquationRef();
+            fcCalculate();
+        }
+
+        function fcGetHeadFt() {
+            const val = parseFloat(document.getElementById('fcHeadIn').value);
+            const unit = document.getElementById('fcHeadUnit').value;
+            if (isNaN(val) || val <= 0) return null;
+            return unit === 'in' ? val / 12 : val;
+        }
+
+        function fcGetFlowCFS() {
+            const val = parseFloat(document.getElementById('fcFlowIn').value);
+            const unit = document.getElementById('fcFlowUnitIn').value;
+            if (isNaN(val) || val <= 0) return null;
+            if (unit === 'gpm') return val / 448.831;
+            if (unit === 'mgd') return val * 1.5472;
+            return val; // cfs
+        }
+
+        function fcCalcQfromH(dev, Hft) {
+            if (PARSHALL[dev]) {
+                const { C, n } = PARSHALL[dev];
+                return C * Math.pow(Hft, n);
+            }
+            if (PALMER_BOWLUS[dev]) {
+                const { C, k, n } = PALMER_BOWLUS[dev];
+                return C * Math.pow(Hft + k, n);
+            }
+            if (dev.startsWith('vnotch_')) {
+                let theta = dev === 'vnotch_custom'
+                    ? parseFloat(document.getElementById('fcCustomAngle').value)
+                    : parseFloat(dev.split('_')[1]);
+                if (isNaN(theta) || theta < 20 || theta > 120) return null;
+                const Ce = vnotchCe(theta);
+                const k  = vnotchK(theta);
+                return 4.28 * Ce * Math.tan(theta/2 * Math.PI/180) * Math.pow(Hft + k, 2.5);
+            }
+            if (dev === 'rect_suppressed') {
+                const L = parseFloat(document.getElementById('fcWeirLength').value);
+                if (isNaN(L) || L <= 0) return null;
+                return 3.33 * L * Math.pow(Hft, 1.5);
+            }
+            if (dev === 'rect_contracted') {
+                const L = parseFloat(document.getElementById('fcWeirLength').value);
+                if (isNaN(L) || L <= 0) return null;
+                return 3.33 * (L - 0.2*Hft) * Math.pow(Hft, 1.5);
+            }
+            return null;
+        }
+
+        // Reverse calc: bisection method to find H given Q
+        function fcCalcHfromQ(dev, Qcfs) {
+            let lo = 0.001, hi = 20;
+            for (let i = 0; i < 60; i++) {
+                const mid = (lo + hi) / 2;
+                const q = fcCalcQfromH(dev, mid);
+                if (q === null) return null;
+                if (q < Qcfs) lo = mid; else hi = mid;
+                if (hi - lo < 0.00001) break;
+            }
+            return (lo + hi) / 2;
+        }
+
+        function fcCalculate() {
+            const dev = document.getElementById('fcDevice').value;
+            const resultEl = document.getElementById('fcResult');
+            const errorEl  = document.getElementById('fcError');
+
+            errorEl.style.display = 'none';
+            resultEl.style.display = 'none';
+
+            let Qcfs = null;
+            let Hft  = null;
+
+            if (fcMode === 'H') {
+                Hft = fcGetHeadFt();
+                if (!Hft) return;
+                Qcfs = fcCalcQfromH(dev, Hft);
+            } else {
+                Qcfs = fcGetFlowCFS();
+                if (!Qcfs) return;
+                Hft = fcCalcHfromQ(dev, Qcfs);
+                Qcfs = fcCalcQfromH(dev, Hft); // recalc for consistency
+            }
+
+            if (Qcfs === null || isNaN(Qcfs) || Qcfs < 0) {
+                errorEl.textContent = 'Invalid input — check head value and device selection.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            const gpm = Qcfs * 448.831;
+            const mgd = Qcfs / 1.5472;
+
+            // Show result
+            if (fcMode === 'H') {
+                document.getElementById('fcResultLabel').textContent = 'Flow Rate (Q)';
+                document.getElementById('fcPrimary').textContent = gpm.toFixed(2);
+                document.getElementById('fcPrimaryUnit').textContent = 'GPM';
+            } else {
+                document.getElementById('fcResultLabel').textContent = 'Head (H)';
+                const Hin = Hft * 12;
+                document.getElementById('fcPrimary').textContent = Hin.toFixed(3);
+                document.getElementById('fcPrimaryUnit').textContent = 'inches  (' + Hft.toFixed(4) + ' ft)';
+            }
+
+            document.getElementById('fcCFS').textContent = Qcfs.toFixed(4);
+            document.getElementById('fcGPM').textContent = gpm.toFixed(2);
+            document.getElementById('fcMGD').textContent = mgd.toFixed(4);
+
+            // Equation detail
+            if (Hft) {
+                document.getElementById('fcEquation').textContent =
+                    'H = ' + Hft.toFixed(4) + ' ft  →  Q = ' + Qcfs.toFixed(4) + ' cfs';
+            }
+
+            resultEl.style.display = 'block';
+            fcUpdateEquationRef();
+        }
+
+        function fcUpdateEquationRef() {
+            const dev = document.getElementById('fcDevice').value;
+            const el  = document.getElementById('fcEquationRef');
+
+            if (PARSHALL[dev]) {
+                const { C, n, label } = PARSHALL[dev];
+                el.innerHTML = `<b>${label}</b><br>Q = ${C} × Ha<sup>${n}</sup>  (cfs, Ha in ft)<br>Source: USBR Water Measurement Manual`;
+            } else if (PALMER_BOWLUS[dev]) {
+                const { C, k, n, label } = PALMER_BOWLUS[dev];
+                el.innerHTML = `<b>${label}</b><br>Q = ${C} × (H + ${k})<sup>${n}</sup>  (cfs, H in ft)<br>Source: Plasti-fab / cclynch.com Palmer-Bowlus equations`;
+            } else if (dev.startsWith('vnotch_')) {
+                el.innerHTML = `<b>V-Notch Weir (Kindsvater-Shen)</b><br>Q = 4.28 × Ce × tan(θ/2) × (H + k)<sup>2.5</sup>  (cfs, H in ft)<br>Ce and k from LMNO curve fits of USBR/ISO data<br>Valid: 20° ≤ θ ≤ 120°`;
+            } else if (dev === 'rect_suppressed') {
+                el.innerHTML = `<b>Suppressed Rectangular Weir (Francis)</b><br>Q = 3.33 × L × H<sup>1.5</sup>  (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual — valid for H/L < 0.33`;
+            } else if (dev === 'rect_contracted') {
+                el.innerHTML = `<b>Contracted Rectangular Weir (Francis)</b><br>Q = 3.33 × (L − 0.2H) × H<sup>1.5</sup>  (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual — valid for H/L < 0.33`;
+            }
+        }
+
+        // ============================================
         // MECHANICAL METER CALCULATOR
         // ============================================
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
+        }
+
         function calcMechFlow() {
             const start     = parseFloat(document.getElementById('mechStart').value);
             const end       = parseFloat(document.getElementById('mechEnd').value);
@@ -3419,19 +3781,35 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             const gpm = document.getElementById('mechGPM').textContent;
             const totalizer = document.getElementById('mechTotalizerReading').value.trim();
 
-            // Populate meter reading field
+            // Fill customer meter flow rate fields (before and/or after)
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+
+            if (!cusBefore.value && !cusAfter.value) {
+                // Neither filled — put in Before
+                cusBefore.value = gpm;
+                showToast(`${gpm} GPM → Customer Before field`, 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                // Before already filled — put in After
+                cusAfter.value = gpm;
+                showToast(`${gpm} GPM → Customer After field`, 'success');
+            } else {
+                // Both filled — overwrite After and notify
+                cusAfter.value = gpm;
+                showToast(`${gpm} GPM → Customer After field (overwritten)`, 'success');
+            }
+
+            // Populate meter reading field from totalizer
             if (totalizer) {
                 document.getElementById('formMeterReading').value = totalizer;
             }
 
-            // Populate notes with the calculated result
+            // Add note
             const existing = document.getElementById('formNotes').value;
-            const note = `Mechanical timed test: ${gpm} GPM (timed flow calculation)`;
+            const note = `Mechanical timed test: ${gpm} GPM`;
             document.getElementById('formNotes').value = existing
                 ? existing + '\n' + note
                 : note;
-
-            showToast(`${gpm} GPM added to notes`, 'success');
         }
 
         // Updates unit badge labels whenever a units dropdown changes
@@ -3481,9 +3859,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 case 'Chart Recorder':
                     document.getElementById('chartRecorderFields').classList.add('visible');
                     break;
-                case 'Mechanical':
-                    document.getElementById('mechanicalFields').classList.add('visible');
-                    break;
+
             }
             
             // Update before/after field visibility based on startup status
@@ -4310,7 +4686,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         <span class="status ${statusClass}">${statusText}</span>
                         <div class="btn-row">
                             <button class="btn-test" onclick="startTestFromMap('${site.serial}')">Start Test</button>
-                            <button class="btn-nav" onclick="navigateToSite(${site.lat}, ${site.lng})">📍 Navigate</button>
+                            <button class="btn-nav" onclick="navigateToSite(${site.lat}, ${site.lng})">📍 Nav</button>
+                            <button class="btn-nav" onclick="showMeterOptions('${site.serial}', '${site.name}')">⚙️</button>
                         </div>
                     </div>
                 `);
