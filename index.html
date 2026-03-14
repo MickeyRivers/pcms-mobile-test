@@ -1833,6 +1833,12 @@
 
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ============================================
+        // GLOBAL URLs
+        // ============================================
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+        const SHEETS_URL      = APPS_SCRIPT_URL;
+
+        // ============================================
         // APP STATE
         // ============================================
         let currentScreen = 'homeScreen';
@@ -2224,7 +2230,6 @@
         // ============================================
         async function loadAssetDB() {
             const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
-        const SHEETS_URL = ASSETDB_URL; // global alias used by auth and sync
             
             // Try to fetch fresh data from Google Sheets
             try {
