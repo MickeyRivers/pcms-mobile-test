@@ -7,14 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PCMS Mobile</title>
-    <!-- Disable Cloudflare email obfuscation which breaks script execution -->
-    <meta name="robots" content="noindex">
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Leaflet Map -->
-    <!-- Leaflet Map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="apple-touch-icon" href="assets/logo.png">
     
     <!-- OCR powered by OCR.space API -->
@@ -595,7 +588,6 @@
             font-size: 14px;
         }
 
-        /* Unit badges on field labels */
         .unit-badge {
             display: inline-block;
             background: var(--teal);
@@ -778,46 +770,6 @@
             margin: -8px;
             margin-right: 8px;
         }
-
-        /* Map styles */
-        .map-chip {
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--gray-200);
-            background: white;
-            font-size: 13px;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-        .map-chip.active {
-            background: var(--navy);
-            color: white;
-            border-color: var(--navy);
-        }
-        .map-marker {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .map-marker.green { background: #4ade80; }
-        .map-marker.yellow { background: #fbbf24; }
-        .map-marker.red { background: #ef4444; }
-        .map-popup h4 { margin: 0 0 4px 0; font-size: 14px; }
-        .map-popup p { margin: 0 0 4px 0; font-size: 12px; color: #666; }
-        .map-popup .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .map-popup .status.tested { background: #dcfce7; color: #166534; }
-        .map-popup .status.due { background: #fef3c7; color: #92400e; }
-        .map-popup .status.overdue { background: #fee2e2; color: #991b1b; }
-        .map-popup .btn-row { display: flex; gap: 6px; margin-top: 8px; }
-        .map-popup button { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -835,15 +787,12 @@
         </div>
     </header>
 
-    <!-- PIN Lock Screen -->
-    <!-- Auth Screen (email request for non-admin users) -->
+    <!-- Auth Screen -->
     <div id="authScreen" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--navy); z-index:9998; flex-direction:column; align-items:center; justify-content:center;">
         <div style="text-align:center; padding:24px; width:100%; max-width:340px;">
             <div style="font-size:52px; margin-bottom:16px;">🔐</div>
             <h2 style="color:white; margin-bottom:8px;">PCMS Mobile</h2>
             <p style="color:var(--gray-400); margin-bottom:28px; font-size:14px;" id="authMessage">Enter your email to request access</p>
-
-            <!-- Email input state -->
             <div id="authEmailState">
                 <input type="email" id="authEmail" placeholder="your@email.com"
                     style="width:100%; padding:14px 16px; border-radius:10px; border:2px solid var(--gold); background:transparent; color:white; font-size:16px; text-align:center; margin-bottom:16px; box-sizing:border-box;">
@@ -851,12 +800,10 @@
                     Request Access
                 </button>
             </div>
-
-            <!-- Pending state -->
             <div id="authPendingState" style="display:none;">
                 <div style="background:rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px;">
                     <div style="font-size:28px; margin-bottom:8px;">📧</div>
-                    <p style="color:white; font-size:14px; line-height:1.6;">Your request has been sent to Mick for approval. You'll receive an email once approved.</p>
+                    <p style="color:white; font-size:14px; line-height:1.6;">Your request has been sent to Mick for approval. You will receive an email once approved.</p>
                 </div>
                 <button onclick="checkAccessStatus()" style="width:100%; padding:14px; background:rgba(255,255,255,0.15); color:white; border:none; border-radius:10px; font-size:15px; cursor:pointer; margin-bottom:12px;">
                     🔄 Check Status
@@ -865,11 +812,9 @@
                     Use a different email
                 </button>
             </div>
-
-            <!-- Revoked state -->
             <div id="authRevokedState" style="display:none;">
                 <div style="background:rgba(229,62,62,0.2); border-radius:12px; padding:20px; margin-bottom:20px;">
-                    <p style="color:#fc8181; font-size:14px; line-height:1.6;">Your access has been revoked. Contact <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b1dcd8d2daf1d7dddec69cd2d4c3c59fd2dedc">[email&#160;protected]</a> if you believe this is an error.</p>
+                    <p style="color:#fc8181; font-size:14px; line-height:1.6;">Your access has been revoked. Contact mick at flow-cert.com if you believe this is an error.</p>
                 </div>
                 <button onclick="showAuthEmailState()" style="width:100%; padding:12px; background:transparent; color:var(--gray-400); border:none; font-size:13px; cursor:pointer;">
                     Try a different email
@@ -878,6 +823,7 @@
         </div>
     </div>
 
+    <!-- PIN Lock Screen -->
     <div id="pinLockScreen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--navy); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
@@ -949,6 +895,25 @@
             20%, 60% { transform: translateX(-10px); }
             40%, 80% { transform: translateX(10px); }
         }
+    </style>
+
+    <style>
+        .map-chip { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--gray-200); background: white; font-size: 13px; white-space: nowrap; cursor: pointer; }
+        .map-chip.active { background: var(--navy); color: white; border-color: var(--navy); }
+        .map-marker { width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; }
+        .map-marker.green { background: #4ade80; }
+        .map-marker.yellow { background: #fbbf24; }
+        .map-marker.red { background: #ef4444; }
+        .map-popup h4 { margin: 0 0 4px 0; font-size: 14px; }
+        .map-popup p { margin: 0 0 4px 0; font-size: 12px; color: #666; }
+        .map-popup .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .map-popup .status.tested { background: #dcfce7; color: #166534; }
+        .map-popup .status.due { background: #fef3c7; color: #92400e; }
+        .map-popup .status.overdue { background: #fee2e2; color: #991b1b; }
+        .map-popup .btn-row { display: flex; gap: 6px; margin-top: 8px; }
+        .map-popup button { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .map-popup .btn-test { background: var(--gold); color: var(--navy); font-weight: 600; }
+        .map-popup .btn-nav { background: #e5e7eb; }
     </style>
 
     <!-- Main Container -->
@@ -1054,10 +1019,7 @@
         <section class="screen" id="formScreen">
             <!-- Match Card (shown when asset found) -->
             <div class="match-card" id="matchCard" style="display: none;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <h3>METER FOUND</h3>
-                    <button onclick="showMeterOptions(document.getElementById('matchSerial').textContent, document.getElementById('matchLocation').textContent)" style="background:rgba(255,255,255,0.2); border:none; color:white; border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer;">⚙️ Settings</button>
-                </div>
+                <h3>METER FOUND</h3>
                 <div class="serial" id="matchSerial">-</div>
                 <div class="details">
                     <div class="detail-item">
@@ -1144,7 +1106,6 @@
                     <div class="service-type-option" data-type="Chart Recorder" onclick="selectServiceType(this)">
                         Chart Recorder
                     </div>
-
                 </div>
 
                 <div class="startup-toggle" onclick="document.getElementById('formStartup').click()">
@@ -1236,7 +1197,6 @@
                                 <option value="1000">×1,000 — last digit = 1,000 gal</option>
                                 <option value="10000">×10,000 — last digit = 10,000 gal</option>
                             </select>
-                            <div class="form-hint">Check the meter face for "Multiply Register by ___"</div>
                         </div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                             <div class="form-group" style="margin-bottom:0;">
@@ -1278,7 +1238,6 @@
                         <div class="form-group" style="margin-top:12px;">
                             <label class="form-label">Totalizer Reading (at end)</label>
                             <input type="text" class="form-input" id="mechTotalizerReading" placeholder="e.g. 0045231">
-                            <div class="form-hint">Populates the Meter Reading field</div>
                         </div>
                     </div>
                 </div>
@@ -1310,22 +1269,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Flow Units</label>
-                    <select class="form-select" id="formUnitsOC" onchange="updateUnitLabels('OC')">
+                    <label class="form-label">Units</label>
+                    <select class="form-select" id="formUnitsOC">
+                        <option value="">Select...</option>
                         <option value="MGD">MGD</option>
                         <option value="GPM">GPM</option>
                         <option value="CFS">CFS</option>
-                        <option value="GPD">GPD</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Level Units</label>
-                    <select class="form-select" id="formLevelUnitsOC" onchange="updateUnitLabels('OC')">
-                        <option value="Inches">Inches (in)</option>
-                        <option value="Feet">Feet (ft)</option>
-                        <option value="mm">Millimeters (mm)</option>
-                        <option value="cm">Centimeters (cm)</option>
                     </select>
                 </div>
 
@@ -1342,17 +1291,14 @@
                     <label class="form-label">Level in Channel (Before) <span class="unit-badge" id="unitBadgeOCChanBefore">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelChannelBefore" placeholder="0.00">
                 </div>
-
                 <div class="form-group before-field">
                     <label class="form-label">Level on Meter (Before) <span class="unit-badge" id="unitBadgeOCMeterBefore">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelMeterBefore" placeholder="0.00">
                 </div>
-
                 <div class="form-group after-field">
                     <label class="form-label">Level in Channel (After) <span class="unit-badge" id="unitBadgeOCChanAfter">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelChannelAfter" placeholder="0.00">
                 </div>
-
                 <div class="form-group after-field">
                     <label class="form-label">Level on Meter (After) <span class="unit-badge" id="unitBadgeOCMeterAfter">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelMeterAfter" placeholder="0.00">
@@ -1362,7 +1308,6 @@
             <!-- Loop Test Fields -->
             <div class="form-section conditional-fields" id="loopTestFields">
                 <div class="form-section-title">⚡ Loop Test Data</div>
-
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Flow Units</label>
@@ -1383,7 +1328,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Desired Output - Low (mA)</label>
                     <input type="number" step="0.01" class="form-input" id="formLowDesired" placeholder="4.00">
@@ -1418,7 +1362,6 @@
             <!-- Chart Recorder Fields -->
             <div class="form-section conditional-fields" id="chartRecorderFields">
                 <div class="form-section-title">📈 Chart Recorder Data</div>
-
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Flow Units</label>
@@ -1439,7 +1382,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Measurement Type</label>
                     <select class="form-select" id="formMeasurementType" onchange="updateUnitLabels('CR')">
@@ -1447,22 +1389,18 @@
                         <option value="Level">Level</option>
                     </select>
                 </div>
-
                 <div class="form-group before-field">
                     <label class="form-label">Value on Meter (Before) <span class="unit-badge" id="unitBadgeCRMeterBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterBefore">
                 </div>
-
                 <div class="form-group before-field">
                     <label class="form-label">Value on Chart Recorder (Before) <span class="unit-badge" id="unitBadgeCRChartBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartBefore">
                 </div>
-
                 <div class="form-group after-field">
                     <label class="form-label">Value on Meter (After) <span class="unit-badge" id="unitBadgeCRMeterAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterAfter">
                 </div>
-
                 <div class="form-group after-field">
                     <label class="form-label">Value on Chart Recorder (After) <span class="unit-badge" id="unitBadgeCRChartAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartAfter">
@@ -1623,6 +1561,7 @@
         </section>
     </main>
 
+        <!-- Map Screen -->
         <section class="screen" id="mapScreen">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="section-title" style="margin: 0;">Site Map</div>
@@ -1630,22 +1569,18 @@
                     <option value="">All Customers</option>
                 </select>
             </div>
-            
             <div class="map-filter-chips" style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px;">
                 <button class="map-chip active" onclick="filterMapStatus('all', this)">All</button>
                 <button class="map-chip" onclick="filterMapStatus('tested', this)">✓ Tested</button>
-                <button class="map-chip" onclick="filterMapStatus('due', this)" id="chipDue">⚠ Due</button>
+                <button class="map-chip" onclick="filterMapStatus('due', this)">⚠ Due</button>
                 <button class="map-chip" onclick="filterMapStatus('overdue', this)">🚨 Overdue</button>
             </div>
-            
             <div id="siteMap" style="height: calc(100vh - 380px); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200);"></div>
-            
             <div class="map-legend" style="display: flex; gap: 16px; justify-content: center; margin: 12px 0; font-size: 12px;">
                 <span><span style="display:inline-block;width:12px;height:12px;background:#4ade80;border-radius:50%;margin-right:4px;"></span>Tested</span>
                 <span><span style="display:inline-block;width:12px;height:12px;background:#fbbf24;border-radius:50%;margin-right:4px;"></span>Due</span>
                 <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:50%;margin-right:4px;"></span>Overdue</span>
             </div>
-            
             <div class="map-route-settings" style="background: var(--gray-50); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
                 <div style="font-weight: 600; font-size: 13px; margin-bottom: 10px;">🗺️ Route Planning</div>
                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
@@ -1659,13 +1594,11 @@
                     <button onclick="setRouteEnd()" style="padding: 10px; border: 1px solid var(--gray-200); border-radius: 8px; background: white;">✏️</button>
                 </div>
             </div>
-            
             <div style="display: flex; gap: 8px;">
                 <button onclick="locateMeOnMap()" style="padding: 14px 16px; background: var(--navy); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">🎯 Find Me</button>
                 <button onclick="planMapRoute('due')" style="flex: 1; padding: 14px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">📍 Route to Due</button>
                 <button onclick="planMapRoute('overdue')" style="flex: 1; padding: 14px; background: var(--teal); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">🚨 Route to Overdue</button>
             </div>
-            
             <div id="routeInfoBanner" style="display: none; background: var(--teal); color: white; padding: 12px; border-radius: 8px; margin-top: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -1675,6 +1608,7 @@
                     <button onclick="openRouteInGoogleMaps()" style="background: white; color: var(--teal); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600;">Open in Maps</button>
                 </div>
             </div>
+            <div class="bottom-spacer"></div>
         </section>
 
         <!-- Flow Calculator Screen -->
@@ -1682,8 +1616,6 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <div class="section-title" style="margin:0;">🧮 Flow Calculator</div>
             </div>
-
-            <!-- Device selector -->
             <div class="form-section">
                 <div class="form-group">
                     <label class="form-label">Primary Device</label>
@@ -1725,32 +1657,20 @@
                         </optgroup>
                     </select>
                 </div>
-
-                <!-- Custom V-notch angle input -->
                 <div class="form-group" id="fcCustomAngleGroup" style="display:none;">
                     <label class="form-label">Notch Angle (degrees)</label>
                     <input type="number" class="form-input" id="fcCustomAngle" placeholder="e.g. 76.6" min="20" max="120" oninput="fcCalculate()">
                 </div>
-
-                <!-- Rectangular weir length input -->
                 <div class="form-group" id="fcWeirLengthGroup" style="display:none;">
                     <label class="form-label">Weir Crest Length (ft)</label>
                     <input type="number" class="form-input" id="fcWeirLength" placeholder="e.g. 2.0" step="0.01" oninput="fcCalculate()">
                 </div>
             </div>
-
-            <!-- Input / Output mode toggle -->
             <div class="form-section">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
-                    <button id="fcModeH" onclick="fcSetMode('H')" style="padding:12px; background:var(--teal); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
-                        Head → Flow
-                    </button>
-                    <button id="fcModeQ" onclick="fcSetMode('Q')" style="padding:12px; background:var(--gray-200); color:var(--gray-700); border:none; border-radius:8px; font-weight:600; cursor:pointer;">
-                        Flow → Head
-                    </button>
+                    <button id="fcModeH" onclick="fcSetMode('H')" style="padding:12px; background:var(--teal); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Head → Flow</button>
+                    <button id="fcModeQ" onclick="fcSetMode('Q')" style="padding:12px; background:var(--gray-200); color:var(--gray-700); border:none; border-radius:8px; font-weight:600; cursor:pointer;">Flow → Head</button>
                 </div>
-
-                <!-- Head input -->
                 <div id="fcHeadInputGroup">
                     <div class="form-group">
                         <label class="form-label">Head / Level (H)</label>
@@ -1763,8 +1683,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Flow input (reverse calc) -->
                 <div id="fcFlowInputGroup" style="display:none;">
                     <div class="form-group">
                         <label class="form-label">Flow Rate (Q)</label>
@@ -1779,8 +1697,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Result card -->
             <div id="fcResult" style="display:none; background:linear-gradient(135deg,var(--navy),var(--navy-light)); border-radius:16px; padding:24px; text-align:center; color:white; margin-bottom:16px;">
                 <div style="font-size:12px; opacity:0.8; margin-bottom:4px;" id="fcResultLabel">Flow Rate</div>
                 <div id="fcPrimary" style="font-size:40px; font-weight:700; letter-spacing:-1px; margin-bottom:4px;">—</div>
@@ -1801,15 +1717,11 @@
                 </div>
                 <div id="fcEquation" style="margin-top:12px; font-size:11px; opacity:0.6; font-style:italic;">—</div>
             </div>
-
             <div id="fcError" style="display:none; background:#fee2e2; border-radius:10px; padding:14px; color:#991b1b; font-size:13px; margin-bottom:16px;"></div>
-
-            <!-- Equation reference -->
             <div class="form-section" style="font-size:12px; color:var(--gray-500);">
                 <div style="font-weight:600; color:var(--gray-700); margin-bottom:6px;">📐 Equation Reference</div>
                 <div id="fcEquationRef">Select a device to see the equation used.</div>
             </div>
-
             <div class="bottom-spacer"></div>
         </section>
 
@@ -1829,11 +1741,10 @@
     <div class="toast" id="toast"></div>
 
     <!-- Hidden inputs -->
-    <input type="file" id="photoInput" accept="image/*" style="display:none">
-    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false">
+    <script>
         // ============================================
         // GLOBAL URLs
         // ============================================
@@ -1856,22 +1767,11 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-
-        // Map state
-        let siteMap = null;
-        let mapMarkers = [];
-        let mapRouteLine = null;
-        let mapSites = [];
-        let currentMapFilter = 'all';
-        let routeStartCoords = null;
-        let routeEndCoords = { lat: 29.5478, lng: -98.4936 }; // Default: San Antonio
-        let plannedRoute = [];
         const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
 
         // ============================================
         // PIN SECURITY
         // ============================================
-        // Admin PIN — Mick bypasses the email auth flow entirely
         const ADMIN_PIN_KEY = 'pcms_pin';
 
         function checkPinSetup() {
@@ -1879,34 +1779,43 @@
             const storedEmail = localStorage.getItem('pcms_recovery_email');
             const pinLockScreen = document.getElementById('pinLockScreen');
             const mainContainer = document.getElementById('mainContainer');
-
-            // If PIN exists OR is being set up — this is Mick's device
-            // Also treat no-PIN as PIN setup (admin device) if no auth token stored
-            // Admin devices always go to PIN screen
             const isAdminDevice = storedPin || localStorage.getItem('pcms_is_admin') === 'true';
 
             if (isAdminDevice) {
-                document.getElementById('pinMessage').textContent = 'Enter your 4-digit PIN';
-                document.getElementById('pinSetupLink').style.display = 'block';
-                document.getElementById('emailSetup').style.display = 'none';
-                document.getElementById('resetCodeInput').style.display = 'none';
-                document.getElementById('pinDots').style.display = 'flex';
-                document.getElementById('pinPad').style.display = 'grid';
+                if (!storedPin) {
+                    isSettingPin = true;
+                    if (!storedEmail) {
+                        document.getElementById('pinMessage').textContent = 'Set up recovery email';
+                        document.getElementById('emailSetup').style.display = 'block';
+                        document.getElementById('pinDots').style.display = 'none';
+                        document.getElementById('pinPad').style.display = 'none';
+                    } else {
+                        document.getElementById('pinMessage').textContent = 'Create a 4-digit PIN';
+                        document.getElementById('emailSetup').style.display = 'none';
+                        document.getElementById('pinDots').style.display = 'flex';
+                        document.getElementById('pinPad').style.display = 'grid';
+                    }
+                    document.getElementById('pinSetupLink').style.display = 'none';
+                } else {
+                    document.getElementById('pinMessage').textContent = 'Enter your 4-digit PIN';
+                    document.getElementById('pinSetupLink').style.display = 'block';
+                    document.getElementById('emailSetup').style.display = 'none';
+                    document.getElementById('resetCodeInput').style.display = 'none';
+                    document.getElementById('pinDots').style.display = 'flex';
+                    document.getElementById('pinPad').style.display = 'grid';
+                }
                 pinLockScreen.style.display = 'flex';
                 mainContainer.style.display = 'none';
                 return;
             }
 
-            // Check if this device has an approved auth token stored
             const authEmail = localStorage.getItem('pcms_auth_email');
             const authToken = localStorage.getItem('pcms_auth_token');
             if (authEmail && authToken) {
-                // Verify token is still active against sheet
                 verifyStoredAuth(authEmail, authToken);
                 return;
             }
 
-            // No PIN, no stored auth — show email auth screen
             showAuthScreen();
         }
 
@@ -1940,8 +1849,7 @@
                     showAuthScreen();
                 }
             } catch (e) {
-                // Network error — if we have a stored token, let them in (offline grace)
-                unlockApp();
+                unlockApp(); // offline grace
             }
         }
 
@@ -1951,15 +1859,11 @@
                 document.getElementById('authMessage').textContent = 'Please enter a valid email address';
                 return;
             }
-
             document.getElementById('authMessage').textContent = 'Sending request...';
-
             try {
                 const fd = new FormData();
-                fd.append('data', JSON.stringify({ action: 'requestAccess', email }));
-                const res = await fetch(SHEETS_URL, { method: 'POST', body: fd, mode: 'no-cors' });
-
-                // no-cors means we can't read response — assume sent and show pending
+                fd.append('data', JSON.stringify({ action: 'requestAccess', email: email }));
+                await fetch(SHEETS_URL, { method: 'POST', body: fd, mode: 'no-cors' });
                 localStorage.setItem('pcms_pending_email', email);
                 document.getElementById('authEmailState').style.display = 'none';
                 document.getElementById('authPendingState').style.display = 'block';
@@ -1973,13 +1877,10 @@
             const email = localStorage.getItem('pcms_pending_email') ||
                           document.getElementById('authEmail').value.trim().toLowerCase();
             if (!email) { showAuthEmailState(); return; }
-
             document.getElementById('authMessage').textContent = 'Checking...';
-
             try {
                 const res = await fetch(SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(email));
                 const data = await res.json();
-
                 if (data.status === 'Active') {
                     localStorage.setItem('pcms_auth_email', email);
                     localStorage.setItem('pcms_auth_token', data.token || '');
@@ -1990,7 +1891,7 @@
                     document.getElementById('authRevokedState').style.display = 'block';
                     document.getElementById('authMessage').textContent = 'Access denied';
                 } else {
-                    document.getElementById('authMessage').textContent = 'Still pending — check back soon';
+                    document.getElementById('authMessage').textContent = 'Still pending - check back soon';
                 }
             } catch (e) {
                 document.getElementById('authMessage').textContent = 'Error checking status. Try again.';
@@ -2087,6 +1988,7 @@
         
         function unlockApp() {
             document.getElementById('pinLockScreen').style.display = 'none';
+            document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
             enteredPin = '';
             newPinFirst = '';
@@ -2175,7 +2077,7 @@
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
-            // Secret admin setup: visit URL with ?admin=setup to mark this as admin device
+            // Admin setup: visit ?admin=setup once to mark this as admin device
             if (window.location.search.includes('admin=setup')) {
                 localStorage.setItem('pcms_is_admin', 'true');
                 localStorage.removeItem('pcms_auth_email');
@@ -2183,40 +2085,7 @@
                 window.history.replaceState({}, '', window.location.pathname);
             }
 
-            // Register service worker
-            if ('serviceWorker' in navigator) {
-                try {
-                    const reg = await navigator.serviceWorker.register('./sw.js');
-                    console.log('SW registered:', reg.scope);
-
-                    navigator.serviceWorker.addEventListener('message', event => {
-                        if (event.data && event.data.type === 'SYNC_COMPLETE') {
-                            const { success, failed } = event.data.result;
-                            hideLoading();
-                            if (failed === 0 && success > 0) {
-                                showToast(`${success} test${success !== 1 ? 's' : ''} synced successfully!`, 'success');
-                            } else if (success === 0 && failed > 0) {
-                                showToast('Sync failed — will retry automatically when connection improves.', 'error');
-                            } else if (success > 0) {
-                                showToast(`${success} synced, ${failed} will retry automatically.`, 'info');
-                            }
-                            loadPendingTests();
-                            if (typeof updateFailedCertsUI === 'function') updateFailedCertsUI();
-                        }
-                    });
-
-                    window.addEventListener('online', () => {
-                        updateOnlineStatus();
-                        if ('SyncManager' in window) {
-                            reg.sync.register('pcms-sync').catch(() => {});
-                        }
-                    });
-                } catch (e) {
-                    console.warn('SW registration failed:', e);
-                }
-            }
-
-            // Check PIN first
+            // Check PIN / auth first
             checkPinSetup();
             
             // Load AssetDB from localStorage or fetch
@@ -2228,17 +2097,18 @@
             // Initialize tracker
             initTracker();
             
-            // Load pending tests from IndexedDB
-            await loadPendingTests();
+            // Load pending tests from localStorage
+            loadPendingTests();
             
             // Check online status
             updateOnlineStatus();
+            window.addEventListener('online', updateOnlineStatus);
             window.addEventListener('offline', updateOnlineStatus);
             
             // Setup photo input handler
             document.getElementById('photoInput').addEventListener('change', handlePhotoCapture);
-            document.getElementById('photoInputCamera').addEventListener('change', handlePhotoCapture);
         });
+
         // ============================================
         // ASSET DATABASE
         // ============================================
@@ -2289,10 +2159,6 @@
                     testHistory = await response.json();
                     localStorage.setItem('testHistory', JSON.stringify(testHistory));
                     console.log(`Loaded ${testHistory.length} history records`);
-                    // Refresh map markers now that history is loaded
-                    if (siteMap && mapSites.length > 0) {
-                        processMapData(assetDB);
-                    }
                     return;
                 }
             } catch (e) {
@@ -2304,10 +2170,6 @@
             if (cached) {
                 testHistory = JSON.parse(cached);
                 console.log(`Loaded ${testHistory.length} history records from cache`);
-                // Refresh map markers if already open
-                if (siteMap && mapSites.length > 0) {
-                    processMapData(assetDB);
-                }
             }
         }
 
@@ -2378,34 +2240,17 @@
         
         function showHistoryDetail(record) {
             const date = record['Date'] ? new Date(record['Date']).toLocaleDateString() : 'Unknown';
-            const serial = record['Serial Number'] || 'N/A';
-            const location = record['Facility/Location'] || 'N/A';
-            const modalHTML = `
-                <div id="historyDetailModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:1000;display:flex;align-items:center;justify-content:center;">
-                    <div style="background:white;margin:20px;border-radius:16px;overflow:hidden;width:100%;max-width:380px;">
-                        <div style="background:var(--navy);color:white;padding:16px;display:flex;justify-content:space-between;align-items:center;">
-                            <div>
-                                <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;">${serial}</div>
-                                <div style="font-size:12px;opacity:0.8;">${location}</div>
-                            </div>
-                            <button onclick="document.getElementById('historyDetailModal').remove()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">×</button>
-                        </div>
-                        <div style="padding:16px;font-size:13px;line-height:1.8;">
-                            <div><b>Customer:</b> ${record['Customer'] || 'N/A'}</div>
-                            <div><b>Date Tested:</b> ${date}</div>
-                            <div><b>Tested By:</b> ${record['Tested By'] || 'N/A'}</div>
-                            <div><b>Manufacturer:</b> ${record['Manufacturer/Model'] || 'N/A'}</div>
-                            <div><b>Accuracy:</b> ${record['Accuracy (%)'] || 'N/A'}%</div>
-                            <div><b>GPS:</b> ${record['GPS Coordinates'] || 'N/A'}</div>
-                        </div>
-                        <div style="padding:0 16px 16px;display:flex;gap:8px;">
-                            <button onclick="document.getElementById('historyDetailModal').remove(); showMeterOptions('${serial.replace(/'/g,"\\'")}', '${location.replace(/'/g,"\\'")}');" style="flex:1;padding:12px;background:var(--gray-100);border:none;border-radius:8px;font-size:13px;cursor:pointer;">⚙️ Meter Settings</button>
-                            <button onclick="document.getElementById('historyDetailModal').remove(); lookupSerial('${serial.replace(/'/g,"\\'")}');" style="flex:1;padding:12px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📝 Start Test</button>
-                        </div>
-                    </div>
-                </div>
+            const details = `
+Serial Number: ${record['Serial Number'] || 'N/A'}
+Customer: ${record['Customer'] || 'N/A'}
+Location: ${record['Facility/Location'] || 'N/A'}
+Date Tested: ${date}
+Tested By: ${record['Tested By'] || 'N/A'}
+Manufacturer: ${record['Manufacturer/Model'] || 'N/A'}
+Accuracy: ${record['Accuracy (%)'] || 'N/A'}%
+GPS: ${record['GPS Coordinates'] || 'N/A'}
             `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            alert(details);
         }
 
         // ============================================
@@ -3386,18 +3231,18 @@
                 stopCamera();
             }
             
+            // Reset tracker to dashboard view when entering
+            if (screenId === 'trackerScreen') {
+                showTrackerDashboard();
+                initTracker();
+            }
+
             // Initialize map when showing map screen
             if (screenId === 'mapScreen') {
                 setTimeout(() => {
                     initSiteMap();
                     if (siteMap) siteMap.invalidateSize();
                 }, 100);
-            }
-
-            // Reset tracker to dashboard view when entering
-            if (screenId === 'trackerScreen') {
-                showTrackerDashboard();
-                initTracker(); // Refresh data
             }
             
             // Update pending list when showing pending screen
@@ -3689,304 +3534,6 @@
             });
         }
 
-        // ============================================
-        // FLOW CALCULATOR
-        // ============================================
-
-        // USBR Parshall flume constants: { C, n } where Q(cfs) = C * Ha(ft)^n
-        const PARSHALL = {
-            'parshall_3':  { C: 0.992,  n: 1.547, label: '3" Parshall Flume',  rangeHft: [0.05, 1.5] },
-            'parshall_6':  { C: 2.06,   n: 1.58,  label: '6" Parshall Flume',  rangeHft: [0.05, 1.9] },
-            'parshall_9':  { C: 3.07,   n: 1.53,  label: '9" Parshall Flume',  rangeHft: [0.05, 2.0] },
-            'parshall_12': { C: 4.00,   n: 1.52,  label: '12" Parshall Flume', rangeHft: [0.05, 2.0] },
-            'parshall_18': { C: 6.00,   n: 1.53,  label: '18" Parshall Flume', rangeHft: [0.05, 2.5] },
-            'parshall_24': { C: 8.00,   n: 1.53,  label: '24" Parshall Flume', rangeHft: [0.05, 2.6] },
-            'parshall_36': { C: 12.00,  n: 1.56,  label: '36" Parshall Flume', rangeHft: [0.10, 3.0] },
-            'parshall_48': { C: 16.00,  n: 1.56,  label: '48" Parshall Flume', rangeHft: [0.10, 3.5] },
-            'parshall_60': { C: 20.00,  n: 1.58,  label: '60" Parshall Flume', rangeHft: [0.10, 4.0] },
-            'parshall_72': { C: 24.00,  n: 1.59,  label: '72" Parshall Flume', rangeHft: [0.10, 4.5] },
-        };
-
-        // Palmer-Bowlus: Q(cfs) = C * (H + k)^n  (short formula, H in feet)
-        const PALMER_BOWLUS = {
-            'pb_4':  { C: 1.73,  k: 0.00588,  n: 1.9573, label: '4" Palmer-Bowlus',  Dft: 4/12 },
-            'pb_6':  { C: 2.071, k: 0.005421, n: 1.9025, label: '6" Palmer-Bowlus',  Dft: 6/12 },
-            'pb_8':  { C: 2.537, k: 0.01456,  n: 1.9724, label: '8" Palmer-Bowlus',  Dft: 8/12 },
-            'pb_10': { C: 2.843, k: 0.01610,  n: 1.9530, label: '10" Palmer-Bowlus', Dft: 10/12 },
-            'pb_12': { C: 3.372, k: 0.01656,  n: 1.9540, label: '12" Palmer-Bowlus', Dft: 12/12 },
-            'pb_15': { C: 4.151, k: 0.02016,  n: 1.9479, label: '15" Palmer-Bowlus', Dft: 15/12 },
-            'pb_18': { C: 4.932, k: 0.02435,  n: 1.9398, label: '18" Palmer-Bowlus', Dft: 18/12 },
-            'pb_24': { C: 6.573, k: 0.02891,  n: 1.9411, label: '24" Palmer-Bowlus', Dft: 24/12 },
-        };
-
-        // Kindsvater-Shen V-notch: Q(cfs) = 4.28 * Ce * tan(θ/2) * (H + k)^2.5
-        // Ce and k from LMNO curve fits: valid 20° ≤ θ ≤ 120°
-        function vnotchCe(theta) {
-            return 0.607165052 - 0.000874466963*theta + 6.10393334e-6*theta*theta;
-        }
-        function vnotchK(theta) {
-            return 0.0144902648 - 0.00033955535*theta + 3.29819003e-6*theta*theta - 1.06215442e-8*theta*theta*theta;
-        }
-
-        let fcMode = 'H'; // 'H' = head→flow, 'Q' = flow→head
-
-        function fcSetMode(mode) {
-            fcMode = mode;
-            document.getElementById('fcModeH').style.background = mode === 'H' ? 'var(--teal)' : 'var(--gray-200)';
-            document.getElementById('fcModeH').style.color = mode === 'H' ? 'white' : 'var(--gray-700)';
-            document.getElementById('fcModeQ').style.background = mode === 'Q' ? 'var(--teal)' : 'var(--gray-200)';
-            document.getElementById('fcModeQ').style.color = mode === 'Q' ? 'white' : 'var(--gray-700)';
-            document.getElementById('fcHeadInputGroup').style.display = mode === 'H' ? 'block' : 'none';
-            document.getElementById('fcFlowInputGroup').style.display = mode === 'Q' ? 'block' : 'none';
-            document.getElementById('fcResult').style.display = 'none';
-            document.getElementById('fcError').style.display = 'none';
-        }
-
-        function fcDeviceChanged() {
-            const dev = document.getElementById('fcDevice').value;
-            document.getElementById('fcCustomAngleGroup').style.display = dev === 'vnotch_custom' ? 'block' : 'none';
-            document.getElementById('fcWeirLengthGroup').style.display = (dev === 'rect_suppressed' || dev === 'rect_contracted') ? 'block' : 'none';
-            fcUpdateEquationRef();
-            fcCalculate();
-        }
-
-        function fcGetHeadFt() {
-            const val = parseFloat(document.getElementById('fcHeadIn').value);
-            const unit = document.getElementById('fcHeadUnit').value;
-            if (isNaN(val) || val <= 0) return null;
-            return unit === 'in' ? val / 12 : val;
-        }
-
-        function fcGetFlowCFS() {
-            const val = parseFloat(document.getElementById('fcFlowIn').value);
-            const unit = document.getElementById('fcFlowUnitIn').value;
-            if (isNaN(val) || val <= 0) return null;
-            if (unit === 'gpm') return val / 448.831;
-            if (unit === 'mgd') return val * 1.5472;
-            return val; // cfs
-        }
-
-        function fcCalcQfromH(dev, Hft) {
-            if (PARSHALL[dev]) {
-                const { C, n } = PARSHALL[dev];
-                return C * Math.pow(Hft, n);
-            }
-            if (PALMER_BOWLUS[dev]) {
-                const { C, k, n } = PALMER_BOWLUS[dev];
-                return C * Math.pow(Hft + k, n);
-            }
-            if (dev.startsWith('vnotch_')) {
-                let theta = dev === 'vnotch_custom'
-                    ? parseFloat(document.getElementById('fcCustomAngle').value)
-                    : parseFloat(dev.split('_')[1]);
-                if (isNaN(theta) || theta < 20 || theta > 120) return null;
-                const Ce = vnotchCe(theta);
-                const k  = vnotchK(theta);
-                return 4.28 * Ce * Math.tan(theta/2 * Math.PI/180) * Math.pow(Hft + k, 2.5);
-            }
-            if (dev === 'rect_suppressed') {
-                const L = parseFloat(document.getElementById('fcWeirLength').value);
-                if (isNaN(L) || L <= 0) return null;
-                return 3.33 * L * Math.pow(Hft, 1.5);
-            }
-            if (dev === 'rect_contracted') {
-                const L = parseFloat(document.getElementById('fcWeirLength').value);
-                if (isNaN(L) || L <= 0) return null;
-                return 3.33 * (L - 0.2*Hft) * Math.pow(Hft, 1.5);
-            }
-            return null;
-        }
-
-        // Reverse calc: bisection method to find H given Q
-        function fcCalcHfromQ(dev, Qcfs) {
-            let lo = 0.001, hi = 20;
-            for (let i = 0; i < 60; i++) {
-                const mid = (lo + hi) / 2;
-                const q = fcCalcQfromH(dev, mid);
-                if (q === null) return null;
-                if (q < Qcfs) lo = mid; else hi = mid;
-                if (hi - lo < 0.00001) break;
-            }
-            return (lo + hi) / 2;
-        }
-
-        function fcCalculate() {
-            const dev = document.getElementById('fcDevice').value;
-            const resultEl = document.getElementById('fcResult');
-            const errorEl  = document.getElementById('fcError');
-
-            errorEl.style.display = 'none';
-            resultEl.style.display = 'none';
-
-            let Qcfs = null;
-            let Hft  = null;
-
-            if (fcMode === 'H') {
-                Hft = fcGetHeadFt();
-                if (!Hft) return;
-                Qcfs = fcCalcQfromH(dev, Hft);
-            } else {
-                Qcfs = fcGetFlowCFS();
-                if (!Qcfs) return;
-                Hft = fcCalcHfromQ(dev, Qcfs);
-                Qcfs = fcCalcQfromH(dev, Hft); // recalc for consistency
-            }
-
-            if (Qcfs === null || isNaN(Qcfs) || Qcfs < 0) {
-                errorEl.textContent = 'Invalid input — check head value and device selection.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            const gpm = Qcfs * 448.831;
-            const mgd = Qcfs / 1.5472;
-
-            // Show result
-            if (fcMode === 'H') {
-                document.getElementById('fcResultLabel').textContent = 'Flow Rate (Q)';
-                document.getElementById('fcPrimary').textContent = gpm.toFixed(2);
-                document.getElementById('fcPrimaryUnit').textContent = 'GPM';
-            } else {
-                document.getElementById('fcResultLabel').textContent = 'Head (H)';
-                const Hin = Hft * 12;
-                document.getElementById('fcPrimary').textContent = Hin.toFixed(3);
-                document.getElementById('fcPrimaryUnit').textContent = 'inches  (' + Hft.toFixed(4) + ' ft)';
-            }
-
-            document.getElementById('fcCFS').textContent = Qcfs.toFixed(4);
-            document.getElementById('fcGPM').textContent = gpm.toFixed(2);
-            document.getElementById('fcMGD').textContent = mgd.toFixed(4);
-
-            // Equation detail
-            if (Hft) {
-                document.getElementById('fcEquation').textContent =
-                    'H = ' + Hft.toFixed(4) + ' ft  →  Q = ' + Qcfs.toFixed(4) + ' cfs';
-            }
-
-            resultEl.style.display = 'block';
-            fcUpdateEquationRef();
-        }
-
-        function fcUpdateEquationRef() {
-            const dev = document.getElementById('fcDevice').value;
-            const el  = document.getElementById('fcEquationRef');
-
-            if (PARSHALL[dev]) {
-                const { C, n, label } = PARSHALL[dev];
-                el.innerHTML = `<b>${label}</b><br>Q = ${C} × Ha<sup>${n}</sup>  (cfs, Ha in ft)<br>Source: USBR Water Measurement Manual`;
-            } else if (PALMER_BOWLUS[dev]) {
-                const { C, k, n, label } = PALMER_BOWLUS[dev];
-                el.innerHTML = `<b>${label}</b><br>Q = ${C} × (H + ${k})<sup>${n}</sup>  (cfs, H in ft)<br>Source: Plasti-fab / cclynch.com Palmer-Bowlus equations`;
-            } else if (dev.startsWith('vnotch_')) {
-                el.innerHTML = `<b>V-Notch Weir (Kindsvater-Shen)</b><br>Q = 4.28 × Ce × tan(θ/2) × (H + k)<sup>2.5</sup>  (cfs, H in ft)<br>Ce and k from LMNO curve fits of USBR/ISO data<br>Valid: 20° ≤ θ ≤ 120°`;
-            } else if (dev === 'rect_suppressed') {
-                el.innerHTML = `<b>Suppressed Rectangular Weir (Francis)</b><br>Q = 3.33 × L × H<sup>1.5</sup>  (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual — valid for H/L < 0.33`;
-            } else if (dev === 'rect_contracted') {
-                el.innerHTML = `<b>Contracted Rectangular Weir (Francis)</b><br>Q = 3.33 × (L − 0.2H) × H<sup>1.5</sup>  (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual — valid for H/L < 0.33`;
-            }
-        }
-
-        // ============================================
-        // MECHANICAL METER CALCULATOR
-        // ============================================
-        function toggleMechCalc() {
-            const panel = document.getElementById('mechCalcPanel');
-            const icon  = document.getElementById('mechCalcToggleIcon');
-            const open  = panel.style.display === 'none';
-            panel.style.display = open ? 'block' : 'none';
-            icon.textContent    = open ? '－' : '＋';
-        }
-
-        function calcMechFlow() {
-            const start     = parseFloat(document.getElementById('mechStart').value);
-            const end       = parseFloat(document.getElementById('mechEnd').value);
-            const minutes   = parseFloat(document.getElementById('mechTime').value);
-            const mult      = parseFloat(document.getElementById('mechMultiplier').value);
-
-            const resultEl  = document.getElementById('mechResult');
-            const useBtn    = document.getElementById('mechUseBtn');
-
-            if (isNaN(start) || isNaN(end) || end <= start) {
-                resultEl.style.display = 'none';
-                useBtn.style.display   = 'none';
-                return;
-            }
-
-            const gallons = (end - start) * mult;        // actual gallons that passed
-            const gpm     = gallons / minutes;           // gallons per minute
-            const mgd     = gpm * 1440 / 1000000;       // million gallons per day
-            const gph     = gpm * 60;                   // gallons per hour
-
-            document.getElementById('mechGPM').textContent  = gpm.toFixed(2);
-            document.getElementById('mechMGD').textContent  = mgd.toFixed(4);
-            document.getElementById('mechGPH').textContent  = Math.round(gph).toLocaleString();
-            document.getElementById('mechCalcDetail').textContent =
-                `(${end} − ${start}) × ${mult.toLocaleString()} gal = ${gallons.toLocaleString()} gal ÷ ${minutes} min`;
-
-            resultEl.style.display = 'block';
-            useBtn.style.display   = 'block';
-        }
-
-        function useMechResult() {
-            const gpm = document.getElementById('mechGPM').textContent;
-            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
-
-            // Fill customer meter flow rate fields (before and/or after)
-            const cusBefore = document.getElementById('formCusFlowBefore');
-            const cusAfter  = document.getElementById('formCusFlowAfter');
-
-            if (!cusBefore.value && !cusAfter.value) {
-                // Neither filled — put in Before
-                cusBefore.value = gpm;
-                showToast(`${gpm} GPM → Customer Before field`, 'success');
-            } else if (cusBefore.value && !cusAfter.value) {
-                // Before already filled — put in After
-                cusAfter.value = gpm;
-                showToast(`${gpm} GPM → Customer After field`, 'success');
-            } else {
-                // Both filled — overwrite After and notify
-                cusAfter.value = gpm;
-                showToast(`${gpm} GPM → Customer After field (overwritten)`, 'success');
-            }
-
-            // Populate meter reading field from totalizer
-            if (totalizer) {
-                document.getElementById('formMeterReading').value = totalizer;
-            }
-
-            // Add note
-            const existing = document.getElementById('formNotes').value;
-            const note = `Mechanical timed test: ${gpm} GPM`;
-            document.getElementById('formNotes').value = existing
-                ? existing + '\n' + note
-                : note;
-        }
-
-        // Updates unit badge labels whenever a units dropdown changes
-        function updateUnitLabels(section) {
-            if (section === 'CP') {
-                const fu = document.getElementById('formFlowUnitsCP')?.value || 'GPM';
-                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter']
-                    .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = fu; });
-            }
-            if (section === 'OC') {
-                const fu = document.getElementById('formUnitsOC')?.value || 'MGD';
-                const lu = document.getElementById('formLevelUnitsOC')?.value || 'Inches';
-                const luShort = lu === 'Inches' ? 'in' : lu === 'Feet' ? 'ft' : lu;
-                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter']
-                    .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = luShort; });
-            }
-            if (section === 'CR') {
-                const type = document.getElementById('formMeasurementType')?.value || 'Flow';
-                const fu = document.getElementById('formFlowUnitsCR')?.value || 'GPM';
-                const lu = document.getElementById('formLevelUnitsCR')?.value || 'Inches';
-                const luShort = lu === 'Inches' ? 'in' : lu === 'Feet' ? 'ft' : lu;
-                const unit = type === 'Flow' ? fu : luShort;
-                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter']
-                    .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = unit; });
-            }
-        }
-
         function selectServiceType(element) {
             // Update selection
             document.querySelectorAll('.service-type-option').forEach(o => o.classList.remove('selected'));
@@ -4009,7 +3556,6 @@
                 case 'Chart Recorder':
                     document.getElementById('chartRecorderFields').classList.add('visible');
                     break;
-
             }
             
             // Update before/after field visibility based on startup status
@@ -4328,69 +3874,17 @@
             showToast('Editing test - make changes and save', 'info');
         }
 
-        // ─── IndexedDB helpers ────────────────────────────────────────────────
-        function openPCMSDB() {
-            return new Promise((resolve, reject) => {
-                const req = indexedDB.open('pcms', 1);
-                req.onupgradeneeded = e => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains('pending')) {
-                        db.createObjectStore('pending', { keyPath: 'id' });
-                    }
-                };
-                req.onsuccess = e => resolve(e.target.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        async function loadPendingTests() {
-            try {
-                const db = await openPCMSDB();
-                const tx = db.transaction('pending', 'readonly');
-                const req = tx.objectStore('pending').getAll();
-                await new Promise((res, rej) => { req.onsuccess = res; req.onerror = rej; });
-                pendingTests = req.result || [];
-
-                // One-time migration from localStorage
-                const legacy = localStorage.getItem('pendingTests');
-                if (legacy) {
-                    const old = JSON.parse(legacy);
-                    if (old.length > 0) {
-                        const db2 = await openPCMSDB();
-                        const tx2 = db2.transaction('pending', 'readwrite');
-                        const store = tx2.objectStore('pending');
-                        for (const t of old) { store.put(t); }
-                        await new Promise((res, rej) => { tx2.oncomplete = res; tx2.onerror = rej; });
-                        localStorage.removeItem('pendingTests');
-                        // Merge without duplicates
-                        const ids = new Set(pendingTests.map(t => t.id));
-                        for (const t of old) { if (!ids.has(t.id)) pendingTests.push(t); }
-                    }
-                }
-            } catch (e) {
-                console.warn('IndexedDB unavailable, falling back to localStorage:', e);
-                const stored = localStorage.getItem('pendingTests');
-                pendingTests = stored ? JSON.parse(stored) : [];
+        function loadPendingTests() {
+            const stored = localStorage.getItem('pendingTests');
+            if (stored) {
+                pendingTests = JSON.parse(stored);
             }
             updatePendingCount();
             updatePendingList();
         }
 
-        async function savePendingTests() {
-            try {
-                const db = await openPCMSDB();
-                const tx = db.transaction('pending', 'readwrite');
-                const store = tx.objectStore('pending');
-                store.clear();
-                for (const t of pendingTests) { store.put(t); }
-                await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
-
-                // Background sync intentionally NOT auto-triggered on save.
-                // Sync only runs when user taps "Sync All to Cloud".
-            } catch (e) {
-                console.warn('IndexedDB save failed, using localStorage:', e);
-                localStorage.setItem('pendingTests', JSON.stringify(pendingTests));
-            }
+        function savePendingTests() {
+            localStorage.setItem('pendingTests', JSON.stringify(pendingTests));
             updatePendingCount();
             updatePendingList();
         }
@@ -4455,8 +3949,6 @@
         const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
         const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
 
-        // Submit data to Google Apps Script via hidden iframe form.
-        // This sidesteps CORS preflight — Apps Script does not handle OPTIONS requests.
         function submitViaIframe(url, data, frameName) {
             const iframe = document.createElement('iframe');
             iframe.name = frameName;
@@ -4480,87 +3972,63 @@
         }
 
         async function syncPending() {
-            await loadPendingTests(); // Ensure fresh from IndexedDB
             if (pendingTests.length === 0) {
                 showToast('No tests to sync', 'info');
                 return;
             }
-
+            
             if (!navigator.onLine) {
-                showToast('No internet — tests saved locally and will sync automatically when you’re back on WiFi.', 'info');
+                showToast('No internet connection', 'error');
                 return;
             }
-
+            
             showLoading('Syncing to cloud...');
-
-            // Prefer SW-based sync so it survives tab close / connection drops
-            if ('serviceWorker' in navigator) {
-                try {
-                    const reg = await navigator.serviceWorker.ready;
-                    if (reg.active) {
-                        reg.active.postMessage({ type: 'MANUAL_SYNC' });
-                        // Result handled by message listener in DOMContentLoaded
-                        return;
-                    }
-                } catch(e) { /* fall through to direct sync */ }
-            }
-
-            // Fallback: SW not available, sync directly in page
-            const SHEETS_URL = GOOGLE_SHEET_URL;
+            
             let successCount = 0;
             let failCount = 0;
             const failedTests = [];
-
+            
             for (let i = 0; i < pendingTests.length; i++) {
                 const test = pendingTests[i];
-                document.getElementById('loadingText').textContent = `Syncing ${i + 1} of ${pendingTests.length} - generating PDF...`;
-
-                let pdfOk = false;
-
+                document.getElementById('loadingText').textContent = `Syncing ${i + 1} of ${pendingTests.length}...`;
+                
+                let pdfSuccess = false;
+                let sheetSuccess = false;
+                
                 // 1. Generate PDF certificate
                 try {
-                    console.log('Attempting Cloud Run:', CLOUD_FUNCTION_URL);
-                    const pdfAbort = new AbortController();
-                    const pdfTimeout = setTimeout(() => pdfAbort.abort(), 30000);
-                    const res = await fetch(CLOUD_FUNCTION_URL, {
+                    const pdfResponse = await fetch(CLOUD_FUNCTION_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(test),
-                        signal: pdfAbort.signal
+                        body: JSON.stringify(test)
                     });
-                    clearTimeout(pdfTimeout);
-                    console.log('Cloud Run response status:', res.status);
-                    if (res.ok) {
-                        const json = await res.json();
-                        console.log('Cloud Run response body:', json);
-                        pdfOk = !!json.success;
-                        if (!pdfOk) saveFailedCert(test, json.error || 'Unknown error');
+                    
+                    const pdfResult = await pdfResponse.json();
+                    
+                    if (pdfResponse.ok && pdfResult.success) {
+                        pdfSuccess = true;
+                        console.log(`Certificate created: ${pdfResult.dropbox_path}`);
                     } else {
-                        const errText = await res.text().catch(() => '');
-                        console.error('Cloud Run HTTP error:', res.status, errText);
-                        saveFailedCert(test, `HTTP ${res.status}: ${errText.slice(0,100)}`);
+                        console.error(`Failed to create certificate: ${pdfResult.error}`);
                     }
-                } catch (e) {
-                    console.error('Cloud Run fetch error:', e.name, e.message);
-                    if (e.name === 'AbortError') {
-                        saveFailedCert(test, 'Timeout - Cloud Run took too long');
-                        showToast('PDF generation timed out - saved to retry later', 'warning');
-                    } else {
-                        saveFailedCert(test, e.message || 'Network error');
-                    }
+                } catch (error) {
+                    console.error(`Error creating PDF: ${error}`);
                 }
-
-                // 2. Sync to Google Sheets (iframe submit - avoids CORS preflight with Apps Script)
+                
+                // 2. Sync to Google Sheets (iframe - avoids CORS preflight)
                 try {
-                    const sheetData = { ...test, action: 'addFieldData' };
+                    const sheetData = {...test};
                     delete sheetData.photos;
+                    sheetData.action = 'addFieldData';
                     submitViaIframe(SHEETS_URL, sheetData, 'sheetFrame' + i);
-                } catch (e) { /* best-effort */ }
-
-                // 3. Update AssetDB (best-effort)
+                    sheetSuccess = true;
+                } catch (error) { /* best-effort */ }
+                
+                // 3. Update AssetDB with any new field data (or create if not exists)
                 if (test.serialNumber) {
                     try {
-                        const assetPayload = {
+                        // Create asset update data with action
+                        const assetData = {
                             action: 'updateAsset',
                             serialNumber: test.serialNumber,
                             customer: test.customer,
@@ -4577,31 +4045,103 @@
                             waterType: test.waterType,
                             gpsCoordinates: test.gpsCoordinates
                         };
-                        submitViaIframe(SHEETS_URL, assetPayload, 'assetFrame' + i);
-                    } catch (e) { /* best-effort */ }
+                        
+                        const updateIframe = document.createElement('iframe');
+                        updateIframe.name = 'assetFrame' + i;
+                        updateIframe.style.display = 'none';
+                        document.body.appendChild(updateIframe);
+                        
+                        const updateForm = document.createElement('form');
+                        updateForm.method = 'POST';
+                        updateForm.action = ASSETDB_URL;
+                        updateForm.target = updateIframe.name;
+                        
+                        const updateInput = document.createElement('input');
+                        updateInput.type = 'hidden';
+                        updateInput.name = 'data';
+                        updateInput.value = JSON.stringify(assetData);
+                        updateForm.appendChild(updateInput);
+                        
+                        document.body.appendChild(updateForm);
+                        updateForm.submit();
+                        
+                        setTimeout(() => {
+                            document.body.removeChild(updateForm);
+                            document.body.removeChild(updateIframe);
+                        }, 2000);
+                        
+                        console.log('AssetDB update sent');
+                    } catch (error) {
+                        console.error(`Error updating AssetDB: ${error}`);
+                    }
+                    
+                    // 4. Add to Test History
+                    try {
+                        const historyData = {
+                            action: 'addHistory',
+                            customer: test.customer,
+                            location: test.location,
+                            timestamp: test.timestamp,
+                            testedBy: test.testedBy,
+                            manufacturer: test.manufacturer,
+                            serialNumber: test.serialNumber,
+                            accuracy: '', // Can be added later if needed
+                            gpsCoordinates: test.gpsCoordinates
+                        };
+                        
+                        const historyIframe = document.createElement('iframe');
+                        historyIframe.name = 'historyFrame' + i;
+                        historyIframe.style.display = 'none';
+                        document.body.appendChild(historyIframe);
+                        
+                        const historyForm = document.createElement('form');
+                        historyForm.method = 'POST';
+                        historyForm.action = ASSETDB_URL;
+                        historyForm.target = historyIframe.name;
+                        
+                        const historyInput = document.createElement('input');
+                        historyInput.type = 'hidden';
+                        historyInput.name = 'data';
+                        historyInput.value = JSON.stringify(historyData);
+                        historyForm.appendChild(historyInput);
+                        
+                        document.body.appendChild(historyForm);
+                        historyForm.submit();
+                        
+                        setTimeout(() => {
+                            document.body.removeChild(historyForm);
+                            document.body.removeChild(historyIframe);
+                        }, 2000);
+                        
+                        console.log('Test History updated');
+                    } catch (error) {
+                        console.error(`Error updating Test History: ${error}`);
+                    }
                 }
-
-                if (pdfOk) {
+                
+                // Consider success if either worked
+                if (pdfSuccess || sheetSuccess) {
                     successCount++;
                 } else {
                     failCount++;
                     failedTests.push(test);
                 }
             }
-
+            
+            // Keep only failed tests in pending
             pendingTests = failedTests;
-            await savePendingTests();
-            updateFailedCertsUI();
+            savePendingTests();
+            
             hideLoading();
-
+            
             if (failCount === 0) {
                 showToast(`${successCount} test${successCount !== 1 ? 's' : ''} synced successfully!`, 'success');
             } else if (successCount === 0) {
-                showToast('Sync failed — will retry automatically when connection improves.', 'error');
+                showToast(`Sync failed. Check your connection.`, 'error');
             } else {
-                showToast(`${successCount} synced, ${failCount} will retry automatically.`, 'info');
+                showToast(`${successCount} synced, ${failCount} failed. Retry later.`, 'info');
             }
-
+            
             updatePendingList();
         }
 
@@ -4635,98 +4175,72 @@
         // ============================================
         // SITE MAP
         // ============================================
+        let siteMap = null;
+        let mapMarkers = [];
+        let mapRouteLine = null;
+        let mapSites = [];
+        let currentMapFilter = 'all';
+        let routeStartCoords = null;
+        let routeEndCoords = { lat: 29.5478, lng: -98.4936 };
+        let plannedRoute = [];
+        let myLocationMarker = null;
+
+        function parseGPS(raw) {
+            if (!raw) return null;
+            const str = raw.toString().trim();
+            const parts = str.split(',');
+            if (parts.length !== 2) return null;
+            function parsePart(s) {
+                s = s.trim();
+                const neg = /[WwSs]/.test(s);
+                const val = parseFloat(s.replace(/[^0-9.-]/g, ''));
+                if (isNaN(val)) return null;
+                return neg ? -val : val;
+            }
+            const lat = parsePart(parts[0]);
+            const lng = parsePart(parts[1]);
+            if (lat === null || lng === null) return null;
+            return { lat, lng };
+        }
+
         function initSiteMap() {
-            if (siteMap) return; // Already initialized
-            
-            // Initialize map centered on San Antonio area
+            if (siteMap) return;
             siteMap = L.map('siteMap').setView([29.65, -98.35], 10);
-            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(siteMap);
-            
-            // Load sites from AssetDB
             loadMapSites();
         }
 
         async function loadMapSites() {
-            // Use already-loaded assetDB — if empty, wait up to 5s for it
             if (!assetDB || assetDB.length === 0) {
-                console.log('AssetDB not loaded yet, waiting...');
-                let waited = 0;
-                while ((!assetDB || assetDB.length === 0) && waited < 5000) {
-                    await new Promise(r => setTimeout(r, 200));
-                    waited += 200;
-                }
+                await loadAssetDB();
             }
-
             if (assetDB && assetDB.length > 0) {
                 processMapData(assetDB);
-            } else {
-                console.log('No AssetDB data available for map');
             }
         }
-        
-        function processMapData(data) {
-            if (!data || !Array.isArray(data)) {
-                console.log('No valid map data received');
-                return;
-            }
-            
-            // Helper to parse GPS string in either decimal or degree-symbol format
-            function parseGPS(raw) {
-                if (!raw) return null;
-                const s = raw.toString().trim();
-                if (!s.includes(',')) return null;
-                const parts = s.split(',');
-                if (parts.length < 2) return null;
-                // Strip degree symbols and direction letters: "30.154° N" → 30.154, "97.858° W" → -97.858
-                function parsePart(p, negLetter) {
-                    const cleaned = p.replace(/[°'"]/g, '').trim();
-                    const hasNeg = negLetter && new RegExp(negLetter, 'i').test(cleaned);
-                    const val = parseFloat(cleaned.replace(/[NSEW]/gi, '').trim());
-                    return hasNeg ? -Math.abs(val) : val;
-                }
-                const lat = parsePart(parts[0], 'S');
-                const lng = parsePart(parts[1], 'W');
-                if (isNaN(lat) || isNaN(lng)) return null;
-                return { lat, lng };
-            }
 
+        function processMapData(data) {
+            if (!data || !Array.isArray(data)) return;
             mapSites = data.filter(site => {
-                const gps = site['GPS Coordinates'] || site.gpsCoordinates || '';
+                const gps = site['GPS Coordinates'] || '';
                 return gps && gps.toString().includes(',');
             }).map(site => {
-                const raw = (site['GPS Coordinates'] || site.gpsCoordinates || '').toString();
-                const parsed = parseGPS(raw);
+                const coords = parseGPS(site['GPS Coordinates'] || '');
+                if (!coords) return null;
                 return {
-                    name: site['Facility/Location'] || site['Location'] || site.location || 'Unknown',
-                    customer: site['Customer'] || site.customer || '',
-                    serial: site['Serial Number'] || site.serialNumber || '',
-                    lat: parsed ? parsed.lat : NaN,
-                    lng: parsed ? parsed.lng : NaN,
-                    lastTest: (() => {
-                        const serial = String(site['Serial Number'] || '').trim();
-                        const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === serial);
-                        if (matches.length === 0) return '';
-                        matches.sort((a, b) => new Date(b['Date'] || 0) - new Date(a['Date'] || 0));
-                        const d = new Date(matches[0]['Date']);
-                        return isNaN(d) ? '' : d.toLocaleDateString();
-                    })(),
+                    name: site['Facility/Location'] || site['Location'] || 'Unknown',
+                    customer: site['Customer'] || '',
+                    serial: String(site['Serial Number'] || ''),
+                    lat: coords.lat,
+                    lng: coords.lng,
                     status: getTestStatus(site),
                     serviceType: site['Service Type'] || ''
                 };
-            }).filter(s => !isNaN(s.lat) && !isNaN(s.lng));
-            
-            console.log('Map sites loaded:', mapSites.length);
-            
-            // Populate customer filter
+            }).filter(s => s !== null);
             populateMapCustomerFilter();
-            
-            // Add markers
             updateMapMarkers();
-            
-            // Fit bounds if we have sites
             if (mapSites.length > 0 && siteMap) {
                 const bounds = L.latLngBounds(mapSites.map(s => [s.lat, s.lng]));
                 siteMap.fitBounds(bounds, { padding: [30, 30] });
@@ -4734,44 +4248,32 @@
         }
 
         function getTestStatus(site) {
-            const serial = site['Serial Number'] || '';
+            const serial = String(site['Serial Number'] || '').trim();
+            if (!serial) return 'overdue';
+            const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === serial);
+            if (matches.length === 0) return 'overdue';
+            matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+            const lastTestDate = new Date(matches[0]['Date']);
+            const now = new Date();
+            const daysSince = (now - lastTestDate) / (1000 * 60 * 60 * 24);
             const customer = site['Customer'] || '';
             const semiAnnualCustomers = ['New Braunfels Utilities', 'MidSouth', 'Guadalupe-Blanco River Authority', 'GBRA'];
-            const isSemiAnnual = semiAnnualCustomers.some(c => customer.includes(c));
-            const frequency = isSemiAnnual ? 'Semi-Annual' : (site['Service Frequency'] || 'Annual');
-
-            // Look up last test from testHistory
-            const tests = serial ? testHistory.filter(h =>
-                String(h['Serial Number'] || h['serialNumber'] || '').trim() === String(serial).trim()
-            ) : [];
-
-            if (tests.length === 0) return 'overdue';
-
-            // Find most recent test
-            tests.sort((a, b) => new Date(b['Timestamp'] || b['Date'] || b['timestamp'] || 0) - new Date(a['Timestamp'] || a['Date'] || a['timestamp'] || 0));
-            const lastTestDate = new Date(tests[0]['Timestamp'] || tests[0]['Date'] || tests[0]['timestamp'] || 0);
-            const now = new Date();
-            const daysSinceTest = (now - lastTestDate) / (1000 * 60 * 60 * 24);
-
-            let daysAllowed = 365;
-            if (frequency === 'Semi-Annual') daysAllowed = 180;
-            else if (frequency === 'Quarterly') daysAllowed = 90;
-
-            if (daysSinceTest > daysAllowed) return 'overdue';
-            if (daysSinceTest > daysAllowed - 60) return 'due';
+            const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()));
+            const threshold = isSemi ? 180 : 365;
+            if (daysSince > threshold) return 'overdue';
+            if (daysSince > threshold - 60) return 'due';
             return 'tested';
         }
 
         function populateMapCustomerFilter() {
             const customers = [...new Set(mapSites.map(s => s.customer).filter(c => c))].sort();
             const select = document.getElementById('mapCustomerFilter');
+            if (!select) return;
             select.innerHTML = '<option value="">All Customers</option>' +
-                customers.map(c => `<option value="${c}">${c}</option>`).join('');
+                customers.map(c => '<option value="' + c + '">' + c + '</option>').join('');
         }
 
-        function filterMapByCustomer() {
-            updateMapMarkers();
-        }
+        function filterMapByCustomer() { updateMapMarkers(); }
 
         function filterMapStatus(status, btn) {
             currentMapFilter = status;
@@ -4781,121 +4283,77 @@
         }
 
         function updateMapMarkers() {
-            // Clear existing markers
             mapMarkers.forEach(m => siteMap.removeLayer(m));
             mapMarkers = [];
-            
-            const customerFilter = document.getElementById('mapCustomerFilter').value;
-            
+            const customerFilter = document.getElementById('mapCustomerFilter') ?
+                document.getElementById('mapCustomerFilter').value : '';
             mapSites.forEach(site => {
-                // Apply filters
                 if (customerFilter && site.customer !== customerFilter) return;
                 if (currentMapFilter !== 'all' && site.status !== currentMapFilter) return;
-                
                 const colorClass = site.status === 'tested' ? 'green' : site.status === 'due' ? 'yellow' : 'red';
                 const symbol = site.status === 'tested' ? '✓' : site.status === 'due' ? '!' : '⚠';
-                
                 const icon = L.divIcon({
                     className: 'map-marker-wrapper',
-                    html: `<div class="map-marker ${colorClass}">${symbol}</div>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
+                    html: '<div class="map-marker ' + colorClass + '">' + symbol + '</div>',
+                    iconSize: [30, 30], iconAnchor: [15, 15]
                 });
-                
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
-                
                 const statusClass = site.status;
-
-                // Calculate due date for this site
-                const _serial = String(site.serial || '').trim();
-                const _hist = testHistory.filter(r => String(r['Serial Number']||'').trim() === _serial);
-                _hist.sort((a,b) => new Date(b['Date']||0) - new Date(a['Date']||0));
-                const _lastDate = _hist.length ? new Date(_hist[0]['Date']) : null;
-                const _lastStr = _lastDate && !isNaN(_lastDate) ? _lastDate.toLocaleDateString() : 'Never';
-
-                const _customer = site.customer || '';
-                const _semiAnnual = ['New Braunfels Utilities','MidSouth','Guadalupe-Blanco River Authority','GBRA'].some(c => _customer.includes(c));
-                const _daysAllowed = _semiAnnual ? 180 : 365;
-                const _dueDate = _lastDate && !isNaN(_lastDate)
-                    ? new Date(_lastDate.getTime() + _daysAllowed * 86400000)
-                    : null;
-                const _dueDateStr = _dueDate ? _dueDate.toLocaleDateString() : 'Unknown';
-
-                const statusText = site.status === 'tested' ? 'Tested'
-                    : site.status === 'due' ? `Due ${_dueDateStr}`
-                    : site.status === 'overdue' && _dueDate ? `Overdue since ${_dueDateStr}`
-                    : 'Overdue';
-
-                marker.bindPopup(`
-                    <div class="map-popup">
-                        <h4>${site.name}</h4>
-                        <p>👤 ${site.customer}</p>
-                        <p>🔢 ${site.serial}</p>
-                        <p>📅 Last: ${_lastStr}</p>
-                        ${site.status !== 'tested' ? `<p>⏰ Due: ${_dueDateStr}</p>` : ''}
-                        <span class="status ${statusClass}">${statusText}</span>
-                        <div class="btn-row">
-                            <button class="btn-test" onclick="startTestFromMap('${site.serial}')">Start Test</button>
-                            <button class="btn-nav" onclick="navigateToSite(${site.lat}, ${site.lng})">📍 Nav</button>
-                            <button class="btn-nav" onclick="showMeterOptions('${site.serial}', '${site.name}')">⚙️</button>
-                        </div>
-                    </div>
-                `);
-                
+                const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
+                const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === site.serial);
+                matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+                const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
+                marker.bindPopup(
+                    '<div class="map-popup">' +
+                    '<h4>' + site.name + '</h4>' +
+                    '<p>👤 ' + site.customer + '</p>' +
+                    '<p>🔢 ' + site.serial + '</p>' +
+                    '<p>📅 Last: ' + lastStr + '</p>' +
+                    '<span class="status ' + statusClass + '">' + statusText + '</span>' +
+                    '<div class="btn-row">' +
+                    '<button class="btn-test" onclick="startTestFromMap(\"' + site.serial + '\")">Start Test</button>' +
+                    '<button class="btn-nav" onclick="navigateToSite(' + site.lat + ',' + site.lng + ')">📍 Nav</button>' +
+                    '<button class="btn-nav" onclick="showMeterOptions(\"' + site.serial + '\",\"' + site.name + '\")">⚙️</button>' +
+                    '</div></div>'
+                );
                 marker.siteData = site;
                 mapMarkers.push(marker);
-            });
-
-            // Update chip labels with counts and nearest due date
-            const allVisible = mapSites.filter(s => !customerFilter || s.customer === customerFilter);
-            const dueCount = allVisible.filter(s => s.status === 'due').length;
-            const overdueCount = allVisible.filter(s => s.status === 'overdue').length;
-            const testedCount = allVisible.filter(s => s.status === 'tested').length;
-
-            // Find nearest due date among "due" sites
-            const dueSites = allVisible.filter(s => s.status === 'due');
-            let nearestDueStr = '';
-            if (dueSites.length > 0) {
-                const dueDates = dueSites.map(s => {
-                    const ser = String(s.serial||'').trim();
-                    const h = testHistory.filter(r => String(r['Serial Number']||'').trim() === ser);
-                    h.sort((a,b) => new Date(b['Date']||0) - new Date(a['Date']||0));
-                    const last = h.length ? new Date(h[0]['Date']) : null;
-                    const isSemi = ['New Braunfels Utilities','MidSouth','Guadalupe-Blanco River Authority','GBRA'].some(c => (s.customer||'').includes(c));
-                    return last && !isNaN(last) ? new Date(last.getTime() + (isSemi ? 180 : 365) * 86400000) : null;
-                }).filter(Boolean);
-                dueDates.sort((a,b) => a - b);
-                if (dueDates[0]) nearestDueStr = ' · next ' + dueDates[0].toLocaleDateString();
-            }
-
-            const chipDue = document.getElementById('chipDue');
-            if (chipDue) chipDue.textContent = `⚠ Due (${dueCount})${nearestDueStr}`;
-            const chips = document.querySelectorAll('.map-chip');
-            chips.forEach(c => {
-                if (c.textContent.startsWith('✓')) c.textContent = `✓ Tested (${testedCount})`;
-                if (c.textContent.startsWith('🚨')) c.textContent = `🚨 Overdue (${overdueCount})`;
-                if (c.textContent.startsWith('All')) c.textContent = `All (${allVisible.length})`;
             });
         }
 
         function startTestFromMap(serial) {
             siteMap.closePopup();
-            
-            // Find the asset in assetDB
-            const asset = assetDB.find(a => a['Serial Number'] === serial);
-            
-            if (asset) {
-                populateFromAsset(asset);
-            } else {
-                // Fallback - just open form with serial
-                showScreen('formScreen');
-                resetForm();
-                document.getElementById('formSerial').value = serial;
-            }
+            const asset = assetDB.find(a => String(a['Serial Number']) === serial);
+            if (asset) { populateFromAsset(asset); }
+            else { showScreen('formScreen'); resetForm(); document.getElementById('formSerial').value = serial; }
         }
 
         function navigateToSite(lat, lng) {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+            window.open('https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng, '_blank');
+        }
+
+        function locateMeOnMap() {
+            if (!siteMap) return;
+            if (!navigator.geolocation) { showToast('GPS not supported', 'error'); return; }
+            showToast('Getting your location...', 'info');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    routeStartCoords = { lat, lng };
+                    if (myLocationMarker) siteMap.removeLayer(myLocationMarker);
+                    const icon = L.divIcon({
+                        className: 'map-marker-wrapper',
+                        html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,0.3);"></div>',
+                        iconSize: [20,20], iconAnchor: [10,10]
+                    });
+                    myLocationMarker = L.marker([lat, lng], { icon }).addTo(siteMap)
+                        .bindPopup('<b>📍 You are here</b>').openPopup();
+                    siteMap.setView([lat, lng], 13);
+                    showToast('Location found!', 'success');
+                },
+                () => showToast('Could not get location', 'error'),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
         }
 
         function setRouteStart() {
@@ -4903,23 +4361,17 @@
                 navigator.geolocation.getCurrentPosition(pos => {
                     routeStartCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                     document.getElementById('routeStart').value = '📍 Current Location';
-                    showToast('Start point set to current location', 'success');
-                }, () => {
-                    showToast('Could not get location', 'error');
+                    showToast('Start point set', 'success');
                 });
             }
         }
 
         function setRouteEnd() {
-            const address = prompt('Enter end address (or leave blank for home):', '');
-            if (address) {
-                document.getElementById('routeEnd').value = '🏠 ' + address;
-                // In production, would geocode this address
-            }
+            const address = prompt('Enter end address:', '');
+            if (address) document.getElementById('routeEnd').value = '🏠 ' + address;
         }
 
         function planMapRoute(statusFilter) {
-            // Get sites matching filter
             const customerFilter = document.getElementById('mapCustomerFilter').value;
             let routeSites = mapSites.filter(s => {
                 if (customerFilter && s.customer !== customerFilter) return false;
@@ -4927,107 +4379,233 @@
                 if (statusFilter === 'due') return s.status === 'due' || s.status === 'overdue';
                 return true;
             });
-            
-            if (routeSites.length === 0) {
-                showToast('No sites to route to', 'info');
-                return;
-            }
-            
-            // Sort north to south (highest lat first) so we end up closer to home (south)
+            if (routeSites.length === 0) { showToast('No sites to route to', 'info'); return; }
             routeSites.sort((a, b) => b.lat - a.lat);
-            
             plannedRoute = routeSites;
-            
-            // Clear existing route
             if (mapRouteLine) siteMap.removeLayer(mapRouteLine);
-            
-            // Build route points
             const startPoint = routeStartCoords || { lat: routeSites[0].lat + 0.05, lng: routeSites[0].lng };
-            const routePoints = [
-                [startPoint.lat, startPoint.lng],
+            const routePoints = [[startPoint.lat, startPoint.lng],
                 ...routeSites.map(s => [s.lat, s.lng]),
-                [routeEndCoords.lat, routeEndCoords.lng]
-            ];
-            
-            // Draw route line
-            mapRouteLine = L.polyline(routePoints, {
-                color: '#2a9d8f',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '10, 10'
-            }).addTo(siteMap);
-            
-            // Update markers with stop numbers
-            updateMapMarkers();
-            
-            // Add numbered markers for route stops
-            routeSites.forEach((site, i) => {
-                const existingMarker = mapMarkers.find(m => m.siteData?.serial === site.serial);
-                if (existingMarker) {
-                    const colorClass = site.status === 'tested' ? 'green' : site.status === 'due' ? 'yellow' : 'red';
-                    const newIcon = L.divIcon({
-                        className: 'map-marker-wrapper',
-                        html: `<div class="map-marker ${colorClass}" style="position:relative;">${i + 1}<div style="position:absolute;top:-8px;right:-8px;background:var(--navy);color:white;width:18px;height:18px;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;border:2px solid white;"></div></div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
-                    existingMarker.setIcon(newIcon);
-                }
-            });
-            
-            // Fit map to route
+                [routeEndCoords.lat, routeEndCoords.lng]];
+            mapRouteLine = L.polyline(routePoints, { color: '#2a9d8f', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(siteMap);
             siteMap.fitBounds(mapRouteLine.getBounds(), { padding: [50, 50] });
-            
-            // Show route info
             document.getElementById('routeInfoBanner').style.display = 'block';
-            document.getElementById('routeStopsCount').textContent = `${routeSites.length} stops planned`;
-            document.getElementById('routeDistance').textContent = 'Route: North → South (ending near home)';
-        }
-
-        let myLocationMarker = null;
-
-        function locateMeOnMap() {
-            if (!siteMap) return;
-            if (!navigator.geolocation) {
-                showToast("GPS not supported on this device", "error");
-                return;
-            }
-            showToast("Getting your location...", "info");
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    routeStartCoords = { lat, lng };
-                    // Remove old marker if exists
-                    if (myLocationMarker) siteMap.removeLayer(myLocationMarker);
-                    // Blue pulsing marker
-                    const icon = L.divIcon({
-                        className: "map-marker-wrapper",
-                        html: `<div style="width:20px;height:20px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,0.3);"></div>`,
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    });
-                    myLocationMarker = L.marker([lat, lng], { icon })
-                        .addTo(siteMap)
-                        .bindPopup("<b>📍 You are here</b>")
-                        .openPopup();
-                    siteMap.setView([lat, lng], 13);
-                    showToast("Location found!", "success");
-                },
-                () => showToast("Could not get location", "error"),
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
+            document.getElementById('routeStopsCount').textContent = routeSites.length + ' stops planned';
+            document.getElementById('routeDistance').textContent = 'Route: North to South';
         }
 
         function openRouteInGoogleMaps() {
-            if (plannedRoute.length === 0) {
-                showToast('No route planned', 'error');
-                return;
+            if (plannedRoute.length === 0) { showToast('No route planned', 'error'); return; }
+            const start = routeStartCoords ? routeStartCoords.lat + ',' + routeStartCoords.lng : '';
+            const end = routeEndCoords.lat + ',' + routeEndCoords.lng;
+            const waypoints = plannedRoute.map(s => s.lat + ',' + s.lng).join('|');
+            let url = 'https://www.google.com/maps/dir/?api=1&destination=' + end + '&travelmode=driving';
+            if (start) url += '&origin=' + start;
+            if (waypoints) url += '&waypoints=' + waypoints;
+            window.open(url, '_blank');
+        }
+
+        // ============================================
+        // FLOW CALCULATOR
+        // ============================================
+        const PARSHALL = {
+            parshall_3:  { C: 0.992,  n: 1.547, label: '3" Parshall Flume'  },
+            parshall_6:  { C: 2.06,   n: 1.58,  label: '6" Parshall Flume'  },
+            parshall_9:  { C: 3.07,   n: 1.53,  label: '9" Parshall Flume'  },
+            parshall_12: { C: 4.00,   n: 1.52,  label: '12" Parshall Flume' },
+            parshall_18: { C: 6.00,   n: 1.53,  label: '18" Parshall Flume' },
+            parshall_24: { C: 8.00,   n: 1.53,  label: '24" Parshall Flume' },
+            parshall_36: { C: 12.00,  n: 1.56,  label: '36" Parshall Flume' },
+            parshall_48: { C: 16.00,  n: 1.56,  label: '48" Parshall Flume' },
+            parshall_60: { C: 20.00,  n: 1.58,  label: '60" Parshall Flume' },
+            parshall_72: { C: 24.00,  n: 1.59,  label: '72" Parshall Flume' }
+        };
+        const PALMER_BOWLUS = {
+            pb_4:  { C: 1.73,  k: 0.00588,  n: 1.9573, label: '4" Palmer-Bowlus'  },
+            pb_6:  { C: 2.071, k: 0.005421, n: 1.9025, label: '6" Palmer-Bowlus'  },
+            pb_8:  { C: 2.537, k: 0.01456,  n: 1.9724, label: '8" Palmer-Bowlus'  },
+            pb_10: { C: 2.843, k: 0.01610,  n: 1.9530, label: '10" Palmer-Bowlus' },
+            pb_12: { C: 3.372, k: 0.01656,  n: 1.9540, label: '12" Palmer-Bowlus' },
+            pb_15: { C: 4.151, k: 0.02016,  n: 1.9479, label: '15" Palmer-Bowlus' },
+            pb_18: { C: 4.932, k: 0.02435,  n: 1.9398, label: '18" Palmer-Bowlus' },
+            pb_24: { C: 6.573, k: 0.02891,  n: 1.9411, label: '24" Palmer-Bowlus' }
+        };
+        function vnotchCe(t) { return 0.607165052 - 0.000874466963*t + 6.10393334e-6*t*t; }
+        function vnotchK(t)  { return 0.0144902648 - 0.00033955535*t + 3.29819003e-6*t*t - 1.06215442e-8*t*t*t; }
+        let fcMode = 'H';
+
+        function fcSetMode(mode) {
+            fcMode = mode;
+            document.getElementById('fcModeH').style.background = mode==='H' ? 'var(--teal)' : 'var(--gray-200)';
+            document.getElementById('fcModeH').style.color = mode==='H' ? 'white' : 'var(--gray-700)';
+            document.getElementById('fcModeQ').style.background = mode==='Q' ? 'var(--teal)' : 'var(--gray-200)';
+            document.getElementById('fcModeQ').style.color = mode==='Q' ? 'white' : 'var(--gray-700)';
+            document.getElementById('fcHeadInputGroup').style.display = mode==='H' ? 'block' : 'none';
+            document.getElementById('fcFlowInputGroup').style.display = mode==='Q' ? 'block' : 'none';
+            document.getElementById('fcResult').style.display = 'none';
+        }
+
+        function fcDeviceChanged() {
+            const dev = document.getElementById('fcDevice').value;
+            document.getElementById('fcCustomAngleGroup').style.display = dev==='vnotch_custom' ? 'block' : 'none';
+            document.getElementById('fcWeirLengthGroup').style.display = (dev==='rect_suppressed'||dev==='rect_contracted') ? 'block' : 'none';
+            fcUpdateEquationRef();
+            fcCalculate();
+        }
+
+        function fcCalcQfromH(dev, Hft) {
+            if (PARSHALL[dev]) { const {C,n} = PARSHALL[dev]; return C * Math.pow(Hft, n); }
+            if (PALMER_BOWLUS[dev]) { const {C,k,n} = PALMER_BOWLUS[dev]; return C * Math.pow(Hft+k, n); }
+            if (dev.startsWith('vnotch_')) {
+                let theta = dev==='vnotch_custom' ? parseFloat(document.getElementById('fcCustomAngle').value) : parseFloat(dev.split('_')[1]);
+                if (isNaN(theta)||theta<20||theta>120) return null;
+                return 4.28 * vnotchCe(theta) * Math.tan(theta/2*Math.PI/180) * Math.pow(Hft+vnotchK(theta), 2.5);
             }
-            
-            const start = routeStartCoords ? `${routeStartCoords.lat},${routeStartCoords.lng}` : '';
-            const end = `${routeEndCoords.lat},${routeEndCoords.lng}`;
-            const waypoints = plannedRoute.map(s => `${s.lat},${s.lng}`).join('|');
-            
-            let url = `https://www.google.com/maps/dir/?api=1&destination=${end}&travelmode=driving`;
-            if (start) url += `&origi
+            if (dev==='rect_suppressed') { const L=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L)||L<=0) return null; return 3.33*L*Math.pow(Hft,1.5); }
+            if (dev==='rect_contracted') { const L=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L)||L<=0) return null; return 3.33*(L-0.2*Hft)*Math.pow(Hft,1.5); }
+            return null;
+        }
+
+        function fcCalcHfromQ(dev, Qcfs) {
+            let lo=0.001, hi=20;
+            for (let i=0; i<60; i++) {
+                const mid=(lo+hi)/2, q=fcCalcQfromH(dev,mid);
+                if (q===null) return null;
+                if (q<Qcfs) lo=mid; else hi=mid;
+                if (hi-lo<0.00001) break;
+            }
+            return (lo+hi)/2;
+        }
+
+        function fcCalculate() {
+            const dev = document.getElementById('fcDevice').value;
+            document.getElementById('fcError').style.display = 'none';
+            document.getElementById('fcResult').style.display = 'none';
+            let Qcfs=null, Hft=null;
+            if (fcMode==='H') {
+                const v=parseFloat(document.getElementById('fcHeadIn').value);
+                const u=document.getElementById('fcHeadUnit').value;
+                if (isNaN(v)||v<=0) return;
+                Hft = u==='in' ? v/12 : v;
+                Qcfs = fcCalcQfromH(dev, Hft);
+            } else {
+                const v=parseFloat(document.getElementById('fcFlowIn').value);
+                const u=document.getElementById('fcFlowUnitIn').value;
+                if (isNaN(v)||v<=0) return;
+                Qcfs = u==='gpm' ? v/448.831 : u==='mgd' ? v*1.5472 : v;
+                Hft = fcCalcHfromQ(dev, Qcfs);
+                Qcfs = fcCalcQfromH(dev, Hft);
+            }
+            if (!Qcfs||isNaN(Qcfs)||Qcfs<0) { document.getElementById('fcError').textContent='Invalid input.'; document.getElementById('fcError').style.display='block'; return; }
+            const gpm=Qcfs*448.831, mgd=Qcfs/1.5472;
+            if (fcMode==='H') {
+                document.getElementById('fcResultLabel').textContent='Flow Rate (Q)';
+                document.getElementById('fcPrimary').textContent=gpm.toFixed(2);
+                document.getElementById('fcPrimaryUnit').textContent='GPM';
+            } else {
+                document.getElementById('fcResultLabel').textContent='Head (H)';
+                document.getElementById('fcPrimary').textContent=(Hft*12).toFixed(3);
+                document.getElementById('fcPrimaryUnit').textContent='inches  (' + Hft.toFixed(4) + ' ft)';
+            }
+            document.getElementById('fcCFS').textContent=Qcfs.toFixed(4);
+            document.getElementById('fcGPM').textContent=gpm.toFixed(2);
+            document.getElementById('fcMGD').textContent=mgd.toFixed(4);
+            if (Hft) document.getElementById('fcEquation').textContent='H = '+Hft.toFixed(4)+' ft  →  Q = '+Qcfs.toFixed(4)+' cfs';
+            document.getElementById('fcResult').style.display='block';
+            fcUpdateEquationRef();
+        }
+
+        function fcUpdateEquationRef() {
+            const dev=document.getElementById('fcDevice').value;
+            const el=document.getElementById('fcEquationRef');
+            if (PARSHALL[dev]) { const {C,n,label}=PARSHALL[dev]; el.innerHTML='<b>'+label+'</b><br>Q = '+C+' × Ha<sup>'+n+'</sup> (cfs, Ha in ft)<br>Source: USBR Water Measurement Manual'; }
+            else if (PALMER_BOWLUS[dev]) { const {C,k,n,label}=PALMER_BOWLUS[dev]; el.innerHTML='<b>'+label+'</b><br>Q = '+C+' × (H + '+k+')<sup>'+n+'</sup> (cfs, H in ft)<br>Source: Palmer-Bowlus equations'; }
+            else if (dev.startsWith('vnotch_')) { el.innerHTML='<b>V-Notch Weir (Kindsvater-Shen)</b><br>Q = 4.28 × Ce × tan(θ/2) × (H + k)<sup>2.5</sup> (cfs, H in ft)<br>Valid: 20° ≤ θ ≤ 120°'; }
+            else if (dev==='rect_suppressed') { el.innerHTML='<b>Suppressed Rectangular Weir</b><br>Q = 3.33 × L × H<sup>1.5</sup> (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual'; }
+            else if (dev==='rect_contracted') { el.innerHTML='<b>Contracted Rectangular Weir</b><br>Q = 3.33 × (L − 0.2H) × H<sup>1.5</sup> (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual'; }
+        }
+
+        // ============================================
+        // MECHANICAL METER CALCULATOR
+        // ============================================
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
+        }
+
+        function calcMechFlow() {
+            const start   = parseFloat(document.getElementById('mechStart').value);
+            const end     = parseFloat(document.getElementById('mechEnd').value);
+            const minutes = parseFloat(document.getElementById('mechTime').value);
+            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
+            const gallons = (end-start)*mult;
+            const gpm = gallons/minutes;
+            const mgd = gpm*1440/1000000;
+            const gph = gpm*60;
+            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
+            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
+            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
+            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
+            resultEl.style.display='block';
+            useBtn.style.display='block';
+        }
+
+        function useMechResult() {
+            const gpm = document.getElementById('mechGPM').textContent;
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+            if (!cusBefore.value && !cusAfter.value) {
+                cusBefore.value = gpm;
+                showToast(gpm + ' GPM → Customer Before field', 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field', 'success');
+            } else {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            }
+            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
+            const existing = document.getElementById('formNotes').value;
+            const note = 'Mechanical timed test: ' + gpm + ' GPM';
+            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
+        }
+
+        // Updates unit badge labels when units dropdowns change
+        function updateUnitLabels(section) {
+            if (section==='CP') {
+                const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
+                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fu;});
+            }
+            if (section==='OC') {
+                const lu=document.getElementById('formLevelUnitsOC')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=luS;});
+            }
+            if (section==='CR') {
+                const type=document.getElementById('formMeasurementType')?.value||'Flow';
+                const fu=document.getElementById('formFlowUnitsCR')?.value||'GPM';
+                const lu=document.getElementById('formLevelUnitsCR')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                const unit=type==='Flow'?fu:luS;
+                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=unit;});
+            }
+        }
+
+        // ============================================
+        // SERVICE WORKER REGISTRATION
+        // ============================================
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+    </script>
+</body>
+</html>
