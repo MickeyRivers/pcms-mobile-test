@@ -1,5 +1,5 @@
 // PCMS Service Worker - Offline Cache + Background Sync
-const CACHE_NAME = 'pcms-v7';
+const CACHE_NAME = 'pcms-v8';
 const SYNC_TAG = 'pcms-sync';
 
 const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
@@ -66,12 +66,12 @@ self.addEventListener('fetch', event => {
     );
 });
 
-// ─── Background Sync ─────────────────────────────────────────────────────────
-self.addEventListener('sync', event => {
-    if (event.tag === SYNC_TAG) {
-        event.waitUntil(syncPendingTests());
-    }
-});
+// ─── Background Sync (disabled — sync runs manually from the UI only) ────────
+// self.addEventListener('sync', event => {
+//     if (event.tag === SYNC_TAG) {
+//         event.waitUntil(syncPendingTests());
+//     }
+// });
 
 // ─── Push message from page: manual sync trigger ────────────────────────────
 self.addEventListener('message', event => {
