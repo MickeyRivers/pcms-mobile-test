@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PCMS Mobile</title>
+    <!-- Disable Cloudflare email obfuscation which breaks script execution -->
+    <meta name="robots" content="noindex">
     <link rel="manifest" href="manifest.json">
     
     <!-- Leaflet Map -->
@@ -1831,7 +1833,7 @@
     <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false">
         // ============================================
         // GLOBAL URLs
         // ============================================
