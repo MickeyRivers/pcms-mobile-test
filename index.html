@@ -834,6 +834,48 @@
     </header>
 
     <!-- PIN Lock Screen -->
+    <!-- Auth Screen (email request for non-admin users) -->
+    <div id="authScreen" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--navy); z-index:9998; flex-direction:column; align-items:center; justify-content:center;">
+        <div style="text-align:center; padding:24px; width:100%; max-width:340px;">
+            <div style="font-size:52px; margin-bottom:16px;">🔐</div>
+            <h2 style="color:white; margin-bottom:8px;">PCMS Mobile</h2>
+            <p style="color:var(--gray-400); margin-bottom:28px; font-size:14px;" id="authMessage">Enter your email to request access</p>
+
+            <!-- Email input state -->
+            <div id="authEmailState">
+                <input type="email" id="authEmail" placeholder="your@email.com"
+                    style="width:100%; padding:14px 16px; border-radius:10px; border:2px solid var(--gold); background:transparent; color:white; font-size:16px; text-align:center; margin-bottom:16px; box-sizing:border-box;">
+                <button onclick="requestAccess()" style="width:100%; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;">
+                    Request Access
+                </button>
+            </div>
+
+            <!-- Pending state -->
+            <div id="authPendingState" style="display:none;">
+                <div style="background:rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px;">
+                    <div style="font-size:28px; margin-bottom:8px;">📧</div>
+                    <p style="color:white; font-size:14px; line-height:1.6;">Your request has been sent to Mick for approval. You'll receive an email once approved.</p>
+                </div>
+                <button onclick="checkAccessStatus()" style="width:100%; padding:14px; background:rgba(255,255,255,0.15); color:white; border:none; border-radius:10px; font-size:15px; cursor:pointer; margin-bottom:12px;">
+                    🔄 Check Status
+                </button>
+                <button onclick="showAuthEmailState()" style="width:100%; padding:12px; background:transparent; color:var(--gray-400); border:none; font-size:13px; cursor:pointer;">
+                    Use a different email
+                </button>
+            </div>
+
+            <!-- Revoked state -->
+            <div id="authRevokedState" style="display:none;">
+                <div style="background:rgba(229,62,62,0.2); border-radius:12px; padding:20px; margin-bottom:20px;">
+                    <p style="color:#fc8181; font-size:14px; line-height:1.6;">Your access has been revoked. Contact mick@flow-cert.com if you believe this is an error.</p>
+                </div>
+                <button onclick="showAuthEmailState()" style="width:100%; padding:12px; background:transparent; color:var(--gray-400); border:none; font-size:13px; cursor:pointer;">
+                    Try a different email
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="pinLockScreen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--navy); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
@@ -1821,29 +1863,17 @@
         // ============================================
         // PIN SECURITY
         // ============================================
+        // Admin PIN — Mick bypasses the email auth flow entirely
+        const ADMIN_PIN_KEY = 'pcms_pin';
+
         function checkPinSetup() {
-            const storedPin = localStorage.getItem('pcms_pin');
+            const storedPin = localStorage.getItem(ADMIN_PIN_KEY);
             const storedEmail = localStorage.getItem('pcms_recovery_email');
             const pinLockScreen = document.getElementById('pinLockScreen');
             const mainContainer = document.getElementById('mainContainer');
-            
-            if (!storedPin) {
-                // No PIN set - prompt to create one
-                isSettingPin = true;
-                if (!storedEmail) {
-                    // Need email first
-                    document.getElementById('pinMessage').textContent = 'Set up recovery email';
-                    document.getElementById('emailSetup').style.display = 'block';
-                    document.getElementById('pinDots').style.display = 'none';
-                    document.getElementById('pinPad').style.display = 'none';
-                } else {
-                    document.getElementById('pinMessage').textContent = 'Create a 4-digit PIN';
-                }
-                document.getElementById('pinSetupLink').style.display = 'none';
-                pinLockScreen.style.display = 'flex';
-                mainContainer.style.display = 'none';
-            } else {
-                // PIN exists - require unlock
+
+            // If PIN exists this is Mick's device — go straight to PIN screen
+            if (storedPin) {
                 document.getElementById('pinMessage').textContent = 'Enter your 4-digit PIN';
                 document.getElementById('pinSetupLink').style.display = 'block';
                 document.getElementById('emailSetup').style.display = 'none';
@@ -1852,6 +1882,106 @@
                 document.getElementById('pinPad').style.display = 'grid';
                 pinLockScreen.style.display = 'flex';
                 mainContainer.style.display = 'none';
+                return;
+            }
+
+            // Check if this device has an approved auth token stored
+            const authEmail = localStorage.getItem('pcms_auth_email');
+            const authToken = localStorage.getItem('pcms_auth_token');
+            if (authEmail && authToken) {
+                // Verify token is still active against sheet
+                verifyStoredAuth(authEmail, authToken);
+                return;
+            }
+
+            // No PIN, no stored auth — show email auth screen
+            showAuthScreen();
+        }
+
+        function showAuthScreen() {
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('pinLockScreen').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'none';
+            showAuthEmailState();
+        }
+
+        function showAuthEmailState() {
+            document.getElementById('authEmailState').style.display = 'block';
+            document.getElementById('authPendingState').style.display = 'none';
+            document.getElementById('authRevokedState').style.display = 'none';
+            document.getElementById('authMessage').textContent = 'Enter your email to request access';
+        }
+
+        async function verifyStoredAuth(email, token) {
+            try {
+                const res = await fetch(SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(email));
+                const data = await res.json();
+                if (data.status === 'Active' && data.token === token) {
+                    unlockApp();
+                } else if (data.status === 'Revoked') {
+                    localStorage.removeItem('pcms_auth_email');
+                    localStorage.removeItem('pcms_auth_token');
+                    showAuthScreen();
+                    document.getElementById('authRevokedState').style.display = 'block';
+                    document.getElementById('authEmailState').style.display = 'none';
+                } else {
+                    showAuthScreen();
+                }
+            } catch (e) {
+                // Network error — if we have a stored token, let them in (offline grace)
+                unlockApp();
+            }
+        }
+
+        async function requestAccess() {
+            const email = document.getElementById('authEmail').value.trim().toLowerCase();
+            if (!email || !email.includes('@')) {
+                document.getElementById('authMessage').textContent = 'Please enter a valid email address';
+                return;
+            }
+
+            document.getElementById('authMessage').textContent = 'Sending request...';
+
+            try {
+                const fd = new FormData();
+                fd.append('data', JSON.stringify({ action: 'requestAccess', email }));
+                const res = await fetch(SHEETS_URL, { method: 'POST', body: fd, mode: 'no-cors' });
+
+                // no-cors means we can't read response — assume sent and show pending
+                localStorage.setItem('pcms_pending_email', email);
+                document.getElementById('authEmailState').style.display = 'none';
+                document.getElementById('authPendingState').style.display = 'block';
+                document.getElementById('authMessage').textContent = 'Request sent!';
+            } catch (e) {
+                document.getElementById('authMessage').textContent = 'Error sending request. Try again.';
+            }
+        }
+
+        async function checkAccessStatus() {
+            const email = localStorage.getItem('pcms_pending_email') ||
+                          document.getElementById('authEmail').value.trim().toLowerCase();
+            if (!email) { showAuthEmailState(); return; }
+
+            document.getElementById('authMessage').textContent = 'Checking...';
+
+            try {
+                const res = await fetch(SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(email));
+                const data = await res.json();
+
+                if (data.status === 'Active') {
+                    localStorage.setItem('pcms_auth_email', email);
+                    localStorage.setItem('pcms_auth_token', data.token || '');
+                    localStorage.removeItem('pcms_pending_email');
+                    unlockApp();
+                } else if (data.status === 'Revoked') {
+                    document.getElementById('authPendingState').style.display = 'none';
+                    document.getElementById('authRevokedState').style.display = 'block';
+                    document.getElementById('authMessage').textContent = 'Access denied';
+                } else {
+                    document.getElementById('authMessage').textContent = 'Still pending — check back soon';
+                }
+            } catch (e) {
+                document.getElementById('authMessage').textContent = 'Error checking status. Try again.';
             }
         }
         
