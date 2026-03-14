@@ -1744,7 +1744,7 @@
     <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
-    <script>
+    <script data-cfasync="false">
         // ============================================
         // GLOBAL URLs
         // ============================================
@@ -1861,15 +1861,21 @@
             }
             document.getElementById('authMessage').textContent = 'Sending request...';
             try {
-                const fd = new FormData();
-                fd.append('data', JSON.stringify({ action: 'requestAccess', email: email }));
-                await fetch(SHEETS_URL, { method: 'POST', body: fd, mode: 'no-cors' });
+                // Use GET request — Apps Script handles GET without CORS preflight
+                const url = SHEETS_URL + '?action=requestAccess&email=' + encodeURIComponent(email);
+                const res = await fetch(url);
+                const data = await res.json();
                 localStorage.setItem('pcms_pending_email', email);
                 document.getElementById('authEmailState').style.display = 'none';
                 document.getElementById('authPendingState').style.display = 'block';
-                document.getElementById('authMessage').textContent = 'Request sent!';
+                if (data.status === 'already_approved') {
+                    // Already approved — just unlock
+                    checkAccessStatus();
+                } else {
+                    document.getElementById('authMessage').textContent = 'Request sent! Mick will be notified.';
+                }
             } catch (e) {
-                document.getElementById('authMessage').textContent = 'Error sending request. Try again.';
+                document.getElementById('authMessage').textContent = 'Error: ' + e.message;
             }
         }
 
