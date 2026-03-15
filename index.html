@@ -770,8 +770,8 @@
             letter-spacing: 0.5px;
         }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -4366,32 +4366,51 @@ let siteMap = null;
             mapSites.forEach(site => {
                 if (customerFilter && site.customer !== customerFilter) return;
                 if (currentMapFilter !== 'all' && site.status !== currentMapFilter) return;
-                const colorClass = site.status === 'tested' ? 'green' : site.status === 'due' ? 'yellow' : 'red';
-                const symbol = site.status === 'tested' ? '✓' : site.status === 'due' ? '!' : '⚠';
+
+                // Icon: green checkmark, yellow exclamation, red X
+                const iconColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
+                const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : '✕';
                 const icon = L.divIcon({
-                    className: 'map-marker-wrapper',
-                    html: '<div class="map-marker ' + colorClass + '">' + symbol + '</div>',
-                    iconSize: [30, 30], iconAnchor: [15, 15]
+                    className: '',
+                    html: '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>',
+                    iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
                 });
+
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
-                const statusClass = site.status;
                 const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
+                const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
                 const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === site.serial);
                 matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
                 const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
-                marker.bindPopup(
-                    '<div class="map-popup">' +
-                    '<h4>' + site.name + '</h4>' +
-                    '<p>👤 ' + site.customer + '</p>' +
-                    '<p>🔢 ' + site.serial + '</p>' +
-                    '<p>📅 Last: ' + lastStr + '</p>' +
-                    '<span class="status ' + statusClass + '">' + statusText + '</span>' +
-                    '<div class="btn-row">' +
-                    '<button class="btn-test" onclick="startTestFromMap(\"' + site.serial + '\")">Start Test</button>' +
-                    '<button class="btn-nav" onclick="navigateToSite(' + site.lat + ',' + site.lng + ')">📍 Nav</button>' +
-                    '<button class="btn-nav" onclick="showMeterOptions(\"' + site.serial + '\",\"' + site.name + '\")">⚙️</button>' +
-                    '</div></div>'
-                );
+
+                const popupEl = document.createElement('div');
+                popupEl.style.cssText = 'min-width:200px;font-family:sans-serif;';
+                popupEl.innerHTML =
+                    '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + site.name + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:2px;">👤 ' + site.customer + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:2px;">🔢 ' + site.serial + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:8px;">📅 Last: ' + lastStr + '</div>' +
+                    '<div style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;background:' + statusColor + ';margin-bottom:10px;">' + statusText + '</div>' +
+                    '<div style="display:flex;gap:6px;">' +
+                    '<button id="btn-test-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="flex:1;padding:8px 4px;background:#1a365d;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">▶ Start Test</button>' +
+                    '<button id="btn-nav-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="flex:1;padding:8px 4px;background:#319795;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">📍 Nav</button>' +
+                    '<button id="btn-cfg-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="padding:8px 10px;background:#718096;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">⚙️</button>' +
+                    '</div>';
+
+                const popup = L.popup({ minWidth: 210 }).setContent(popupEl);
+                marker.bindPopup(popup);
+
+                // Wire up buttons after popup opens (avoids inline onclick sandboxing issues)
+                marker.on('popupopen', function() {
+                    const sid = site.serial.replace(/[^a-z0-9]/gi,'_');
+                    const btnTest = document.getElementById('btn-test-' + sid);
+                    const btnNav  = document.getElementById('btn-nav-'  + sid);
+                    const btnCfg  = document.getElementById('btn-cfg-'  + sid);
+                    if (btnTest) btnTest.addEventListener('click', function() { siteMap.closePopup(); startTestFromMap(site.serial); });
+                    if (btnNav)  btnNav.addEventListener('click',  function() { navigateToSite(site.lat, site.lng); });
+                    if (btnCfg)  btnCfg.addEventListener('click',  function() { showMeterOptions(site.serial, site.name); });
+                });
+
                 marker.siteData = site;
                 mapMarkers.push(marker);
             });
