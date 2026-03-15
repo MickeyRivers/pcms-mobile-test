@@ -757,6 +757,25 @@
             margin: -8px;
             margin-right: 8px;
         }
+        .map-chip {
+            padding: 10px 18px;
+            border-radius: 24px;
+            border: 2px solid var(--gray-300);
+            background: white;
+            color: var(--navy);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .map-chip.active {
+            border-color: var(--teal);
+            background: var(--teal);
+            color: white;
+        }
+        .map-chip:active { opacity: 0.8; }
+
         .unit-badge {
             display: inline-block;
             background: var(--teal);
@@ -4342,19 +4361,35 @@ let siteMap = null;
         function getTestStatus(site) {
             const serial = String(site['Serial Number'] || '').trim();
             if (!serial) return 'overdue';
+
             const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === serial);
             if (matches.length === 0) return 'overdue';
             matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+
             const lastTestDate = new Date(matches[0]['Date']);
+            if (isNaN(lastTestDate)) return 'overdue';
+
             const now = new Date();
             const daysSince = (now - lastTestDate) / (1000 * 60 * 60 * 24);
+
             const customer = site['Customer'] || '';
+            const freq = (site['Service Frequency'] || '').toLowerCase();
             const semiAnnualCustomers = ['New Braunfels Utilities', 'MidSouth', 'Guadalupe-Blanco River Authority', 'GBRA'];
-            const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()));
-            const threshold = isSemi ? 180 : 365;
-            if (daysSince > threshold) return 'overdue';
-            if (daysSince > threshold - 60) return 'due';
-            return 'tested';
+            const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()))
+                        || freq.includes('semi') || freq.includes('6 month') || freq.includes('twice');
+
+            // Semi-annual: cycle = 180 days, Annual: cycle = 365 days
+            const cycle = isSemi ? 180 : 365;
+
+            // Tested:  tested within 11 months (annual) or 5.5 months (semi)
+            // Due:     within 1 month of needing to be tested
+            // Overdue: past due
+            const testedThreshold = cycle - 30;  // e.g. 335 days for annual
+            const dueThreshold    = cycle;        // e.g. 365 days for annual
+
+            if (daysSince <= testedThreshold) return 'tested';  // still good
+            if (daysSince <= dueThreshold)    return 'due';      // within 30 days of due
+            return 'overdue';                                     // past due
         }
 
         function populateMapCustomerFilter() {
