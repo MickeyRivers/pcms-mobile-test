@@ -4204,8 +4204,12 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             if (!serial || !testHistory || testHistory.length === 0) return;
 
             // Find most recent test with tech notes for this serial
-            const matches = testHistory
-                .filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim() && h['Tech Notes'] && String(h['Tech Notes']).trim())
+            // Build a fake site object to use findHistoryMatches
+            const siteForLookup = assetDB ? assetDB.find(a => String(a['Serial Number'] || '').trim() === String(serial).trim()) : null;
+            const allMatches = siteForLookup ? findHistoryMatches(siteForLookup) :
+                testHistory.filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim());
+            const matches = allMatches
+                .filter(h => h['Tech Notes'] && String(h['Tech Notes']).trim())
                 .sort((a, b) => new Date(b['Date'] || 0) - new Date(a['Date'] || 0));
 
             if (matches.length === 0) return;
@@ -4358,14 +4362,38 @@ let siteMap = null;
             }
         }
 
-        function getTestStatus(site) {
+        // Find history matches by serial, falling back to location if serial is blank/N/A
+        function findHistoryMatches(site) {
             const serial = String(site['Serial Number'] || '').trim();
-            if (!serial) return 'overdue';
+            const location = String(site['Facility/Location'] || '').trim().toLowerCase();
+            const customer = String(site['Customer'] || '').trim().toLowerCase();
+            const isBlankSerial = !serial || serial.toLowerCase() === 'n/a' || serial === '####';
 
-            const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === serial);
+            if (!isBlankSerial) {
+                const bySerial = testHistory.filter(h =>
+                    String(h['Serial Number'] || '').trim() === serial
+                );
+                if (bySerial.length > 0) return bySerial;
+            }
+
+            // Fallback: match by location + customer
+            if (location) {
+                const byLocation = testHistory.filter(h => {
+                    const hLoc = String(h['Facility/Location'] || '').trim().toLowerCase();
+                    const hCust = String(h['Customer'] || '').trim().toLowerCase();
+                    return hLoc === location && (!customer || hCust === customer);
+                });
+                if (byLocation.length > 0) return byLocation;
+            }
+
+            return [];
+        }
+
+        function getTestStatus(site) {
+            const matches = findHistoryMatches(site);
             if (matches.length === 0) return 'overdue';
-            matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
 
+            matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
             const lastTestDate = new Date(matches[0]['Date']);
             if (isNaN(lastTestDate)) return 'overdue';
 
@@ -4378,18 +4406,13 @@ let siteMap = null;
             const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()))
                         || freq.includes('semi') || freq.includes('6 month') || freq.includes('twice');
 
-            // Semi-annual: cycle = 180 days, Annual: cycle = 365 days
             const cycle = isSemi ? 180 : 365;
+            const testedThreshold = cycle - 30;
+            const dueThreshold = cycle;
 
-            // Tested:  tested within 11 months (annual) or 5.5 months (semi)
-            // Due:     within 1 month of needing to be tested
-            // Overdue: past due
-            const testedThreshold = cycle - 30;  // e.g. 335 days for annual
-            const dueThreshold    = cycle;        // e.g. 365 days for annual
-
-            if (daysSince <= testedThreshold) return 'tested';  // still good
-            if (daysSince <= dueThreshold)    return 'due';      // within 30 days of due
-            return 'overdue';                                     // past due
+            if (daysSince <= testedThreshold) return 'tested';
+            if (daysSince <= dueThreshold)    return 'due';
+            return 'overdue';
         }
 
         function populateMapCustomerFilter() {
@@ -4430,7 +4453,7 @@ let siteMap = null;
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
                 const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
-                const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === site.serial);
+                const matches = findHistoryMatches(site);
                 matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
                 const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
 
