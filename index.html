@@ -2091,6 +2091,8 @@
                 const searchTerm = value.trim().toLowerCase();
                 
                 const matches = testHistory.filter(h => {
+                    // Skip records without a Date (e.g. AssetDB entries leaked into history)
+                    if (!h['Date'] || !String(h['Date']).trim()) return false;
                     const serial = String(h['Serial Number'] || '').toLowerCase();
                     const customer = String(h['Customer'] || '').toLowerCase();
                     const location = String(h['Facility/Location'] || '').toLowerCase();
