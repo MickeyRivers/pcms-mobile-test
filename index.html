@@ -2090,6 +2090,8 @@
                 localStorage.setItem('pcms_is_admin', 'true');
                 localStorage.removeItem('pcms_auth_email');
                 localStorage.removeItem('pcms_auth_token');
+                localStorage.removeItem('pcms_pin');
+                localStorage.removeItem('pcms_recovery_email');
                 window.history.replaceState({}, '', window.location.pathname);
             }
 
