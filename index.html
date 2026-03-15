@@ -2013,25 +2013,41 @@
         }
 
         async function loadTestHistory() {
-            const HISTORY_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec?action=history';
-            
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+
             try {
-                const response = await fetch(HISTORY_URL);
-                if (response.ok) {
-                    testHistory = await response.json();
+                // Fetch both Field Data and Test History tabs in parallel
+                const [fieldDataRes, testHistoryRes] = await Promise.allSettled([
+                    fetch(BASE_URL + '?action=history'),
+                    fetch(BASE_URL + '?action=testHistory')
+                ]);
+
+                let combined = [];
+
+                if (fieldDataRes.status === 'fulfilled' && fieldDataRes.value.ok) {
+                    const data = await fieldDataRes.value.json();
+                    if (Array.isArray(data)) combined = combined.concat(data);
+                }
+                if (testHistoryRes.status === 'fulfilled' && testHistoryRes.value.ok) {
+                    const data = await testHistoryRes.value.json();
+                    if (Array.isArray(data)) combined = combined.concat(data);
+                }
+
+                if (combined.length > 0) {
+                    testHistory = combined;
                     localStorage.setItem('testHistory', JSON.stringify(testHistory));
-                    console.log(`Loaded ${testHistory.length} history records`);
+                    console.log(`Loaded ${testHistory.length} history records (Field Data + Test History)`);
                     return;
                 }
             } catch (e) {
                 console.log('Could not fetch history, trying cache...');
             }
-            
+
             // Fall back to cache
             const cached = localStorage.getItem('testHistory');
             if (cached) {
                 testHistory = JSON.parse(cached);
-                console.log(`Loaded ${testHistory.length} history records from cache`);
+                console.log(`Loaded ${testHistory.length} cached history records`);
             }
         }
 
