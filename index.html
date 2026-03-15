@@ -1816,7 +1816,9 @@
                 return;
             }
 
-            showAuthScreen();
+            // Auth disabled — go straight to PIN
+            document.getElementById('pinLockScreen').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
         }
 
         function showAuthScreen() {
