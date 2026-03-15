@@ -4363,14 +4363,18 @@ let siteMap = null;
         }
 
         // Find history matches by serial, falling back to location if serial is blank/N/A
+        // Only returns records that have a valid Date field (filters out AssetDB records)
         function findHistoryMatches(site) {
             const serial = String(site['Serial Number'] || '').trim();
             const location = String(site['Facility/Location'] || '').trim().toLowerCase();
             const customer = String(site['Customer'] || '').trim().toLowerCase();
             const isBlankSerial = !serial || serial.toLowerCase() === 'n/a' || serial === '####';
 
+            // Only consider records that have a Date field
+            const historyOnly = testHistory.filter(h => h['Date'] && String(h['Date']).trim());
+
             if (!isBlankSerial) {
-                const bySerial = testHistory.filter(h =>
+                const bySerial = historyOnly.filter(h =>
                     String(h['Serial Number'] || '').trim() === serial
                 );
                 if (bySerial.length > 0) return bySerial;
@@ -4378,7 +4382,7 @@ let siteMap = null;
 
             // Fallback: match by location + customer
             if (location) {
-                const byLocation = testHistory.filter(h => {
+                const byLocation = historyOnly.filter(h => {
                     const hLoc = String(h['Facility/Location'] || '').trim().toLowerCase();
                     const hCust = String(h['Customer'] || '').trim().toLowerCase();
                     return hLoc === location && (!customer || hCust === customer);
