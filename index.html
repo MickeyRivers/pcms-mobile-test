@@ -588,19 +588,6 @@
             font-size: 14px;
         }
 
-        .unit-badge {
-            display: inline-block;
-            background: var(--teal);
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 10px;
-            margin-left: 4px;
-            vertical-align: middle;
-            letter-spacing: 0.5px;
-        }
-
         /* Conditional Fields */
         .conditional-fields {
             display: none;
@@ -770,7 +757,21 @@
             margin: -8px;
             margin-right: 8px;
         }
+        .unit-badge {
+            display: inline-block;
+            background: var(--teal);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            margin-left: 4px;
+            vertical-align: middle;
+            letter-spacing: 0.5px;
+        }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -787,7 +788,7 @@
         </div>
     </header>
 
-
+    <!-- PIN Lock Screen -->
     <div id="pinLockScreen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--navy); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
@@ -861,25 +862,6 @@
         }
     </style>
 
-    <style>
-        .map-chip { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--gray-200); background: white; font-size: 13px; white-space: nowrap; cursor: pointer; }
-        .map-chip.active { background: var(--navy); color: white; border-color: var(--navy); }
-        .map-marker { width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; }
-        .map-marker.green { background: #4ade80; }
-        .map-marker.yellow { background: #fbbf24; }
-        .map-marker.red { background: #ef4444; }
-        .map-popup h4 { margin: 0 0 4px 0; font-size: 14px; }
-        .map-popup p { margin: 0 0 4px 0; font-size: 12px; color: #666; }
-        .map-popup .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .map-popup .status.tested { background: #dcfce7; color: #166534; }
-        .map-popup .status.due { background: #fef3c7; color: #92400e; }
-        .map-popup .status.overdue { background: #fee2e2; color: #991b1b; }
-        .map-popup .btn-row { display: flex; gap: 6px; margin-top: 8px; }
-        .map-popup button { flex: 1; padding: 8px; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; }
-        .map-popup .btn-test { background: var(--gold); color: var(--navy); font-weight: 600; }
-        .map-popup .btn-nav { background: #e5e7eb; }
-    </style>
-
     <!-- Main Container -->
     <main class="container" id="mainContainer" style="display: none;">
         <!-- Home Screen -->
@@ -910,20 +892,18 @@
                     <div class="action-title">History</div>
                     <div class="action-subtitle">Look up past tests</div>
                 </div>
+                <div class="action-card" onclick="showScreen('mapScreen')">
+                    <div class="action-icon">🗺️</div>
+                    <div class="action-label">Site Map</div>
+                </div>
+                <div class="action-card" onclick="showScreen('flowCalcScreen')">
+                    <div class="action-icon">🧮</div>
+                    <div class="action-label">Flow Calc</div>
+                </div>
                 <div class="action-card" onclick="showScreen('trackerScreen')">
                     <div class="action-icon">📊</div>
                     <div class="action-title">Tracker</div>
                     <div class="action-subtitle">Meters due for testing</div>
-                </div>
-                <div class="action-card" onclick="showScreen('mapScreen')">
-                    <div class="action-icon">🗺️</div>
-                    <div class="action-title">Site Map</div>
-                    <div class="action-subtitle">View sites & plan routes</div>
-                </div>
-                <div class="action-card" onclick="showScreen('flowCalcScreen')">
-                    <div class="action-icon">🧮</div>
-                    <div class="action-title">Flow Calculator</div>
-                    <div class="action-subtitle">Parshall, V-Notch, Palmer-Bowlus, Rectangular Weir</div>
                 </div>
             </div>
 
@@ -1095,8 +1075,8 @@
                         <option value="Carbon Steel">Carbon Steel</option>
                         <option value="Stainless Steel">Stainless Steel</option>
                         <option value="Copper">Copper</option>
-                        <option value="FRP">FRP</option>
                         <option value="HDPE">HDPE</option>
+                        <option value="FRP">FRP</option>
                     </select>
                 </div>
 
@@ -1115,35 +1095,26 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Flow Units</label>
-                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
-                        <option value="GPM">GPM</option>
-                        <option value="MGD">MGD</option>
-                        <option value="CFS">CFS</option>
-                        <option value="GPD">GPD</option>
-                    </select>
-                </div>
-
                 <div class="form-group before-field">
                     <label class="form-label">Flow Rate - Validating Meter (Before) <span class="unit-badge" id="unitBadgeCPValBefore">GPM</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formValFlowBefore" placeholder="0.00">
+                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="GPM">
                 </div>
 
                 <div class="form-group before-field">
                     <label class="form-label">Customer Meter - Flow Rate (Before) <span class="unit-badge" id="unitBadgeCPCusBefore">GPM</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formCusFlowBefore" placeholder="0.00">
+                    <input type="number" step="0.1" class="form-input" id="formCusFlowBefore" placeholder="GPM">
                 </div>
 
                 <div class="form-group after-field">
                     <label class="form-label">Flow Rate - Validating Meter (After) <span class="unit-badge" id="unitBadgeCPValAfter">GPM</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formValFlowAfter" placeholder="0.00">
+                    <input type="number" step="0.1" class="form-input" id="formValFlowAfter" placeholder="GPM">
                 </div>
 
                 <div class="form-group after-field">
                     <label class="form-label">Customer Meter - Flow Rate (After) <span class="unit-badge" id="unitBadgeCPCusAfter">GPM</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formCusFlowAfter" placeholder="0.00">
+                    <input type="number" step="0.1" class="form-input" id="formCusFlowAfter" placeholder="GPM">
                 </div>
+            </div>
 
                 <!-- Mechanical meter timed flow calculator -->
                 <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
@@ -1219,11 +1190,30 @@
                         <option value="(Flume) 6-Inch Parshall">(Flume) 6-Inch Parshall</option>
                         <option value="(Flume) 9-Inch Parshall">(Flume) 9-Inch Parshall</option>
                         <option value="(Flume) 12-Inch Parshall">(Flume) 12-Inch Parshall</option>
-                        <option value="(Flume) 18-Inch Parshall">(Flume) 18-Inch Parshall</option>
                         <option value="(Flume) 24-Inch Parshall">(Flume) 24-Inch Parshall</option>
-                        <option value="(Weir) 90° V-Notch">(Weir) 90° V-Notch</option>
-                        <option value="(Weir) 60° V-Notch">(Weir) 60° V-Notch</option>
-                        <option value="(Weir) Rectangular">(Weir) Rectangular</option>
+                        <option value="(Flume) Large 60-Degree Trapezoidal">(Flume) Large 60-Degree Trapezoidal</option>
+                        <option value="(Flume) Extra Large 60-Degree Trapezoidal">(Flume) Extra Large 60-Degree Trapezoidal</option>
+                        <option value="(Flume) 6-Inch Palmer-Bowlus">(Flume) 6-Inch Palmer-Bowlus</option>
+                        <option value="(Flume) 8-Inch Palmer-Bowlus">(Flume) 8-Inch Palmer-Bowlus</option>
+                        <option value="(Flume) 10-Inch Palmer-Bowlus">(Flume) 10-Inch Palmer-Bowlus</option>
+                        <option value="(Flume) 12-Inch Palmer-Bowlus">(Flume) 12-Inch Palmer-Bowlus</option>
+                        <option value="(Flume) 15-Inch Palmer-Bowlus">(Flume) 15-Inch Palmer-Bowlus</option>
+                        <option value="(V-Notch Weir) 22.5 Degree">(V-Notch Weir) 22.5 Degree</option>
+                        <option value="(V-Notch Weir) 30 Degree">(V-Notch Weir) 30 Degree</option>
+                        <option value="(V-Notch Weir) 45 Degree">(V-Notch Weir) 45 Degree</option>
+                        <option value="(V-Notch Weir) 60 Degree">(V-Notch Weir) 60 Degree</option>
+                        <option value="(V-Notch Weir) 90 Degree">(V-Notch Weir) 90 Degree</option>
+                        <option value="(V-Notch Weir) 120 Degree">(V-Notch Weir) 120 Degree</option>
+                        <option value="(Pipe) 6-Inch">(Pipe) 6-Inch</option>
+                        <option value="(Pipe) 8-Inch">(Pipe) 8-Inch</option>
+                        <option value="(Pipe) 10-Inch">(Pipe) 10-Inch</option>
+                        <option value="(Pipe) 12-Inch">(Pipe) 12-Inch</option>
+                        <option value="(Pipe) 24-Inch">(Pipe) 24-Inch</option>
+                        <option value="(Pipe) 30-Inch">(Pipe) 30-Inch</option>
+                        <option value="(Pipe) 36-Inch">(Pipe) 36-Inch</option>
+                        <option value="(Pipe) 48-Inch">(Pipe) 48-Inch</option>
+                        <option value="(Pipe) 60-Inch">(Pipe) 60-Inch</option>
+                        <option value="Other (Primary Device Type Included in Notes Section Below)">Other (See Notes)</option>
                     </select>
                 </div>
 
@@ -1233,12 +1223,23 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Units</label>
+                    <label class="form-label">Flow Units</label>
                     <select class="form-select" id="formUnitsOC">
                         <option value="">Select...</option>
                         <option value="MGD">MGD</option>
                         <option value="GPM">GPM</option>
                         <option value="CFS">CFS</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Level Units</label>
+                    <select class="form-select" id="formLevelUnits">
+                        <option value="">Select...</option>
+                        <option value="Inches">Inches</option>
+                        <option value="Feet">Feet</option>
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
                     </select>
                 </div>
 
@@ -1253,45 +1254,29 @@
 
                 <div class="form-group before-field">
                     <label class="form-label">Level in Channel (Before) <span class="unit-badge" id="unitBadgeOCChanBefore">in</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelChannelBefore" placeholder="0.00">
+                    <input type="number" step="0.01" class="form-input" id="formLevelChannelBefore" placeholder="Level">
                 </div>
+
                 <div class="form-group before-field">
                     <label class="form-label">Level on Meter (Before) <span class="unit-badge" id="unitBadgeOCMeterBefore">in</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelMeterBefore" placeholder="0.00">
+                    <input type="number" step="0.01" class="form-input" id="formLevelMeterBefore" placeholder="Level">
                 </div>
+
                 <div class="form-group after-field">
                     <label class="form-label">Level in Channel (After) <span class="unit-badge" id="unitBadgeOCChanAfter">in</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelChannelAfter" placeholder="0.00">
+                    <input type="number" step="0.01" class="form-input" id="formLevelChannelAfter" placeholder="Level">
                 </div>
+
                 <div class="form-group after-field">
                     <label class="form-label">Level on Meter (After) <span class="unit-badge" id="unitBadgeOCMeterAfter">in</span></label>
-                    <input type="number" step="0.01" class="form-input" id="formLevelMeterAfter" placeholder="0.00">
+                    <input type="number" step="0.01" class="form-input" id="formLevelMeterAfter" placeholder="Level">
                 </div>
             </div>
 
             <!-- Loop Test Fields -->
             <div class="form-section conditional-fields" id="loopTestFields">
                 <div class="form-section-title">⚡ Loop Test Data</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Flow Units</label>
-                        <select class="form-select" id="formFlowUnitsLT" onchange="updateUnitLabels('LT')">
-                            <option value="GPM">GPM</option>
-                            <option value="MGD">MGD</option>
-                            <option value="CFS">CFS</option>
-                            <option value="GPD">GPD</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Level Units</label>
-                        <select class="form-select" id="formLevelUnitsLT" onchange="updateUnitLabels('LT')">
-                            <option value="Inches">Inches</option>
-                            <option value="Feet">Feet</option>
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                        </select>
-                    </div>
-                </div>
+                
                 <div class="form-group">
                     <label class="form-label">Desired Output - Low (mA)</label>
                     <input type="number" step="0.01" class="form-input" id="formLowDesired" placeholder="4.00">
@@ -1326,45 +1311,33 @@
             <!-- Chart Recorder Fields -->
             <div class="form-section conditional-fields" id="chartRecorderFields">
                 <div class="form-section-title">📈 Chart Recorder Data</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Flow Units</label>
-                        <select class="form-select" id="formFlowUnitsCR" onchange="updateUnitLabels('CR')">
-                            <option value="GPM">GPM</option>
-                            <option value="MGD">MGD</option>
-                            <option value="CFS">CFS</option>
-                            <option value="GPD">GPD</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Level Units</label>
-                        <select class="form-select" id="formLevelUnitsCR" onchange="updateUnitLabels('CR')">
-                            <option value="Inches">Inches</option>
-                            <option value="Feet">Feet</option>
-                            <option value="mm">mm</option>
-                            <option value="cm">cm</option>
-                        </select>
-                    </div>
-                </div>
+                
                 <div class="form-group">
                     <label class="form-label">Measurement Type</label>
-                    <select class="form-select" id="formMeasurementType" onchange="updateUnitLabels('CR')">
-                        <option value="Flow">Flow</option>
-                        <option value="Level">Level</option>
+                    <select class="form-select" id="formMeasurementType">
+                        <option value="">Select...</option>
+                        <option value="Inches">Inches (Level)</option>
+                        <option value="Feet">Feet (Level)</option>
+                        <option value="GPM">GPM (Flow)</option>
+                        <option value="MGD">MGD (Flow)</option>
                     </select>
                 </div>
+
                 <div class="form-group before-field">
                     <label class="form-label">Value on Meter (Before) <span class="unit-badge" id="unitBadgeCRMeterBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterBefore">
                 </div>
+
                 <div class="form-group before-field">
                     <label class="form-label">Value on Chart Recorder (Before) <span class="unit-badge" id="unitBadgeCRChartBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartBefore">
                 </div>
+
                 <div class="form-group after-field">
                     <label class="form-label">Value on Meter (After) <span class="unit-badge" id="unitBadgeCRMeterAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterAfter">
                 </div>
+
                 <div class="form-group after-field">
                     <label class="form-label">Value on Chart Recorder (After) <span class="unit-badge" id="unitBadgeCRChartAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartAfter">
@@ -1410,17 +1383,17 @@
             <div class="form-section">
                 <div class="form-section-title">📷 Photos</div>
                 <div class="photo-grid">
-                    <div class="photo-slot" onclick="capturePhoto(0)">
+                    <div class="photo-slot" onclick="showPhotoOptions(0)">
                         <span class="add-icon">+</span>
                     </div>
-                    <div class="photo-slot" onclick="capturePhoto(1)">
+                    <div class="photo-slot" onclick="showPhotoOptions(1)">
                         <span class="add-icon">+</span>
                     </div>
-                    <div class="photo-slot" onclick="capturePhoto(2)">
+                    <div class="photo-slot" onclick="showPhotoOptions(2)">
                         <span class="add-icon">+</span>
                     </div>
                 </div>
-                <p class="form-hint">Tap to capture photos of the installation</p>
+                <p class="form-hint">Tap to capture or upload photos</p>
             </div>
 
             <div class="bottom-spacer"></div>
@@ -1440,6 +1413,19 @@
             <div style="margin-top: 24px;">
                 <button class="btn btn-gold btn-block" onclick="syncPending()" id="syncBtn">
                     ↑ Sync All to Cloud
+                </button>
+            </div>
+            
+            <div id="failedCertsSection" style="margin-top: 16px; display: none;">
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                    <div style="font-weight: 600; color: #856404;">⚠️ Failed Uploads</div>
+                    <div style="font-size: 13px; color: #856404;" id="failedCertsCount">0 certificates failed to upload to Dropbox</div>
+                </div>
+                <button class="btn btn-block" style="background: var(--teal); color: white;" onclick="retryFailedCerts()">
+                    🔄 Retry Failed Uploads
+                </button>
+                <button class="btn btn-block" style="background: #dc3545; color: white; margin-top: 8px;" onclick="clearFailedCerts()">
+                    🗑️ Clear Failed
                 </button>
             </div>
         </section>
@@ -1525,7 +1511,22 @@
         </section>
     </main>
 
-        <!-- Map Screen -->
+    <!-- Bottom Nav for Form -->
+    <div class="bottom-nav" id="formNav" style="display: none;">
+        <button class="btn btn-secondary" onclick="showScreen('homeScreen')">Cancel</button>
+        <button class="btn btn-gold" onclick="saveTest()">💾 Save Test</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Processing...</div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Hidden inputs -->
         <section class="screen" id="mapScreen">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="section-title" style="margin: 0;">Site Map</div>
@@ -1705,16 +1706,13 @@
     <div class="toast" id="toast"></div>
 
     <!-- Hidden inputs -->
-    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+
+    <input type="file" id="photoInput" accept="image/*" style="display:none">
+    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
-    <script data-cfasync="false">
-        // ============================================
-        // GLOBAL URLs
-        // ============================================
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
-        const SHEETS_URL      = APPS_SCRIPT_URL;
-
+    <script>
         // ============================================
         // APP STATE
         // ============================================
@@ -1736,16 +1734,29 @@
         // ============================================
         // PIN SECURITY
         // ============================================
-        const ADMIN_PIN_KEY = 'pcms_pin';
-
         function checkPinSetup() {
-            const storedPin = localStorage.getItem(ADMIN_PIN_KEY);
+            const storedPin = localStorage.getItem('pcms_pin');
             const storedEmail = localStorage.getItem('pcms_recovery_email');
             const pinLockScreen = document.getElementById('pinLockScreen');
             const mainContainer = document.getElementById('mainContainer');
-
-            if (storedPin) {
-                // PIN exists — show unlock screen
+            
+            if (!storedPin) {
+                // No PIN set - prompt to create one
+                isSettingPin = true;
+                if (!storedEmail) {
+                    // Need email first
+                    document.getElementById('pinMessage').textContent = 'Set up recovery email';
+                    document.getElementById('emailSetup').style.display = 'block';
+                    document.getElementById('pinDots').style.display = 'none';
+                    document.getElementById('pinPad').style.display = 'none';
+                } else {
+                    document.getElementById('pinMessage').textContent = 'Create a 4-digit PIN';
+                }
+                document.getElementById('pinSetupLink').style.display = 'none';
+                pinLockScreen.style.display = 'flex';
+                mainContainer.style.display = 'none';
+            } else {
+                // PIN exists - require unlock
                 document.getElementById('pinMessage').textContent = 'Enter your 4-digit PIN';
                 document.getElementById('pinSetupLink').style.display = 'block';
                 document.getElementById('emailSetup').style.display = 'none';
@@ -1754,30 +1765,9 @@
                 document.getElementById('pinPad').style.display = 'grid';
                 pinLockScreen.style.display = 'flex';
                 mainContainer.style.display = 'none';
-            } else if (storedEmail) {
-                // Email set, create PIN
-                isSettingPin = true;
-                document.getElementById('pinMessage').textContent = 'Create a 4-digit PIN';
-                document.getElementById('emailSetup').style.display = 'none';
-                document.getElementById('pinDots').style.display = 'flex';
-                document.getElementById('pinPad').style.display = 'grid';
-                document.getElementById('pinSetupLink').style.display = 'none';
-                pinLockScreen.style.display = 'flex';
-                mainContainer.style.display = 'none';
-            } else {
-                // Fresh install — set up recovery email first
-                isSettingPin = true;
-                document.getElementById('pinMessage').textContent = 'Set up recovery email';
-                document.getElementById('emailSetup').style.display = 'block';
-                document.getElementById('pinDots').style.display = 'none';
-                document.getElementById('pinPad').style.display = 'none';
-                document.getElementById('pinSetupLink').style.display = 'none';
-                pinLockScreen.style.display = 'flex';
-                mainContainer.style.display = 'none';
             }
         }
-
-
+        
         function saveRecoveryEmail() {
             const email = document.getElementById('recoveryEmail').value.trim();
             if (!email || !email.includes('@')) {
@@ -1956,9 +1946,7 @@
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
-
-
-            // Check PIN / auth first
+            // Check PIN first
             checkPinSetup();
             
             // Load AssetDB from localStorage or fetch
@@ -1980,6 +1968,7 @@
             
             // Setup photo input handler
             document.getElementById('photoInput').addEventListener('change', handlePhotoCapture);
+            document.getElementById('photoInputCamera').addEventListener('change', handlePhotoCapture);
         });
 
         // ============================================
@@ -3013,43 +3002,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
         }
 
-        function showTechNotesPopup(serial) {
-            if (!serial || !testHistory || testHistory.length === 0) return;
-
-            // Find most recent test with tech notes for this serial
-            const matches = testHistory
-                .filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim() && h['Tech Notes'] && String(h['Tech Notes']).trim())
-                .sort((a, b) => new Date(b['Date'] || 0) - new Date(a['Date'] || 0));
-
-            if (matches.length === 0) return;
-
-            const latest = matches[0];
-            const techNotes = String(latest['Tech Notes']).trim();
-            const dateStr = latest['Date'] ? new Date(latest['Date']).toLocaleDateString() : 'Unknown date';
-            const noteCount = matches.length;
-
-            const modal = document.createElement('div');
-            modal.id = 'techNotesModal';
-            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
-            modal.innerHTML = `
-                <div style="background:white;margin:20px;border-radius:16px;overflow:hidden;max-width:380px;width:100%;">
-                    <div style="background:var(--navy);color:white;padding:16px;">
-                        <h3 style="margin:0;font-size:14px;">📋 Tech Notes — ${serial}</h3>
-                        <p style="margin:4px 0 0;font-size:12px;opacity:0.8;">Last visited ${dateStr}${noteCount > 1 ? ' · ' + noteCount + ' previous notes' : ''}</p>
-                    </div>
-                    <div style="padding:16px;font-size:14px;line-height:1.6;color:#333;max-height:300px;overflow-y:auto;">
-                        ${techNotes.replace(/\n/g, '<br>')}
-                    </div>
-                    <div style="padding:0 16px 16px;">
-                        <button onclick="document.getElementById('techNotesModal').remove()" style="width:100%;padding:14px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
-                            Got it — Start Test
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
         function populateFromAsset(asset) {
             showScreen('formScreen');
             
@@ -3113,8 +3065,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
             
             showToast('Meter data loaded!', 'success');
-
-            // Show tech notes popup if any exist from previous tests
             showTechNotesPopup(asset['Serial Number'] || asset['Asset_ID']);
         }
 
@@ -3122,6 +3072,12 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // SCREEN MANAGEMENT
         // ============================================
         function showScreen(screenId) {
+            if (screenId === 'mapScreen') {
+                setTimeout(() => {
+                    initSiteMap();
+                    if (siteMap) siteMap.invalidateSize();
+                }, 100);
+            }
             // Hide all screens
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             
@@ -3147,20 +3103,13 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Reset tracker to dashboard view when entering
             if (screenId === 'trackerScreen') {
                 showTrackerDashboard();
-                initTracker();
-            }
-
-            // Initialize map when showing map screen
-            if (screenId === 'mapScreen') {
-                setTimeout(() => {
-                    initSiteMap();
-                    if (siteMap) siteMap.invalidateSize();
-                }, 100);
+                initTracker(); // Refresh data
             }
             
             // Update pending list when showing pending screen
             if (screenId === 'pendingScreen') {
                 updatePendingList();
+                updateFailedCertsUI();
             }
             
             // Update pending count
@@ -3496,6 +3445,39 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // PHOTO CAPTURE
         // ============================================
+        function showPhotoOptions(index) {
+            currentPhotoIndex = index;
+            // Show action sheet style dialog
+            const dialog = document.createElement('div');
+            dialog.id = 'photoOptionsDialog';
+            dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+            dialog.innerHTML = `
+                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px;padding-bottom:32px;">
+                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
+                    <button onclick="takePhoto()" style="width:100%;padding:14px;margin-bottom:8px;background:var(--gold);border:none;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="chooseFromGallery()" style="width:100%;padding:14px;margin-bottom:8px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;">🖼️ Choose from Gallery</button>
+                    <button onclick="closePhotoDialog()" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            dialog.onclick = (e) => { if (e.target === dialog) closePhotoDialog(); };
+            document.body.appendChild(dialog);
+        }
+
+        function takePhoto() {
+            closePhotoDialog();
+            document.getElementById('photoInputCamera').click();
+        }
+
+        function chooseFromGallery() {
+            closePhotoDialog();
+            document.getElementById('photoInput').click();
+        }
+
+        function closePhotoDialog() {
+            const dialog = document.getElementById('photoOptionsDialog');
+            if (dialog) dialog.remove();
+        }
+
         function capturePhoto(index) {
             currentPhotoIndex = index;
             const sheet = document.createElement('div');
@@ -3512,6 +3494,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
             document.body.appendChild(sheet);
         }
+
 
         function handlePhotoCapture(event) {
             const file = event.target.files[0];
@@ -3647,6 +3630,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     testRecord.deviceType = document.getElementById('formDeviceType').value;
                     testRecord.range = document.getElementById('formRange').value;
                     testRecord.units = document.getElementById('formUnitsOC').value;
+                    testRecord.levelUnits = document.getElementById('formLevelUnits').value;
                     testRecord.method = document.getElementById('formMethodOC').value;
                     testRecord.levelChannelBefore = document.getElementById('formLevelChannelBefore').value;
                     testRecord.levelMeterBefore = document.getElementById('formLevelMeterBefore').value;
@@ -3691,7 +3675,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             resetForm();
             
             showToast('Test saved! Ready to sync when online.', 'success');
-            showScreen('pendingScreen');
+            showScreen('homeScreen');
             updatePendingCount();
         }
 
@@ -3748,6 +3732,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     document.getElementById('formDeviceType').value = test.deviceType || '';
                     document.getElementById('formRange').value = test.range || '';
                     document.getElementById('formUnitsOC').value = test.units || '';
+                    document.getElementById('formLevelUnits').value = test.levelUnits || '';
                     document.getElementById('formMethodOC').value = test.method || '';
                     document.getElementById('formLevelChannelBefore').value = test.levelChannelBefore || '';
                     document.getElementById('formLevelMeterBefore').value = test.levelMeterBefore || '';
@@ -3858,31 +3843,89 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
         }
 
-        const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
+        // Failed certificate management - stores tests that failed to upload to Dropbox
+        let failedCerts = JSON.parse(localStorage.getItem('pcms_failed_certs') || '[]');
+
+        function saveFailedCert(test, errorMsg) {
+            const failedCert = {
+                ...test,
+                failedAt: new Date().toISOString(),
+                errorMessage: errorMsg
+            };
+            failedCerts.push(failedCert);
+            localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
+            console.log('Saved failed cert for retry:', test.serialNumber);
+        }
+
+        function getFailedCerts() {
+            return failedCerts;
+        }
+
+        async function retryFailedCerts() {
+            if (failedCerts.length === 0) {
+                showToast('No failed certificates to retry', 'info');
+                return;
+            }
+
+            showLoading('Retrying failed certificates...');
+            let successCount = 0;
+            const stillFailed = [];
+
+            for (const cert of failedCerts) {
+                try {
+                    const response = await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cert)
+                    });
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        successCount++;
+                        console.log(`Retry success: ${result.dropbox_path}`);
+                    } else {
+                        stillFailed.push(cert);
+                    }
+                } catch (error) {
+                    stillFailed.push(cert);
+                }
+            }
+
+            failedCerts = stillFailed;
+            localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
+            hideLoading();
+
+            if (successCount > 0) {
+                showToast(`${successCount} certificate(s) uploaded successfully!`, 'success');
+            }
+            if (stillFailed.length > 0) {
+                showToast(`${stillFailed.length} still failed - try again later`, 'error');
+            }
+        }
+
+        function clearFailedCerts() {
+            if (confirm(`Clear ${failedCerts.length} failed certificate(s)?`)) {
+                failedCerts = [];
+                localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
+                showToast('Failed certificates cleared', 'info');
+                updateFailedCertsUI();
+            }
+        }
+
+        function updateFailedCertsUI() {
+            const section = document.getElementById('failedCertsSection');
+            const countEl = document.getElementById('failedCertsCount');
+            if (failedCerts.length > 0) {
+                section.style.display = 'block';
+                countEl.textContent = `${failedCerts.length} certificate(s) failed to upload to Dropbox`;
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        const CLOUD_FUNCTION_URL = 'https://generate-certificate-980517620937.us-central1.run.app';
         const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
         const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
-
-        function submitViaIframe(url, data, frameName) {
-            const iframe = document.createElement('iframe');
-            iframe.name = frameName;
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = url;
-            form.target = frameName;
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = JSON.stringify(data);
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-            setTimeout(() => {
-                try { document.body.removeChild(form); } catch(e) {}
-                try { document.body.removeChild(iframe); } catch(e) {}
-            }, 3000);
-        }
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -3923,19 +3966,52 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         console.log(`Certificate created: ${pdfResult.dropbox_path}`);
                     } else {
                         console.error(`Failed to create certificate: ${pdfResult.error}`);
+                        // Save to failed certs for retry later
+                        saveFailedCert(test, pdfResult.error || 'Unknown error');
                     }
                 } catch (error) {
                     console.error(`Error creating PDF: ${error}`);
+                    // Save to failed certs for retry later
+                    saveFailedCert(test, error.message || 'Network error');
                 }
                 
-                // 2. Sync to Google Sheets (iframe - avoids CORS preflight)
+                // 2. Sync to Google Sheets using hidden iframe form (without photos - too large)
                 try {
+                    // Create a copy of test without photos for Google Sheets
                     const sheetData = {...test};
-                    delete sheetData.photos;
-                    sheetData.action = 'addFieldData';
-                    submitViaIframe(SHEETS_URL, sheetData, 'sheetFrame' + i);
+                    delete sheetData.photos;  // Remove photos - too large for sheets
+                    
+                    // Create a hidden iframe and form
+                    const iframe = document.createElement('iframe');
+                    iframe.name = 'sheetFrame' + i;
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = GOOGLE_SHEET_URL;
+                    form.target = iframe.name;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'data';
+                    input.value = JSON.stringify(sheetData);
+                    form.appendChild(input);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                    
+                    // Clean up after a delay
+                    setTimeout(() => {
+                        document.body.removeChild(form);
+                        document.body.removeChild(iframe);
+                    }, 2000);
+                    
                     sheetSuccess = true;
-                } catch (error) { /* best-effort */ }
+                    console.log('Synced to Google Sheets');
+                } catch (error) {
+                    console.error(`Error syncing to sheet: ${error}`);
+                }
                 
                 // 3. Update AssetDB with any new field data (or create if not exists)
                 if (test.serialNumber) {
@@ -4084,11 +4160,98 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }, 3000);
         }
 
+        // ============================================
+        // SERVICE WORKER REGISTRATION
+        // ============================================
+
+
+        function showTechNotesPopup(serial) {
+            if (!serial || !testHistory || testHistory.length === 0) return;
+
+            // Find most recent test with tech notes for this serial
+            const matches = testHistory
+                .filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim() && h['Tech Notes'] && String(h['Tech Notes']).trim())
+                .sort((a, b) => new Date(b['Date'] || 0) - new Date(a['Date'] || 0));
+
+            if (matches.length === 0) return;
+
+            const latest = matches[0];
+            const techNotes = String(latest['Tech Notes']).trim();
+            const dateStr = latest['Date'] ? new Date(latest['Date']).toLocaleDateString() : 'Unknown date';
+            const noteCount = matches.length;
+
+            const modal = document.createElement('div');
+            modal.id = 'techNotesModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;margin:20px;border-radius:16px;overflow:hidden;max-width:380px;width:100%;">
+                    <div style="background:var(--navy);color:white;padding:16px;">
+                        <h3 style="margin:0;font-size:14px;">📋 Tech Notes — ${serial}</h3>
+                        <p style="margin:4px 0 0;font-size:12px;opacity:0.8;">Last visited ${dateStr}${noteCount > 1 ? ' · ' + noteCount + ' previous notes' : ''}</p>
+                    </div>
+                    <div style="padding:16px;font-size:14px;line-height:1.6;color:#333;max-height:300px;overflow-y:auto;">
+                        ${techNotes.replace(/\n/g, '<br>')}
+                    </div>
+                    <div style="padding:0 16px 16px;">
+                        <button onclick="document.getElementById('techNotesModal').remove()" style="width:100%;padding:14px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
+                            Got it — Start Test
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+
+        function updateUnitLabels(section) {
+            if (section==='CP') {
+                const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
+                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fu;});
+            }
+            if (section==='OC') {
+                const lu=document.getElementById('formLevelUnitsOC')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=luS;});
+            }
+            if (section==='CR') {
+                const type=document.getElementById('formMeasurementType')?.value||'Flow';
+                const fu=document.getElementById('formFlowUnitsCR')?.value||'GPM';
+                const lu=document.getElementById('formLevelUnitsCR')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                const unit=type==='Flow'?fu:luS;
+                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=unit;});
+            }
+        }
 
         // ============================================
-        // SITE MAP
+        // SERVICE WORKER REGISTRATION
         // ============================================
-        let siteMap = null;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+
+
+function capturePhoto(index) {
+            currentPhotoIndex = index;
+            const sheet = document.createElement('div');
+            sheet.id = 'photoSheet';
+            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+            sheet.innerHTML = `
+                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
+                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
+                    <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
+            document.body.appendChild(sheet);
+        }
+
+
+let siteMap = null;
         let mapMarkers = [];
         let mapRouteLine = null;
         let mapSites = [];
@@ -4514,7 +4677,63 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // SERVICE WORKER REGISTRATION
         // ============================================
-        if ('serviceWorker' in navigator) {
+
+        
+
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
+        }
+
+
+        function calcMechFlow() {
+            const start   = parseFloat(document.getElementById('mechStart').value);
+            const end     = parseFloat(document.getElementById('mechEnd').value);
+            const minutes = parseFloat(document.getElementById('mechTime').value);
+            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
+            const gallons = (end-start)*mult;
+            const gpm = gallons/minutes;
+            const mgd = gpm*1440/1000000;
+            const gph = gpm*60;
+            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
+            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
+            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
+            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
+            resultEl.style.display='block';
+            useBtn.style.display='block';
+        }
+
+
+        function useMechResult() {
+            const gpm = document.getElementById('mechGPM').textContent;
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+            if (!cusBefore.value && !cusAfter.value) {
+                cusBefore.value = gpm;
+                showToast(gpm + ' GPM → Customer Before field', 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field', 'success');
+            } else {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            }
+            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
+            const existing = document.getElementById('formNotes').value;
+            const note = 'Mechanical timed test: ' + gpm + ' GPM';
+            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
+        }
+
+        // Updates unit badge labels when units dropdowns change
+
+                if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker registered'))
                 .catch(err => console.log('Service Worker registration failed:', err));
