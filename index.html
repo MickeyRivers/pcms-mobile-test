@@ -4367,17 +4367,42 @@ let siteMap = null;
             }
         }
 
-        // Find history matches by serial, falling back to location if serial is blank/N/A
+        // Normalize location string for fuzzy matching
+        function normalizeLocation(str) {
+            return String(str || '').toLowerCase()
+                .replace(/number\s*/g, '#')       // "Number 2" → "#2"
+                .replace(/no\.\s*/g, '#')          // "No. 2" → "#2"
+                .replace(/wwtp/g, 'wwtp')
+                .replace(/wtp/g, 'wtp')
+                .replace(/[^a-z0-9#]/g, ' ')       // strip punctuation
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Score how similar two location strings are (0-1)
+        function locationSimilarity(a, b) {
+            const na = normalizeLocation(a);
+            const nb = normalizeLocation(b);
+            if (na === nb) return 1.0;
+            const wordsA = na.split(' ').filter(w => w.length > 2);
+            const wordsB = new Set(nb.split(' ').filter(w => w.length > 2));
+            if (wordsA.length === 0 || wordsB.size === 0) return 0;
+            const overlap = wordsA.filter(w => wordsB.has(w)).length;
+            return overlap / Math.max(wordsA.length, wordsB.size);
+        }
+
+        // Find history matches by serial, falling back to location (exact then fuzzy)
         // Only returns records that have a valid Date field (filters out AssetDB records)
         function findHistoryMatches(site) {
             const serial = String(site['Serial Number'] || '').trim();
-            const location = String(site['Facility/Location'] || '').trim().toLowerCase();
+            const location = String(site['Facility/Location'] || '').trim();
             const customer = String(site['Customer'] || '').trim().toLowerCase();
             const isBlankSerial = !serial || serial.toLowerCase() === 'n/a' || serial === '####';
 
             // Only consider records that have a Date field
             const historyOnly = testHistory.filter(h => h['Date'] && String(h['Date']).trim());
 
+            // 1. Match by serial number
             if (!isBlankSerial) {
                 const bySerial = historyOnly.filter(h =>
                     String(h['Serial Number'] || '').trim() === serial
@@ -4385,15 +4410,25 @@ let siteMap = null;
                 if (bySerial.length > 0) return bySerial;
             }
 
-            // Fallback: match by location + customer
-            if (location) {
-                const byLocation = historyOnly.filter(h => {
-                    const hLoc = String(h['Facility/Location'] || '').trim().toLowerCase();
-                    const hCust = String(h['Customer'] || '').trim().toLowerCase();
-                    return hLoc === location && (!customer || hCust === customer);
-                });
-                if (byLocation.length > 0) return byLocation;
-            }
+            if (!location) return [];
+
+            // Filter to same customer first
+            const custHistory = customer
+                ? historyOnly.filter(h => String(h['Customer'] || '').trim().toLowerCase() === customer)
+                : historyOnly;
+
+            // 2. Exact location match
+            const exactLoc = custHistory.filter(h =>
+                normalizeLocation(h['Facility/Location']) === normalizeLocation(location)
+            );
+            if (exactLoc.length > 0) return exactLoc;
+
+            // 3. Fuzzy location match (≥0.75 similarity)
+            const fuzzyMatches = custHistory
+                .map(h => ({ h, score: locationSimilarity(h['Facility/Location'], location) }))
+                .filter(x => x.score >= 0.75)
+                .sort((a, b) => b.score - a.score);
+            if (fuzzyMatches.length > 0) return fuzzyMatches.map(x => x.h);
 
             return [];
         }
