@@ -1114,9 +1114,29 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Flow Units</label>
+                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
+                        <option value="GPM">GPM</option>
+                        <option value="MGD">MGD</option>
+                        <option value="CFS">CFS</option>
+                        <option value="GPD">GPD</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Flow Units</label>
+                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
+                        <option value="GPM">GPM</option>
+                        <option value="MGD">MGD</option>
+                        <option value="CFS">CFS</option>
+                        <option value="GPD">GPD</option>
+                    </select>
+                </div>
+
                 <div class="form-group before-field">
                     <label class="form-label">Flow Rate - Validating Meter (Before) <span class="unit-badge" id="unitBadgeCPValBefore">GPM</span></label>
-                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="GPM">
+                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="0.00">
                 </div>
 
                 <div class="form-group before-field">
