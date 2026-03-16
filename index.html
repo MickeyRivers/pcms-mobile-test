@@ -2055,6 +2055,7 @@
                     testHistory = combined;
                     localStorage.setItem('testHistory', JSON.stringify(testHistory));
                     console.log(`Loaded ${testHistory.length} history records (Field Data + Test History)`);
+                    refreshMapIfActive();
                     return;
                 }
             } catch (e) {
@@ -2066,6 +2067,19 @@
             if (cached) {
                 testHistory = JSON.parse(cached);
                 console.log(`Loaded ${testHistory.length} cached history records`);
+                refreshMapIfActive();
+            }
+        }
+
+        function refreshMapIfActive() {
+            if (siteMap && mapSites.length > 0) {
+                // Recalculate status for all sites then redraw markers
+                mapSites.forEach(site => {
+                    const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
+                    site.status = getTestStatus(siteObj);
+                });
+                updateMapMarkers();
+                console.log('Map markers refreshed after history load');
             }
         }
 
