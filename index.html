@@ -1164,17 +1164,16 @@
                         </div>
                         <div class="form-group" style="margin-top:12px;">
                             <label class="form-label">Elapsed Time</label>
-                            <select class="form-select" id="mechTime" onchange="calcMechFlow()">
-                                <option value="0.5">30 seconds</option>
-                                <option value="1" selected>1 minute</option>
-                                <option value="2">2 minutes</option>
-                                <option value="3">3 minutes</option>
-                                <option value="5">5 minutes</option>
-                                <option value="10">10 minutes</option>
-                                <option value="15">15 minutes</option>
-                                <option value="30">30 minutes</option>
-                                <option value="60">1 hour</option>
-                            </select>
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                <div id="mechTimerDisplay" style="font-size:32px; font-weight:700; font-family:monospace; color:var(--navy); min-width:110px;">00:00</div>
+                                <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                                    <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
+                                    <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
+                                    <button id="mechTimerResetBtn" onclick="mechTimerReset()" style="padding:8px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
+                                </div>
+                            </div>
+                            <div style="font-size:11px; color:var(--gray-500);">Or enter time manually (minutes):</div>
+                            <input type="number" step="0.1" min="0.1" class="form-input" id="mechTime" placeholder="e.g. 1.0" oninput="calcMechFlow()" style="margin-top:4px;">
                         </div>
                         <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
                             <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
@@ -4348,8 +4347,12 @@ let siteMap = null;
                 if (!coords) return null;
                 return {
                     name: site['Facility/Location'] || site['Location'] || 'Unknown',
+                    'Facility/Location': site['Facility/Location'] || site['Location'] || '',
                     customer: site['Customer'] || '',
+                    'Customer': site['Customer'] || '',
                     serial: String(site['Serial Number'] || ''),
+                    'Serial Number': String(site['Serial Number'] || ''),
+                    'Service Frequency': site['Service Frequency'] || '',
                     lat: coords.lat,
                     lng: coords.lng,
                     status: getTestStatus(site),
@@ -4459,7 +4462,8 @@ let siteMap = null;
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
                 const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
-                const matches = findHistoryMatches(site);
+                const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
+                const matches = findHistoryMatches(siteObj);
                 matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
                 const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
 
@@ -4703,6 +4707,53 @@ let siteMap = null;
         // ============================================
         // MECHANICAL METER CALCULATOR
         // ============================================
+        // ── Mechanical Meter Timer ───────────────────────────────────────────────
+        let mechTimerInterval = null;
+        let mechTimerSeconds  = 0;
+        let mechTimerRunning  = false;
+
+        function mechTimerStart() {
+            if (mechTimerRunning) return;
+            mechTimerRunning = true;
+            document.getElementById('mechTimerStartBtn').style.display = 'none';
+            document.getElementById('mechTimerStopBtn').style.display  = 'block';
+            document.getElementById('mechTimerResetBtn').style.display = 'none';
+            mechTimerInterval = setInterval(() => {
+                mechTimerSeconds++;
+                const m = String(Math.floor(mechTimerSeconds / 60)).padStart(2, '0');
+                const s = String(mechTimerSeconds % 60).padStart(2, '0');
+                document.getElementById('mechTimerDisplay').textContent = m + ':' + s;
+            }, 1000);
+        }
+
+        function mechTimerStop() {
+            if (!mechTimerRunning) return;
+            clearInterval(mechTimerInterval);
+            mechTimerRunning = false;
+            document.getElementById('mechTimerStopBtn').style.display  = 'none';
+            document.getElementById('mechTimerStartBtn').style.display = 'block';
+            document.getElementById('mechTimerResetBtn').style.display = 'block';
+            // Auto-fill elapsed time in minutes and calculate
+            const minutes = mechTimerSeconds / 60;
+            document.getElementById('mechTime').value = minutes.toFixed(4);
+            calcMechFlow();
+        }
+
+        function mechTimerReset() {
+            clearInterval(mechTimerInterval);
+            mechTimerRunning  = false;
+            mechTimerSeconds  = 0;
+            document.getElementById('mechTimerDisplay').textContent    = '00:00';
+            document.getElementById('mechTimerStartBtn').style.display = 'block';
+            document.getElementById('mechTimerStopBtn').style.display  = 'none';
+            document.getElementById('mechTimerResetBtn').style.display = 'none';
+            document.getElementById('mechTime').value = '';
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            resultEl.style.display = 'none';
+            useBtn.style.display   = 'none';
+        }
+
         function toggleMechCalc() {
             const panel = document.getElementById('mechCalcPanel');
             const icon  = document.getElementById('mechCalcToggleIcon');
@@ -4718,15 +4769,21 @@ let siteMap = null;
             const mult    = parseFloat(document.getElementById('mechMultiplier').value);
             const resultEl = document.getElementById('mechResult');
             const useBtn   = document.getElementById('mechUseBtn');
-            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
-            const gallons = (end-start)*mult;
-            const gpm = gallons/minutes;
-            const mgd = gpm*1440/1000000;
-            const gph = gpm*60;
+            if (isNaN(start)||isNaN(end)||isNaN(minutes)||minutes<=0||end<=start) {
+                resultEl.style.display='none'; useBtn.style.display='none'; return;
+            }
+            const gallons = (end - start) * mult;
+            const gpm = gallons / minutes;
+            const mgd = gpm * 1440 / 1000000;
+            const gph = gpm * 60;
             document.getElementById('mechGPM').textContent = gpm.toFixed(2);
             document.getElementById('mechMGD').textContent = mgd.toFixed(4);
             document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
-            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
+            const mStr = mechTimerSeconds > 0
+                ? Math.floor(mechTimerSeconds/60)+'m '+( mechTimerSeconds%60)+'s'
+                : minutes + ' min';
+            document.getElementById('mechCalcDetail').textContent =
+                '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toFixed(2)+' gal ÷ '+mStr;
             resultEl.style.display='block';
             useBtn.style.display='block';
         }
