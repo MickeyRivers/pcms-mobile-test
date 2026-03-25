@@ -4341,9 +4341,11 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 
                 // 1. Generate PDF certificate via Apps Script (saves to Google Drive)
                 try {
-                    const certData = encodeURIComponent(JSON.stringify(test));
-                    const certUrl = SHEETS_URL + '?action=generateCert&data=' + certData;
-                    const pdfResponse = await fetch(certUrl);
+                    const pdfResponse = await fetch(SHEETS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'generateCert', data: test })
+                    });
                     const pdfResult = await pdfResponse.json();
                     
                     if (pdfResult.success) {
