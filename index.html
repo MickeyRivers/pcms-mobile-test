@@ -2207,7 +2207,9 @@
             
             // Setup photo input handler
             document.getElementById('photoInput').addEventListener('change', handlePhotoCapture);
+            document.getElementById('photoInput').addEventListener('input', handlePhotoCapture);
             document.getElementById('photoInputCamera').addEventListener('change', handlePhotoCapture);
+            document.getElementById('photoInputCamera').addEventListener('input', handlePhotoCapture);
         });
 
         // ============================================
