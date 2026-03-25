@@ -1794,7 +1794,6 @@
 
     <input type="file" id="photoInput" accept="image/*" style="display:none">
     <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
-    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
     <script>
@@ -4622,23 +4621,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 .catch(err => console.log('Service Worker registration failed:', err));
         }
 
-
-function capturePhoto(index) {
-            currentPhotoIndex = index;
-            const sheet = document.createElement('div');
-            sheet.id = 'photoSheet';
-            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
-            sheet.innerHTML = `
-                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
-                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
-                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
-                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
-                    <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
-                </div>
-            `;
-            sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
-            document.body.appendChild(sheet);
-        }
 
 
 let siteMap = null;
