@@ -1876,6 +1876,33 @@
             mainContainer.style.display = 'none';
         }
 
+        // Check auth status every 5 minutes while app is open
+        function startAuthPolling() {
+            const isAdmin = localStorage.getItem('pcms_is_admin') === 'true';
+            if (isAdmin) return; // Admins don't need polling
+            setInterval(async () => {
+                const authToken = localStorage.getItem('pcms_auth_token');
+                const authEmail = localStorage.getItem('pcms_auth_email');
+                if (!authToken || !authEmail) return;
+                try {
+                    const url = SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(authEmail);
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.status === 'Revoked') {
+                        localStorage.removeItem('pcms_auth_token');
+                        localStorage.removeItem('pcms_auth_email');
+                        localStorage.removeItem('pcms_pin');
+                        showToast('Your access has been revoked.', 'error');
+                        setTimeout(() => {
+                            showAuthScreen();
+                            document.getElementById('authRevokedState').style.display = 'block';
+                            document.getElementById('authEmailState').style.display = 'none';
+                        }, 2000);
+                    }
+                } catch(e) { /* offline - ignore */ }
+            }, 5 * 60 * 1000); // every 5 minutes
+        }
+
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('pinLockScreen').style.display = 'none';
@@ -2059,6 +2086,7 @@
             document.getElementById('pinLockScreen').style.display = 'none';
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
+            startAuthPolling();
             enteredPin = '';
             newPinFirst = '';
             isSettingPin = false;
