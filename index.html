@@ -1812,7 +1812,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
         const RESET_CODE_URL = SHEETS_URL;
 
         // ============================================
@@ -2215,7 +2215,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2253,7 +2253,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -4335,8 +4335,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -4362,8 +4362,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 let pdfSuccess = false;
                 let sheetSuccess = false;
                 
-                // 1. Compress and upload photos via GET, then generate cert
+                // 1. Generate cert via Apps Script GET (photos uploaded separately to Drive via iframe)
                 try {
+                    // Compress photos
                     async function compressPhoto(base64) {
                         return new Promise(resolve => {
                             const img = new Image();
@@ -4383,30 +4384,40 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     }
 
                     const rawPhotos = (test.photos || []).filter(p => p);
-                    const photoUrls = [];
-
-                    for (let pi = 0; pi < rawPhotos.length; pi++) {
-                        const compressed = await compressPhoto(rawPhotos[pi]);
-                        try {
-                            const uploadUrl = SHEETS_URL + '?action=uploadPhotoBase64' +
-                                '&timestamp=' + encodeURIComponent(test.timestamp) +
-                                '&serial=' + encodeURIComponent(test.serialNumber || '') +
-                                '&index=' + pi +
-                                '&total=' + rawPhotos.length +
-                                '&photo=' + encodeURIComponent(compressed);
-                            const res = await fetch(uploadUrl);
-                            const result = await res.json();
-                            if (result.success) {
-                                photoUrls.push(result.url);
-                                console.log(`Photo ${pi+1} uploaded: ${result.url}`);
-                            }
-                        } catch(pe) {
-                            console.error(`Photo ${pi+1} upload failed:`, pe.message);
-                        }
+                    const compressedPhotos = [];
+                    for (const p of rawPhotos) {
+                        compressedPhotos.push(await compressPhoto(p));
                     }
 
-                    // Generate cert via GET with photo URLs
-                    const certPayload = Object.assign({}, test, { photos: photoUrls });
+                    // Upload photos via iframe POST (fire and forget - no CORS needed)
+                    if (compressedPhotos.length > 0) {
+                        const pIframe = document.createElement('iframe');
+                        pIframe.name = 'pf' + i;
+                        pIframe.style.display = 'none';
+                        document.body.appendChild(pIframe);
+                        const pForm = document.createElement('form');
+                        pForm.method = 'POST';
+                        pForm.action = SHEETS_URL;
+                        pForm.target = pIframe.name;
+                        const pInput = document.createElement('input');
+                        pInput.type = 'hidden';
+                        pInput.name = 'data';
+                        pInput.value = JSON.stringify({
+                            action: 'savePhotos',
+                            timestamp: test.timestamp,
+                            serialNumber: test.serialNumber,
+                            photos: compressedPhotos
+                        });
+                        pForm.appendChild(pInput);
+                        document.body.appendChild(pForm);
+                        pForm.submit();
+                        setTimeout(() => {
+                            try { document.body.removeChild(pForm); document.body.removeChild(pIframe); } catch(e) {}
+                        }, 5000);
+                    }
+
+                    // Generate cert without photos via GET - Apps Script will attach photos later from Photos tab
+                    const certPayload = Object.assign({}, test, { photos: [] });
                     const certData = encodeURIComponent(JSON.stringify(certPayload));
                     const certUrl = SHEETS_URL + '?action=generateCert&data=' + certData;
                     const certRes = await fetch(certUrl);
@@ -4416,7 +4427,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         console.log('Certificate created: ' + certResult.fileName);
                     } else {
                         console.error('Certificate failed: ' + certResult.error);
-                        saveFailedCert(test, certResult.error || 'Unknown error');
+                        saveFailedCert(test, certResult.error || 'Unknown');
                     }
                 } catch (error) {
                     console.error('Error creating cert:', error);
