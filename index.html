@@ -1822,7 +1822,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyQg--fw7TjC2myXu01R9UnWV1MTP4-hQfRw2IyjYO767-mCHYIAO0_EUzHPdArfG_iHQ/exec';
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwzdz8AQ0rjA7AE6YfLCMc5m1ge3_-pa8ZxlE6QWp1-M_ZPED7gOd_y-qNGEF0xNslJFg/exec';
         const RESET_CODE_URL = SHEETS_URL;
 
         // ============================================
@@ -2225,7 +2225,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyQg--fw7TjC2myXu01R9UnWV1MTP4-hQfRw2IyjYO767-mCHYIAO0_EUzHPdArfG_iHQ/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbwzdz8AQ0rjA7AE6YfLCMc5m1ge3_-pa8ZxlE6QWp1-M_ZPED7gOd_y-qNGEF0xNslJFg/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2263,7 +2263,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbyQg--fw7TjC2myXu01R9UnWV1MTP4-hQfRw2IyjYO767-mCHYIAO0_EUzHPdArfG_iHQ/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbwzdz8AQ0rjA7AE6YfLCMc5m1ge3_-pa8ZxlE6QWp1-M_ZPED7gOd_y-qNGEF0xNslJFg/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -4343,8 +4343,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyQg--fw7TjC2myXu01R9UnWV1MTP4-hQfRw2IyjYO767-mCHYIAO0_EUzHPdArfG_iHQ/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyQg--fw7TjC2myXu01R9UnWV1MTP4-hQfRw2IyjYO767-mCHYIAO0_EUzHPdArfG_iHQ/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwzdz8AQ0rjA7AE6YfLCMc5m1ge3_-pa8ZxlE6QWp1-M_ZPED7gOd_y-qNGEF0xNslJFg/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbwzdz8AQ0rjA7AE6YfLCMc5m1ge3_-pa8ZxlE6QWp1-M_ZPED7gOd_y-qNGEF0xNslJFg/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
