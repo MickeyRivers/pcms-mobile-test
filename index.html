@@ -1822,7 +1822,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzpTYQ9LX6dRrpCSmasFq-coA_Cuggo866RNziif9RFpWLFmQ6RSavwDv7SzmxUnhPP4w/exec';
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwqaRdw3H6xMdNaUsQdwbD6VVBA9Qylp6iy0Jv1lESq99ttX-Ku8nHjjnnCYKrO-uvLXQ/exec';
         const RESET_CODE_URL = SHEETS_URL;
 
         // ============================================
@@ -2225,7 +2225,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbzpTYQ9LX6dRrpCSmasFq-coA_Cuggo866RNziif9RFpWLFmQ6RSavwDv7SzmxUnhPP4w/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbwqaRdw3H6xMdNaUsQdwbD6VVBA9Qylp6iy0Jv1lESq99ttX-Ku8nHjjnnCYKrO-uvLXQ/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2263,7 +2263,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbzpTYQ9LX6dRrpCSmasFq-coA_Cuggo866RNziif9RFpWLFmQ6RSavwDv7SzmxUnhPP4w/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbwqaRdw3H6xMdNaUsQdwbD6VVBA9Qylp6iy0Jv1lESq99ttX-Ku8nHjjnnCYKrO-uvLXQ/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -4343,8 +4343,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzpTYQ9LX6dRrpCSmasFq-coA_Cuggo866RNziif9RFpWLFmQ6RSavwDv7SzmxUnhPP4w/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbzpTYQ9LX6dRrpCSmasFq-coA_Cuggo866RNziif9RFpWLFmQ6RSavwDv7SzmxUnhPP4w/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwqaRdw3H6xMdNaUsQdwbD6VVBA9Qylp6iy0Jv1lESq99ttX-Ku8nHjjnnCYKrO-uvLXQ/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbwqaRdw3H6xMdNaUsQdwbD6VVBA9Qylp6iy0Jv1lESq99ttX-Ku8nHjjnnCYKrO-uvLXQ/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -4370,22 +4370,42 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 let pdfSuccess = false;
                 let sheetSuccess = false;
                 
-                // 1. Generate PDF certificate via Apps Script (no-cors POST includes photos)
+                // 1. Photos sync to Google Sheets Photos tab (triggers cert generation automatically)
                 try {
-                    // Use no-cors fetch - Apps Script reads body via e.postData.contents
-                    await fetch(SHEETS_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'generateCert', data: test })
-                    });
+                    if (test.photos && test.photos.some(p => p)) {
+                        const photoIframe = document.createElement('iframe');
+                        photoIframe.name = 'photoFrame' + i;
+                        photoIframe.style.display = 'none';
+                        document.body.appendChild(photoIframe);
+
+                        const photoForm = document.createElement('form');
+                        photoForm.method = 'POST';
+                        photoForm.action = SHEETS_URL;
+                        photoForm.target = photoIframe.name;
+
+                        const photoInput = document.createElement('input');
+                        photoInput.type = 'hidden';
+                        photoInput.name = 'data';
+                        photoInput.value = JSON.stringify({
+                            action: 'savePhotos',
+                            timestamp: test.timestamp,
+                            serialNumber: test.serialNumber,
+                            photos: test.photos.filter(p => p)
+                        });
+                        photoForm.appendChild(photoInput);
+                        document.body.appendChild(photoForm);
+                        photoForm.submit();
+
+                        setTimeout(() => {
+                            try { document.body.removeChild(photoForm); document.body.removeChild(photoIframe); } catch(e) {}
+                        }, 3000);
+                        console.log('Photos submitted to Drive');
+                    }
                     pdfSuccess = true;
-                    console.log('Certificate generation submitted (check Google Drive in ~30s)');
                 } catch (error) {
-                    console.error(`Error creating PDF: ${error}`);
-                    saveFailedCert(test, error.message || 'Network error');
+                    console.error('Error syncing photos:', error);
                 }
-                
+
                 // 2. Sync to Google Sheets using hidden iframe form (without photos - too large)
                 try {
                     // Create a copy of test without photos for Google Sheets
