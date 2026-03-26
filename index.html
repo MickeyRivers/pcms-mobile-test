@@ -1812,7 +1812,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyMqjwKUruFJ3cx94ctbigsJxGIhfnM5k08xZPX8nVWbaK3bDG2hDyNolLgHTVDvPZdcg/exec';
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
         const RESET_CODE_URL = SHEETS_URL;
 
         // ============================================
@@ -2215,7 +2215,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyMqjwKUruFJ3cx94ctbigsJxGIhfnM5k08xZPX8nVWbaK3bDG2hDyNolLgHTVDvPZdcg/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2253,7 +2253,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbyMqjwKUruFJ3cx94ctbigsJxGIhfnM5k08xZPX8nVWbaK3bDG2hDyNolLgHTVDvPZdcg/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -4335,8 +4335,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyMqjwKUruFJ3cx94ctbigsJxGIhfnM5k08xZPX8nVWbaK3bDG2hDyNolLgHTVDvPZdcg/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyMqjwKUruFJ3cx94ctbigsJxGIhfnM5k08xZPX8nVWbaK3bDG2hDyNolLgHTVDvPZdcg/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbyepeBqSNquVf_L2uf7RQyxlui732WC5W7MXZBVrorocqXXPi6IdRY9eVlztGIw5d6Fow--uYVR_ch4ox9WsFQ7vEwA/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -4362,21 +4362,20 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 let pdfSuccess = false;
                 let sheetSuccess = false;
                 
-                // 1. Compress photos and sync to Photos tab, trigger cert generation
+                // 1. Compress and upload photos via GET, then generate cert
                 try {
-                    // Compress each photo to ~100KB
                     async function compressPhoto(base64) {
                         return new Promise(resolve => {
                             const img = new Image();
                             img.onload = () => {
                                 const canvas = document.createElement('canvas');
                                 let w = img.width, h = img.height;
-                                const maxW = 900, maxH = 700;
+                                const maxW = 800, maxH = 600;
                                 if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
                                 if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
                                 canvas.width = w; canvas.height = h;
                                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                resolve(canvas.toDataURL('image/jpeg', 0.65));
+                                resolve(canvas.toDataURL('image/jpeg', 0.5));
                             };
                             img.onerror = () => resolve(base64);
                             img.src = base64;
@@ -4384,43 +4383,44 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     }
 
                     const rawPhotos = (test.photos || []).filter(p => p);
-                    const compressedPhotos = [];
-                    for (const p of rawPhotos) {
-                        compressedPhotos.push(await compressPhoto(p));
+                    const photoUrls = [];
+
+                    for (let pi = 0; pi < rawPhotos.length; pi++) {
+                        const compressed = await compressPhoto(rawPhotos[pi]);
+                        try {
+                            const uploadUrl = SHEETS_URL + '?action=uploadPhotoBase64' +
+                                '&timestamp=' + encodeURIComponent(test.timestamp) +
+                                '&serial=' + encodeURIComponent(test.serialNumber || '') +
+                                '&index=' + pi +
+                                '&total=' + rawPhotos.length +
+                                '&photo=' + encodeURIComponent(compressed);
+                            const res = await fetch(uploadUrl);
+                            const result = await res.json();
+                            if (result.success) {
+                                photoUrls.push(result.url);
+                                console.log(`Photo ${pi+1} uploaded: ${result.url}`);
+                            }
+                        } catch(pe) {
+                            console.error(`Photo ${pi+1} upload failed:`, pe.message);
+                        }
                     }
 
-                    if (compressedPhotos.length > 0) {
-                        const photoIframe = document.createElement('iframe');
-                        photoIframe.name = 'photoFrame' + i;
-                        photoIframe.style.display = 'none';
-                        document.body.appendChild(photoIframe);
-
-                        const photoForm = document.createElement('form');
-                        photoForm.method = 'POST';
-                        photoForm.action = SHEETS_URL;
-                        photoForm.target = photoIframe.name;
-
-                        const photoInput = document.createElement('input');
-                        photoInput.type = 'hidden';
-                        photoInput.name = 'data';
-                        photoInput.value = JSON.stringify({
-                            action: 'savePhotos',
-                            timestamp: test.timestamp,
-                            serialNumber: test.serialNumber,
-                            photos: compressedPhotos
-                        });
-                        photoForm.appendChild(photoInput);
-                        document.body.appendChild(photoForm);
-                        photoForm.submit();
-
-                        setTimeout(() => {
-                            try { document.body.removeChild(photoForm); document.body.removeChild(photoIframe); } catch(e) {}
-                        }, 3000);
-                        console.log(`${compressedPhotos.length} photos submitted`);
+                    // Generate cert via GET with photo URLs
+                    const certPayload = Object.assign({}, test, { photos: photoUrls });
+                    const certData = encodeURIComponent(JSON.stringify(certPayload));
+                    const certUrl = SHEETS_URL + '?action=generateCert&data=' + certData;
+                    const certRes = await fetch(certUrl);
+                    const certResult = await certRes.json();
+                    if (certResult.success) {
+                        pdfSuccess = true;
+                        console.log('Certificate created: ' + certResult.fileName);
+                    } else {
+                        console.error('Certificate failed: ' + certResult.error);
+                        saveFailedCert(test, certResult.error || 'Unknown error');
                     }
-                    pdfSuccess = true;
                 } catch (error) {
-                    console.error('Error syncing photos:', error);
+                    console.error('Error creating cert:', error);
+                    saveFailedCert(test, error.message || 'Network error');
                 }
 
                 // 2. Sync to Google Sheets using hidden iframe form (without photos - too large)
