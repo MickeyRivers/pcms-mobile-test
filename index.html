@@ -2395,6 +2395,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         let allCustomerStats = [];
         
         function initTracker() {
+            // Guard against assetDB not loaded yet
+            if (!Array.isArray(assetDB) || assetDB.length === 0) return;
             // Get unique customers from AssetDB
             const customers = [...new Set(assetDB.map(a => a['Customer']).filter(c => c))].sort();
             
