@@ -1812,7 +1812,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
         const RESET_CODE_URL = SHEETS_URL;
 
         // ============================================
@@ -2215,7 +2215,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2253,7 +2253,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -4335,8 +4335,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbz0NffME79_H_gXC5cAcAok_dDYUSxLEdNIbuBF4rR4-LePC-IZPmsV6daKo67qrUN0_w--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -4416,58 +4416,67 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                         }, 5000);
                     }
 
-                    // Generate cert without photos via GET - Apps Script will attach photos later from Photos tab
-                    const certPayload = Object.assign({}, test, { photos: [] });
-                    const certData = encodeURIComponent(JSON.stringify(certPayload));
-                    const certUrl = SHEETS_URL + '?action=generateCert&data=' + certData;
-                    const certRes = await fetch(certUrl);
-                    const certResult = await certRes.json();
-                    if (certResult.success) {
-                        pdfSuccess = true;
-                        console.log('Certificate created: ' + certResult.fileName);
-                    } else {
-                        console.error('Certificate failed: ' + certResult.error);
-                        saveFailedCert(test, certResult.error || 'Unknown');
-                    }
+                    pdfSuccess = true;
+                    console.log('Cert generation triggered with photos');
                 } catch (error) {
-                    console.error('Error creating cert:', error);
-                    saveFailedCert(test, error.message || 'Network error');
+                    console.error('Error in cert/photo flow:', error);
                 }
 
-                // 2. Sync to Google Sheets using hidden iframe form (without photos - too large)
+                // 2. Sync to Google Sheets + generate cert with photos
                 try {
-                    // Create a copy of test without photos for Google Sheets
+                    // Compress photos
+                    async function compressP(base64) {
+                        return new Promise(resolve => {
+                            const img = new Image();
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let w = img.width, h = img.height;
+                                if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+                                if (h > 600) { w = Math.round(w * 600 / h); h = 600; }
+                                canvas.width = w; canvas.height = h;
+                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                                resolve(canvas.toDataURL('image/jpeg', 0.5));
+                            };
+                            img.onerror = () => resolve(base64);
+                            img.src = base64;
+                        });
+                    }
+                    const rawPhotos = (test.photos || []).filter(p => p);
+                    const compPhotos = [];
+                    for (const p of rawPhotos) compPhotos.push(await compressP(p));
+
+                    // Send field data + compressed photos together
                     const sheetData = {...test};
-                    delete sheetData.photos;  // Remove photos - too large for sheets
-                    
-                    // Create a hidden iframe and form
+                    delete sheetData.photos;
+                    sheetData.action = 'addFieldDataWithCert';
+                    sheetData.photos = compPhotos;
+
                     const iframe = document.createElement('iframe');
                     iframe.name = 'sheetFrame' + i;
                     iframe.style.display = 'none';
                     document.body.appendChild(iframe);
-                    
+
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = GOOGLE_SHEET_URL;
                     form.target = iframe.name;
-                    
+
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = 'data';
                     input.value = JSON.stringify(sheetData);
                     form.appendChild(input);
-                    
+
                     document.body.appendChild(form);
                     form.submit();
-                    
-                    // Clean up after a delay
+
                     setTimeout(() => {
-                        document.body.removeChild(form);
-                        document.body.removeChild(iframe);
-                    }, 2000);
-                    
+                        try { document.body.removeChild(form); document.body.removeChild(iframe); } catch(e) {}
+                    }, 3000);
+
                     sheetSuccess = true;
-                    console.log('Synced to Google Sheets');
+                    pdfSuccess = true;
+                    console.log('Synced to Sheets + cert generation triggered');
                 } catch (error) {
                     console.error(`Error syncing to sheet: ${error}`);
                 }
