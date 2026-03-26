@@ -1468,14 +1468,23 @@
             <div class="form-section">
                 <div class="form-section-title">📷 Photos</div>
                 <div class="photo-grid">
-                    <div class="photo-slot" onclick="showPhotoOptions(0)">
-                        <span class="add-icon">+</span>
+                    <div class="photo-slot" id="photoSlot0">
+                        <label for="photoFile0" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                            <span class="add-icon">+</span>
+                        </label>
+                        <input type="file" id="photoFile0" accept="image/*" style="display:none" onchange="handlePhotoFile(event,0)">
                     </div>
-                    <div class="photo-slot" onclick="showPhotoOptions(1)">
-                        <span class="add-icon">+</span>
+                    <div class="photo-slot" id="photoSlot1">
+                        <label for="photoFile1" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                            <span class="add-icon">+</span>
+                        </label>
+                        <input type="file" id="photoFile1" accept="image/*" style="display:none" onchange="handlePhotoFile(event,1)">
                     </div>
-                    <div class="photo-slot" onclick="showPhotoOptions(2)">
-                        <span class="add-icon">+</span>
+                    <div class="photo-slot" id="photoSlot2">
+                        <label for="photoFile2" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                            <span class="add-icon">+</span>
+                        </label>
+                        <input type="file" id="photoFile2" accept="image/*" style="display:none" onchange="handlePhotoFile(event,2)">
                     </div>
                 </div>
                 <p class="form-hint">Tap to capture or upload photos</p>
@@ -3746,9 +3755,14 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             
             // Reset photos
             photos = [null, null, null];
-            document.querySelectorAll('.photo-slot').forEach((slot, i) => {
-                slot.innerHTML = '<span class="add-icon">+</span>';
-            });
+            for (var _pi = 0; _pi < 3; _pi++) {
+                var _slot = document.getElementById('photoSlot' + _pi);
+                if (_slot) {
+                    _slot.innerHTML =
+                        '<label for="photoFile' + _pi + '" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;"><span class="add-icon">+</span></label>' +
+                        '<input type="file" id="photoFile' + _pi + '" accept="image/*" style="display:none" onchange="handlePhotoFile(event,' + _pi + ')">';
+                }
+            }
         }
 
         function selectServiceType(element) {
@@ -3850,6 +3864,22 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             document.body.appendChild(sheet);
         }
 
+
+        function handlePhotoFile(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photos[index] = e.target.result;
+                const slot = document.getElementById('photoSlot' + index);
+                slot.innerHTML =
+                    '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">' +
+                    '<button class="remove-photo" onclick="removePhoto(' + index + ', event)">×</button>' +
+                    '<input type="file" id="photoFile' + index + '" accept="image/*" style="display:none" onchange="handlePhotoFile(event,' + index + ')">';
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
 
         function handlePhotoCapture(event) {
             const file = event.target.files[0];
