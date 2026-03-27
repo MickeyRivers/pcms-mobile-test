@@ -1,5 +1,5 @@
 // PCMS Service Worker v68
-const CACHE_NAME = 'pcms-v68';
+const CACHE_NAME = 'pcms-v69';
 
 // Never cache the HTML file - always get fresh from network
 const NEVER_CACHE = ['index.html', './', '/pcms-mobile-test/', '/pcms-mobile-test/index.html'];
