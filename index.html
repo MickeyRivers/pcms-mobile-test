@@ -4448,7 +4448,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     // Send field data + compressed photos together
                     const sheetData = {...test};
                     delete sheetData.photos;
-                    sheetData.action = 'addFieldDataWithCert';
+                    sheetData.action = 'addFieldData';
                     sheetData.photos = compPhotos;
 
                     const iframe = document.createElement('iframe');
