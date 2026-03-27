@@ -833,7 +833,7 @@
             </div>
             <div id="authRevokedState" style="display:none;">
                 <div style="background:rgba(229,62,62,0.2); border-radius:12px; padding:20px; margin-bottom:20px;">
-                    <p style="color:#fc8181; font-size:14px; line-height:1.6;">Your access has been revoked. Contact mick@flow-cert.com.</p>
+                    <p style="color:#fc8181; font-size:14px; line-height:1.6;">Your access has been revoked. Contact <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3a575359517a5c56554d17595f484e14595557">[email&#160;protected]</a>.</p>
                 </div>
                 <button onclick="showAuthEmailState()" style="width:100%; padding:12px; background:transparent; color:var(--gray-500); border:none; font-size:13px; cursor:pointer;">Try a different email</button>
             </div>
@@ -1146,16 +1146,6 @@
                         <option value="Ultrasonic">Ultrasonic</option>
                         <option value="Doppler">Doppler</option>
                         <option value="Volumetric">Volumetric</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Flow Units</label>
-                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
-                        <option value="GPM">GPM</option>
-                        <option value="MGD">MGD</option>
-                        <option value="CFS">CFS</option>
-                        <option value="GPD">GPD</option>
                     </select>
                 </div>
 
@@ -1788,7 +1778,7 @@
     <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
-    <script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ============================================
         // APP STATE
         // ============================================
@@ -1839,6 +1829,7 @@
             if (!storedPin) {
                 // No PIN set - prompt to create one
                 isSettingPin = true;
+                const storedEmail = localStorage.getItem('pcms_recovery_email');
                 if (!storedEmail) {
                     // Need email first
                     document.getElementById('pinMessage').textContent = 'Set up recovery email';
@@ -5268,10 +5259,4 @@ let siteMap = null;
         // Updates unit badge labels when units dropdowns change
 
                 if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed:', err));
-        }
-    </script>
-</body>
-</html>
+            navigator.se
