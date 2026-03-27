@@ -808,50 +808,6 @@
     </header>
 
     <!-- PIN Lock Screen -->
-    <!-- Auth Screen -->
-    <div id="authScreen" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--navy); z-index:9998; flex-direction:column; align-items:center; justify-content:center;">
-        <div style="text-align:center; padding:24px; width:100%; max-width:340px;">
-            <div style="font-size:52px; margin-bottom:16px;">🔐</div>
-            <h2 style="color:white; margin-bottom:8px; font-size:22px;">PCMS Mobile</h2>
-            <p style="color:var(--gray-400); margin-bottom:4px; font-size:13px;">Precision Calibration & Measurement Services</p>
-            <p style="color:var(--gray-500); margin-bottom:28px; font-size:12px;" id="authMessage">Enter your email to request access</p>
-
-            <!-- Email input state -->
-            <div id="authEmailState">
-                <input type="email" id="authEmail" placeholder="your@email.com"
-                    style="width:100%; padding:14px 16px; border-radius:10px; border:2px solid var(--gold); background:rgba(255,255,255,0.1); color:white; font-size:16px; text-align:center; margin-bottom:16px; box-sizing:border-box;">
-                <button onclick="requestAccess()" style="width:100%; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;">
-                    Request Access
-                </button>
-            </div>
-
-            <!-- Pending state -->
-            <div id="authPendingState" style="display:none;">
-                <div style="background:rgba(255,255,255,0.1); border-radius:12px; padding:20px; margin-bottom:20px;">
-                    <div style="font-size:28px; margin-bottom:8px;">⏳</div>
-                    <p style="color:white; font-size:14px; line-height:1.6;">Your request is pending approval. Check back after Mick has reviewed it.</p>
-                    <p style="color:var(--gray-400); font-size:12px; margin-top:8px;" id="authPendingEmail"></p>
-                </div>
-                <button onclick="checkAccessStatus()" style="width:100%; padding:14px; background:rgba(255,255,255,0.15); color:white; border:none; border-radius:10px; font-size:15px; cursor:pointer; margin-bottom:12px;">
-                    🔄 Check Status
-                </button>
-                <button onclick="showAuthEmailState()" style="width:100%; padding:12px; background:transparent; color:var(--gray-500); border:none; font-size:13px; cursor:pointer;">
-                    Use a different email
-                </button>
-            </div>
-
-            <!-- Revoked state -->
-            <div id="authRevokedState" style="display:none;">
-                <div style="background:rgba(229,62,62,0.2); border-radius:12px; padding:20px; margin-bottom:20px;">
-                    <p style="color:#fc8181; font-size:14px; line-height:1.6;">Your access has been revoked. Contact mick at flow-cert.com if you believe this is an error.</p>
-                </div>
-                <button onclick="showAuthEmailState()" style="width:100%; padding:12px; background:transparent; color:var(--gray-500); border:none; font-size:13px; cursor:pointer;">
-                    Try a different email
-                </button>
-            </div>
-        </div>
-    </div>
-
     <div id="pinLockScreen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--navy); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
         <div style="text-align: center; padding: 20px;">
             <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
@@ -1042,10 +998,7 @@
 
             <!-- Meter Info Section -->
             <div class="form-section">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div class="form-section-title">📍 Meter Information</div>
-                    <div id="draftSavedIndicator" style="font-size:11px;color:var(--teal);opacity:0;transition:opacity 0.5s;font-weight:600;">✓ Draft saved</div>
-                </div>
+                <div class="form-section-title">📍 Meter Information</div>
                 
                 <div class="form-group">
                     <label class="form-label required">Customer</label>
@@ -1161,19 +1114,9 @@
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Flow Units</label>
-                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
-                        <option value="GPM">GPM</option>
-                        <option value="MGD">MGD</option>
-                        <option value="CFS">CFS</option>
-                        <option value="GPD">GPD</option>
-                    </select>
-                </div>
-
                 <div class="form-group before-field">
                     <label class="form-label">Flow Rate - Validating Meter (Before) <span class="unit-badge" id="unitBadgeCPValBefore">GPM</span></label>
-                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="0.00">
+                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="GPM">
                 </div>
 
                 <div class="form-group before-field">
@@ -1221,16 +1164,17 @@
                         </div>
                         <div class="form-group" style="margin-top:12px;">
                             <label class="form-label">Elapsed Time</label>
-                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                                <div id="mechTimerDisplay" style="font-size:32px; font-weight:700; font-family:monospace; color:var(--navy); min-width:110px;">00:00</div>
-                                <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
-                                    <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
-                                    <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
-                                    <button id="mechTimerResetBtn" onclick="mechTimerReset()" style="padding:8px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
-                                </div>
-                            </div>
-                            <div style="font-size:11px; color:var(--gray-500);">Or enter time manually (minutes):</div>
-                            <input type="number" step="0.1" min="0.1" class="form-input" id="mechTime" placeholder="e.g. 1.0" oninput="calcMechFlow()" style="margin-top:4px;">
+                            <select class="form-select" id="mechTime" onchange="calcMechFlow()">
+                                <option value="0.5">30 seconds</option>
+                                <option value="1" selected>1 minute</option>
+                                <option value="2">2 minutes</option>
+                                <option value="3">3 minutes</option>
+                                <option value="5">5 minutes</option>
+                                <option value="10">10 minutes</option>
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                            </select>
                         </div>
                         <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
                             <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
@@ -1458,23 +1402,14 @@
             <div class="form-section">
                 <div class="form-section-title">📷 Photos</div>
                 <div class="photo-grid">
-                    <div class="photo-slot" id="photoSlot0">
-                        <label for="photoFile0" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                            <span class="add-icon">+</span>
-                        </label>
-                        <input type="file" id="photoFile0" accept="image/*" style="display:none" onchange="handlePhotoFile(event,0)">
+                    <div class="photo-slot" onclick="showPhotoOptions(0)">
+                        <span class="add-icon">+</span>
                     </div>
-                    <div class="photo-slot" id="photoSlot1">
-                        <label for="photoFile1" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                            <span class="add-icon">+</span>
-                        </label>
-                        <input type="file" id="photoFile1" accept="image/*" style="display:none" onchange="handlePhotoFile(event,1)">
+                    <div class="photo-slot" onclick="showPhotoOptions(1)">
+                        <span class="add-icon">+</span>
                     </div>
-                    <div class="photo-slot" id="photoSlot2">
-                        <label for="photoFile2" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                            <span class="add-icon">+</span>
-                        </label>
-                        <input type="file" id="photoFile2" accept="image/*" style="display:none" onchange="handlePhotoFile(event,2)">
+                    <div class="photo-slot" onclick="showPhotoOptions(2)">
+                        <span class="add-icon">+</span>
                     </div>
                 </div>
                 <p class="form-hint">Tap to capture or upload photos</p>
@@ -1791,8 +1726,9 @@
 
     <!-- Hidden inputs -->
 
-    <input type="file" id="photoInput" accept="image/*" style="position:fixed;top:-1000px;left:-1000px;opacity:0;">
-    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="position:fixed;top:-1000px;left:-1000px;opacity:0;">
+    <input type="file" id="photoInput" accept="image/*" style="display:none">
+    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
     <script>
@@ -1812,8 +1748,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
-        const RESET_CODE_URL = SHEETS_URL;
+        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
 
         // ============================================
         // PIN SECURITY
@@ -1821,174 +1756,34 @@
         function checkPinSetup() {
             const storedPin = localStorage.getItem('pcms_pin');
             const storedEmail = localStorage.getItem('pcms_recovery_email');
-            const authToken = localStorage.getItem('pcms_auth_token');
-            const authEmail = localStorage.getItem('pcms_auth_email');
-            const isAdmin = localStorage.getItem('pcms_is_admin') === 'true';
             const pinLockScreen = document.getElementById('pinLockScreen');
             const mainContainer = document.getElementById('mainContainer');
-
-            // Admin device — go straight to PIN
-            if (isAdmin || storedPin) {
-                showPinScreen(storedPin);
-                return;
-            }
-
-            // Has auth token — verify it's still valid
-            if (authToken && authEmail) {
-                verifyStoredAuth(authEmail, authToken);
-                return;
-            }
-
-            // No auth — show email request screen
-            showAuthScreen();
-        }
-
-        function showPinScreen(storedPin) {
-            const pinLockScreen = document.getElementById('pinLockScreen');
-            const mainContainer = document.getElementById('mainContainer');
-            document.getElementById('authScreen').style.display = 'none';
+            
             if (!storedPin) {
+                // No PIN set - prompt to create one
                 isSettingPin = true;
-                const storedEmail = localStorage.getItem('pcms_recovery_email');
                 if (!storedEmail) {
+                    // Need email first
                     document.getElementById('pinMessage').textContent = 'Set up recovery email';
                     document.getElementById('emailSetup').style.display = 'block';
                     document.getElementById('pinDots').style.display = 'none';
                     document.getElementById('pinPad').style.display = 'none';
                 } else {
                     document.getElementById('pinMessage').textContent = 'Create a 4-digit PIN';
-                    document.getElementById('emailSetup').style.display = 'none';
-                    document.getElementById('pinDots').style.display = 'flex';
-                    document.getElementById('pinPad').style.display = 'grid';
                 }
                 document.getElementById('pinSetupLink').style.display = 'none';
+                pinLockScreen.style.display = 'flex';
+                mainContainer.style.display = 'none';
             } else {
+                // PIN exists - require unlock
                 document.getElementById('pinMessage').textContent = 'Enter your 4-digit PIN';
                 document.getElementById('pinSetupLink').style.display = 'block';
                 document.getElementById('emailSetup').style.display = 'none';
                 document.getElementById('resetCodeInput').style.display = 'none';
                 document.getElementById('pinDots').style.display = 'flex';
                 document.getElementById('pinPad').style.display = 'grid';
-            }
-            pinLockScreen.style.display = 'flex';
-            mainContainer.style.display = 'none';
-        }
-
-        // Check auth status every 5 minutes while app is open
-        function startAuthPolling() {
-            const isAdmin = localStorage.getItem('pcms_is_admin') === 'true';
-            if (isAdmin) return; // Admins don't need polling
-            setInterval(async () => {
-                const authToken = localStorage.getItem('pcms_auth_token');
-                const authEmail = localStorage.getItem('pcms_auth_email');
-                if (!authToken || !authEmail) return;
-                try {
-                    const url = SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(authEmail);
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    if (data.status === 'Revoked') {
-                        localStorage.removeItem('pcms_auth_token');
-                        localStorage.removeItem('pcms_auth_email');
-                        localStorage.removeItem('pcms_pin');
-                        showToast('Your access has been revoked.', 'error');
-                        setTimeout(() => {
-                            showAuthScreen();
-                            document.getElementById('authRevokedState').style.display = 'block';
-                            document.getElementById('authEmailState').style.display = 'none';
-                        }, 2000);
-                    }
-                } catch(e) { /* offline - ignore */ }
-            }, 5 * 60 * 1000); // every 5 minutes
-        }
-
-        function showAuthScreen() {
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('pinLockScreen').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'none';
-            showAuthEmailState();
-        }
-
-        function showAuthEmailState() {
-            document.getElementById('authEmailState').style.display = 'block';
-            document.getElementById('authPendingState').style.display = 'none';
-            document.getElementById('authRevokedState').style.display = 'none';
-            document.getElementById('authMessage').textContent = 'Enter your email to request access';
-        }
-
-        async function verifyStoredAuth(email, token) {
-            try {
-                const url = SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(email);
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.status === 'Active' && data.token === token) {
-                    // Still valid - go to PIN
-                    showPinScreen(localStorage.getItem('pcms_pin'));
-                } else if (data.status === 'Revoked') {
-                    localStorage.removeItem('pcms_auth_token');
-                    localStorage.removeItem('pcms_auth_email');
-                    showAuthScreen();
-                    document.getElementById('authRevokedState').style.display = 'block';
-                    document.getElementById('authEmailState').style.display = 'none';
-                } else {
-                    // Offline or pending - be generous, let them in
-                    showPinScreen(localStorage.getItem('pcms_pin'));
-                }
-            } catch(e) {
-                // Network error - let them in with stored token
-                showPinScreen(localStorage.getItem('pcms_pin'));
-            }
-        }
-
-        async function requestAccess() {
-            const email = document.getElementById('authEmail').value.trim().toLowerCase();
-            if (!email || !email.includes('@')) {
-                document.getElementById('authMessage').textContent = 'Please enter a valid email address';
-                return;
-            }
-            document.getElementById('authMessage').textContent = 'Sending request...';
-            try {
-                const url = SHEETS_URL + '?action=requestAccess&email=' + encodeURIComponent(email);
-                const res = await fetch(url);
-                const data = await res.json();
-                localStorage.setItem('pcms_auth_email', email);
-                if (data.status === 'already_approved') {
-                    localStorage.setItem('pcms_auth_token', data.token);
-                    showPinScreen(localStorage.getItem('pcms_pin'));
-                } else if (data.status === 'revoked') {
-                    document.getElementById('authEmailState').style.display = 'none';
-                    document.getElementById('authRevokedState').style.display = 'block';
-                } else {
-                    document.getElementById('authEmailState').style.display = 'none';
-                    document.getElementById('authPendingState').style.display = 'block';
-                    document.getElementById('authPendingEmail').textContent = email;
-                    document.getElementById('authMessage').textContent = 'Request submitted — pending approval';
-                }
-            } catch(e) {
-                document.getElementById('authMessage').textContent = 'Error: ' + e.message;
-            }
-        }
-
-        async function checkAccessStatus() {
-            const email = localStorage.getItem('pcms_auth_email') ||
-                          document.getElementById('authEmail').value.trim().toLowerCase();
-            if (!email) { showAuthEmailState(); return; }
-            document.getElementById('authMessage').textContent = 'Checking...';
-            try {
-                const url = SHEETS_URL + '?action=checkAuth&email=' + encodeURIComponent(email);
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.status === 'Active') {
-                    localStorage.setItem('pcms_auth_token', data.token);
-                    localStorage.setItem('pcms_auth_email', email);
-                    showPinScreen(localStorage.getItem('pcms_pin'));
-                } else if (data.status === 'Revoked') {
-                    document.getElementById('authPendingState').style.display = 'none';
-                    document.getElementById('authRevokedState').style.display = 'block';
-                } else {
-                    document.getElementById('authMessage').textContent = 'Still pending approval — check back soon';
-                }
-            } catch(e) {
-                document.getElementById('authMessage').textContent = 'Network error — try again';
+                pinLockScreen.style.display = 'flex';
+                mainContainer.style.display = 'none';
             }
         }
         
@@ -2082,9 +1877,7 @@
         
         function unlockApp() {
             document.getElementById('pinLockScreen').style.display = 'none';
-            document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
-            startAuthPolling();
             enteredPin = '';
             newPinFirst = '';
             isSettingPin = false;
@@ -2173,15 +1966,6 @@
         // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
             // Check PIN first
-            // Admin setup: visit ?admin=setup to mark device as admin and clear auth
-            if (window.location.search.includes('admin=setup')) {
-                localStorage.setItem('pcms_is_admin', 'true');
-                localStorage.removeItem('pcms_auth_email');
-                localStorage.removeItem('pcms_auth_token');
-                localStorage.removeItem('pcms_pin');
-                localStorage.removeItem('pcms_recovery_email');
-                window.history.replaceState({}, '', window.location.pathname);
-            }
             checkPinSetup();
             
             // Load AssetDB from localStorage or fetch
@@ -2190,9 +1974,6 @@
             // Load test history
             await loadTestHistory();
             
-            // Check for unsaved draft
-            checkForDraft();
-
             // Initialize tracker
             initTracker();
             
@@ -2206,16 +1987,14 @@
             
             // Setup photo input handler
             document.getElementById('photoInput').addEventListener('change', handlePhotoCapture);
-            document.getElementById('photoInput').addEventListener('input', handlePhotoCapture);
             document.getElementById('photoInputCamera').addEventListener('change', handlePhotoCapture);
-            document.getElementById('photoInputCamera').addEventListener('input', handlePhotoCapture);
         });
 
         // ============================================
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2253,7 +2032,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -2277,7 +2056,6 @@
                     testHistory = combined;
                     localStorage.setItem('testHistory', JSON.stringify(testHistory));
                     console.log(`Loaded ${testHistory.length} history records (Field Data + Test History)`);
-                    refreshMapIfActive();
                     return;
                 }
             } catch (e) {
@@ -2289,19 +2067,6 @@
             if (cached) {
                 testHistory = JSON.parse(cached);
                 console.log(`Loaded ${testHistory.length} cached history records`);
-                refreshMapIfActive();
-            }
-        }
-
-        function refreshMapIfActive() {
-            if (siteMap && mapSites.length > 0) {
-                // Recalculate status for all sites then redraw markers
-                mapSites.forEach(site => {
-                    const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
-                    site.status = getTestStatus(siteObj);
-                });
-                updateMapMarkers();
-                console.log('Map markers refreshed after history load');
             }
         }
 
@@ -2326,8 +2091,6 @@
                 const searchTerm = value.trim().toLowerCase();
                 
                 const matches = testHistory.filter(h => {
-                    // Skip records without a Date (e.g. AssetDB entries leaked into history)
-                    if (!h['Date'] || !String(h['Date']).trim()) return false;
                     const serial = String(h['Serial Number'] || '').toLowerCase();
                     const customer = String(h['Customer'] || '').toLowerCase();
                     const location = String(h['Facility/Location'] || '').toLowerCase();
@@ -2395,8 +2158,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         let allCustomerStats = [];
         
         function initTracker() {
-            // Guard against assetDB not loaded yet
-            if (!Array.isArray(assetDB) || assetDB.length === 0) return;
             // Get unique customers from AssetDB
             const customers = [...new Set(assetDB.map(a => a['Customer']).filter(c => c))].sort();
             
@@ -3346,11 +3107,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // SCREEN MANAGEMENT
         // ============================================
         function showScreen(screenId) {
-            if (screenId === 'formScreen') {
-                startAutosave();
-            } else {
-                stopAutosave();
-            }
             if (screenId === 'mapScreen') {
                 setTimeout(() => {
                     initSiteMap();
@@ -3638,79 +3394,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // FORM HANDLING
         // ============================================
-        // ── Form Draft Autosave ─────────────────────────────────────────────────
-        let autosaveInterval = null;
-
-        function getAllFormFields() {
-            const fields = {};
-            document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(el => {
-                if (el.id) fields[el.id] = el.value;
-            });
-            return fields;
-        }
-
-        function saveDraft() {
-            const fields = getAllFormFields();
-            // Only save if there's meaningful data
-            const hasData = fields['formSerial'] || fields['formCustomer'] || fields['formLocation'];
-            if (!hasData) return;
-            const draft = {
-                timestamp: new Date().toISOString(),
-                fields: fields
-            };
-            localStorage.setItem('pcms_form_draft', JSON.stringify(draft));
-            // Show brief indicator
-            const indicator = document.getElementById('draftSavedIndicator');
-            if (indicator) {
-                indicator.style.opacity = '1';
-                setTimeout(() => indicator.style.opacity = '0', 1500);
-            }
-        }
-
-        function startAutosave() {
-            stopAutosave();
-            autosaveInterval = setInterval(saveDraft, 10000); // every 10 seconds
-        }
-
-        function stopAutosave() {
-            if (autosaveInterval) { clearInterval(autosaveInterval); autosaveInterval = null; }
-        }
-
-        function clearDraft() {
-            localStorage.removeItem('pcms_form_draft');
-        }
-
-        function checkForDraft() {
-            const raw = localStorage.getItem('pcms_form_draft');
-            if (!raw) return;
-            try {
-                const draft = JSON.parse(raw);
-                const age = (new Date() - new Date(draft.timestamp)) / 60000; // minutes
-                if (age > 1440) { clearDraft(); return; } // discard drafts older than 24hrs
-                const timeStr = new Date(draft.timestamp).toLocaleTimeString();
-                const dateStr = new Date(draft.timestamp).toLocaleDateString();
-                if (confirm('Unsaved draft found from ' + dateStr + ' at ' + timeStr + '. Restore it?')) {
-                    restoreDraft(draft.fields);
-                } else {
-                    clearDraft();
-                }
-            } catch(e) { clearDraft(); }
-        }
-
-        function restoreDraft(fields) {
-            showScreen('formScreen');
-            Object.entries(fields).forEach(([id, val]) => {
-                const el = document.getElementById(id);
-                if (el && val !== undefined) {
-                    el.value = val;
-                    // Trigger change events for conditional fields
-                    el.dispatchEvent(new Event('change'));
-                }
-            });
-            showToast('Draft restored!', 'success');
-            startAutosave();
-        }
-
         function resetForm() {
             // Clear editing state
             editingTestId = null;
@@ -3718,10 +3401,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Hide match card
             document.getElementById('matchCard').style.display = 'none';
             
-            // Clear draft and stop autosave
-            clearDraft();
-            stopAutosave();
-
             // Clear all inputs
             document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(input => {
                 if (input.id === 'formTestedBy') {
@@ -3747,14 +3426,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             
             // Reset photos
             photos = [null, null, null];
-            for (var _pi = 0; _pi < 3; _pi++) {
-                var _slot = document.getElementById('photoSlot' + _pi);
-                if (_slot) {
-                    _slot.innerHTML =
-                        '<label for="photoFile' + _pi + '" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;"><span class="add-icon">+</span></label>' +
-                        '<input type="file" id="photoFile' + _pi + '" accept="image/*" style="display:none" onchange="handlePhotoFile(event,' + _pi + ')">';
-                }
-            }
+            document.querySelectorAll('.photo-slot').forEach((slot, i) => {
+                slot.innerHTML = '<span class="add-icon">+</span>';
+            });
         }
 
         function selectServiceType(element) {
@@ -3857,22 +3531,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
 
-        function handlePhotoFile(event, index) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                photos[index] = e.target.result;
-                const slot = document.getElementById('photoSlot' + index);
-                slot.innerHTML =
-                    '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">' +
-                    '<button class="remove-photo" onclick="removePhoto(' + index + ', event)">×</button>' +
-                    '<input type="file" id="photoFile' + index + '" accept="image/*" style="display:none" onchange="handlePhotoFile(event,' + index + ')">';
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
         function handlePhotoCapture(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -3948,31 +3606,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // SAVE & SYNC
         // ============================================
-        function sanitizeText(val) {
-            if (typeof val !== 'string') return val;
-            return val
-                .replace(/[“”]/g, '"')   // smart double quotes
-                .replace(/[‘’]/g, "'")    // smart single quotes
-                .replace(/–/g, '-')            // en dash
-                .replace(/—/g, '--')           // em dash
-                .replace(/…/g, '...')          // ellipsis
-                .replace(/[à-ÿ]/g, c => { // accented chars
-                    const map = {'é':'e','è':'e','ê':'e','à':'a','á':'a','â':'a','ó':'o','ò':'o','ô':'o','ú':'u','ü':'u','ñ':'n'};
-                    return map[c] || c;
-                });
-        }
-
-        function sanitizeRecord(obj) {
-            const clean = {};
-            for (const [k, v] of Object.entries(obj)) {
-                clean[k] = typeof v === 'string' ? sanitizeText(v) : v;
-            }
-            return clean;
-        }
-
         function saveTest() {
-            clearDraft();
-            stopAutosave();
             // Validate required fields
             const customer = document.getElementById('formCustomer').value.trim();
             const location = document.getElementById('formLocation').value.trim();
@@ -4063,12 +3697,12 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 const index = pendingTests.findIndex(t => t.id === editingTestId);
                 if (index !== -1) {
                     testRecord.id = editingTestId;
-                    pendingTests[index] = sanitizeRecord(testRecord);
+                    pendingTests[index] = testRecord;
                 }
                 editingTestId = null;
             } else {
                 // Add new test
-                pendingTests.push(sanitizeRecord(testRecord));
+                pendingTests.push(testRecord);
             }
             savePendingTests();
             
@@ -4176,8 +3810,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         function loadPendingTests() {
             const stored = localStorage.getItem('pendingTests');
             if (stored) {
-                pendingTests = JSON.parse(stored).map(t => sanitizeRecord(t));
-                savePendingTests(); // re-save with sanitized data
+                pendingTests = JSON.parse(stored);
             }
             updatePendingCount();
             updatePendingList();
@@ -4249,23 +3882,14 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         let failedCerts = JSON.parse(localStorage.getItem('pcms_failed_certs') || '[]');
 
         function saveFailedCert(test, errorMsg) {
-            // Store only key fields to avoid localStorage quota issues
             const failedCert = {
-                id: test.id,
-                serialNumber: test.serialNumber,
-                customer: test.customer,
-                location: test.location,
-                serviceType: test.serviceType,
+                ...test,
                 failedAt: new Date().toISOString(),
                 errorMessage: errorMsg
             };
             failedCerts.push(failedCert);
-            try {
-                localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
-                console.log('Saved failed cert for retry:', test.serialNumber);
-            } catch(e) {
-                console.log('Could not save failed cert (storage full):', e.message);
-            }
+            localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
+            console.log('Saved failed cert for retry:', test.serialNumber);
         }
 
         function getFailedCerts() {
@@ -4334,9 +3958,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
         }
 
-        const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw--uYVR_ch4ox9WsFQ7vEwA/exec';
+        const CLOUD_FUNCTION_URL = 'https://generate-certificate-980517620937.us-central1.run.app';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -4362,121 +3986,64 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 let pdfSuccess = false;
                 let sheetSuccess = false;
                 
-                // 1. Generate cert via Apps Script GET (photos uploaded separately to Drive via iframe)
+                // 1. Generate PDF certificate
                 try {
-                    // Compress photos
-                    async function compressPhoto(base64) {
-                        return new Promise(resolve => {
-                            const img = new Image();
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                let w = img.width, h = img.height;
-                                const maxW = 800, maxH = 600;
-                                if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-                                if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
-                                canvas.width = w; canvas.height = h;
-                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                resolve(canvas.toDataURL('image/jpeg', 0.5));
-                            };
-                            img.onerror = () => resolve(base64);
-                            img.src = base64;
-                        });
+                    const pdfResponse = await fetch(CLOUD_FUNCTION_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(test)
+                    });
+                    
+                    const pdfResult = await pdfResponse.json();
+                    
+                    if (pdfResponse.ok && pdfResult.success) {
+                        pdfSuccess = true;
+                        console.log(`Certificate created: ${pdfResult.dropbox_path}`);
+                    } else {
+                        console.error(`Failed to create certificate: ${pdfResult.error}`);
+                        // Save to failed certs for retry later
+                        saveFailedCert(test, pdfResult.error || 'Unknown error');
                     }
-
-                    const rawPhotos = (test.photos || []).filter(p => p);
-                    const compressedPhotos = [];
-                    for (const p of rawPhotos) {
-                        compressedPhotos.push(await compressPhoto(p));
-                    }
-
-                    // Upload photos via iframe POST (fire and forget - no CORS needed)
-                    if (compressedPhotos.length > 0) {
-                        const pIframe = document.createElement('iframe');
-                        pIframe.name = 'pf' + i;
-                        pIframe.style.display = 'none';
-                        document.body.appendChild(pIframe);
-                        const pForm = document.createElement('form');
-                        pForm.method = 'POST';
-                        pForm.action = SHEETS_URL;
-                        pForm.target = pIframe.name;
-                        const pInput = document.createElement('input');
-                        pInput.type = 'hidden';
-                        pInput.name = 'data';
-                        pInput.value = JSON.stringify({
-                            action: 'savePhotos',
-                            timestamp: test.timestamp,
-                            serialNumber: test.serialNumber,
-                            photos: compressedPhotos
-                        });
-                        pForm.appendChild(pInput);
-                        document.body.appendChild(pForm);
-                        pForm.submit();
-                        setTimeout(() => {
-                            try { document.body.removeChild(pForm); document.body.removeChild(pIframe); } catch(e) {}
-                        }, 5000);
-                    }
-
-                    pdfSuccess = true;
-                    console.log('Cert generation triggered with photos');
                 } catch (error) {
-                    console.error('Error in cert/photo flow:', error);
+                    console.error(`Error creating PDF: ${error}`);
+                    // Save to failed certs for retry later
+                    saveFailedCert(test, error.message || 'Network error');
                 }
-
-                // 2. Sync to Google Sheets + generate cert with photos
+                
+                // 2. Sync to Google Sheets using hidden iframe form (without photos - too large)
                 try {
-                    // Compress photos
-                    async function compressP(base64) {
-                        return new Promise(resolve => {
-                            const img = new Image();
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                let w = img.width, h = img.height;
-                                if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
-                                if (h > 600) { w = Math.round(w * 600 / h); h = 600; }
-                                canvas.width = w; canvas.height = h;
-                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                resolve(canvas.toDataURL('image/jpeg', 0.5));
-                            };
-                            img.onerror = () => resolve(base64);
-                            img.src = base64;
-                        });
-                    }
-                    const rawPhotos = (test.photos || []).filter(p => p);
-                    const compPhotos = [];
-                    for (const p of rawPhotos) compPhotos.push(await compressP(p));
-
-                    // Send field data + compressed photos together
+                    // Create a copy of test without photos for Google Sheets
                     const sheetData = {...test};
-                    delete sheetData.photos;
-                    sheetData.action = 'addFieldData';
-                    sheetData.photos = compPhotos;
-
+                    delete sheetData.photos;  // Remove photos - too large for sheets
+                    
+                    // Create a hidden iframe and form
                     const iframe = document.createElement('iframe');
                     iframe.name = 'sheetFrame' + i;
                     iframe.style.display = 'none';
                     document.body.appendChild(iframe);
-
+                    
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = GOOGLE_SHEET_URL;
                     form.target = iframe.name;
-
+                    
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = 'data';
                     input.value = JSON.stringify(sheetData);
                     form.appendChild(input);
-
+                    
                     document.body.appendChild(form);
                     form.submit();
-
+                    
+                    // Clean up after a delay
                     setTimeout(() => {
-                        try { document.body.removeChild(form); document.body.removeChild(iframe); } catch(e) {}
-                    }, 3000);
-
+                        document.body.removeChild(form);
+                        document.body.removeChild(iframe);
+                    }, 2000);
+                    
                     sheetSuccess = true;
-                    pdfSuccess = true;
-                    console.log('Synced to Sheets + cert generation triggered');
+                    console.log('Synced to Google Sheets');
                 } catch (error) {
                     console.error(`Error syncing to sheet: ${error}`);
                 }
@@ -4637,12 +4204,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             if (!serial || !testHistory || testHistory.length === 0) return;
 
             // Find most recent test with tech notes for this serial
-            // Build a fake site object to use findHistoryMatches
-            const siteForLookup = assetDB ? assetDB.find(a => String(a['Serial Number'] || '').trim() === String(serial).trim()) : null;
-            const allMatches = siteForLookup ? findHistoryMatches(siteForLookup) :
-                testHistory.filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim());
-            const matches = allMatches
-                .filter(h => h['Tech Notes'] && String(h['Tech Notes']).trim())
+            const matches = testHistory
+                .filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim() && h['Tech Notes'] && String(h['Tech Notes']).trim())
                 .sort((a, b) => new Date(b['Date'] || 0) - new Date(a['Date'] || 0));
 
             if (matches.length === 0) return;
@@ -4705,6 +4268,23 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
 
+function capturePhoto(index) {
+            currentPhotoIndex = index;
+            const sheet = document.createElement('div');
+            sheet.id = 'photoSheet';
+            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+            sheet.innerHTML = `
+                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
+                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
+                    <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
+            document.body.appendChild(sheet);
+        }
+
 
 let siteMap = null;
         let mapMarkers = [];
@@ -4762,12 +4342,8 @@ let siteMap = null;
                 if (!coords) return null;
                 return {
                     name: site['Facility/Location'] || site['Location'] || 'Unknown',
-                    'Facility/Location': site['Facility/Location'] || site['Location'] || '',
                     customer: site['Customer'] || '',
-                    'Customer': site['Customer'] || '',
                     serial: String(site['Serial Number'] || ''),
-                    'Serial Number': String(site['Serial Number'] || ''),
-                    'Service Frequency': site['Service Frequency'] || '',
                     lat: coords.lat,
                     lng: coords.lng,
                     status: getTestStatus(site),
@@ -4782,77 +4358,14 @@ let siteMap = null;
             }
         }
 
-        // Normalize location string for fuzzy matching
-        function normalizeLocation(str) {
-            return String(str || '').toLowerCase()
-                .replace(/number\s*/g, '#')       // "Number 2" → "#2"
-                .replace(/no\.\s*/g, '#')          // "No. 2" → "#2"
-                .replace(/wwtp/g, 'wwtp')
-                .replace(/wtp/g, 'wtp')
-                .replace(/[^a-z0-9#]/g, ' ')       // strip punctuation
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        // Score how similar two location strings are (0-1)
-        function locationSimilarity(a, b) {
-            const na = normalizeLocation(a);
-            const nb = normalizeLocation(b);
-            if (na === nb) return 1.0;
-            const wordsA = na.split(' ').filter(w => w.length > 2);
-            const wordsB = new Set(nb.split(' ').filter(w => w.length > 2));
-            if (wordsA.length === 0 || wordsB.size === 0) return 0;
-            const overlap = wordsA.filter(w => wordsB.has(w)).length;
-            return overlap / Math.max(wordsA.length, wordsB.size);
-        }
-
-        // Find history matches by serial, falling back to location (exact then fuzzy)
-        // Only returns records that have a valid Date field (filters out AssetDB records)
-        function findHistoryMatches(site) {
-            const serial = String(site['Serial Number'] || '').trim();
-            const location = String(site['Facility/Location'] || '').trim();
-            const customer = String(site['Customer'] || '').trim().toLowerCase();
-            const isBlankSerial = !serial || serial.toLowerCase() === 'n/a' || serial === '####';
-
-            // Only consider records that have a Date field
-            const historyOnly = testHistory.filter(h => h['Date'] && String(h['Date']).trim());
-
-            // 1. Match by serial number
-            if (!isBlankSerial) {
-                const bySerial = historyOnly.filter(h =>
-                    String(h['Serial Number'] || '').trim() === serial
-                );
-                if (bySerial.length > 0) return bySerial;
-            }
-
-            if (!location) return [];
-
-            // Filter to same customer first
-            const custHistory = customer
-                ? historyOnly.filter(h => String(h['Customer'] || '').trim().toLowerCase() === customer)
-                : historyOnly;
-
-            // 2. Exact location match
-            const exactLoc = custHistory.filter(h =>
-                normalizeLocation(h['Facility/Location']) === normalizeLocation(location)
-            );
-            if (exactLoc.length > 0) return exactLoc;
-
-            // 3. Fuzzy location match (≥0.75 similarity)
-            const fuzzyMatches = custHistory
-                .map(h => ({ h, score: locationSimilarity(h['Facility/Location'], location) }))
-                .filter(x => x.score >= 0.75)
-                .sort((a, b) => b.score - a.score);
-            if (fuzzyMatches.length > 0) return fuzzyMatches.map(x => x.h);
-
-            return [];
-        }
-
         function getTestStatus(site) {
-            const matches = findHistoryMatches(site);
-            if (matches.length === 0) return 'overdue';
+            const serial = String(site['Serial Number'] || '').trim();
+            if (!serial) return 'overdue';
 
+            const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === serial);
+            if (matches.length === 0) return 'overdue';
             matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+
             const lastTestDate = new Date(matches[0]['Date']);
             if (isNaN(lastTestDate)) return 'overdue';
 
@@ -4865,13 +4378,18 @@ let siteMap = null;
             const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()))
                         || freq.includes('semi') || freq.includes('6 month') || freq.includes('twice');
 
+            // Semi-annual: cycle = 180 days, Annual: cycle = 365 days
             const cycle = isSemi ? 180 : 365;
-            const testedThreshold = cycle - 30;
-            const dueThreshold = cycle;
 
-            if (daysSince <= testedThreshold) return 'tested';
-            if (daysSince <= dueThreshold)    return 'due';
-            return 'overdue';
+            // Tested:  tested within 11 months (annual) or 5.5 months (semi)
+            // Due:     within 1 month of needing to be tested
+            // Overdue: past due
+            const testedThreshold = cycle - 30;  // e.g. 335 days for annual
+            const dueThreshold    = cycle;        // e.g. 365 days for annual
+
+            if (daysSince <= testedThreshold) return 'tested';  // still good
+            if (daysSince <= dueThreshold)    return 'due';      // within 30 days of due
+            return 'overdue';                                     // past due
         }
 
         function populateMapCustomerFilter() {
@@ -4912,8 +4430,7 @@ let siteMap = null;
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
                 const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
-                const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
-                const matches = findHistoryMatches(siteObj);
+                const matches = testHistory.filter(h => String(h['Serial Number'] || '').trim() === site.serial);
                 matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
                 const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
 
@@ -5157,53 +4674,6 @@ let siteMap = null;
         // ============================================
         // MECHANICAL METER CALCULATOR
         // ============================================
-        // ── Mechanical Meter Timer ───────────────────────────────────────────────
-        let mechTimerInterval = null;
-        let mechTimerSeconds  = 0;
-        let mechTimerRunning  = false;
-
-        function mechTimerStart() {
-            if (mechTimerRunning) return;
-            mechTimerRunning = true;
-            document.getElementById('mechTimerStartBtn').style.display = 'none';
-            document.getElementById('mechTimerStopBtn').style.display  = 'block';
-            document.getElementById('mechTimerResetBtn').style.display = 'none';
-            mechTimerInterval = setInterval(() => {
-                mechTimerSeconds++;
-                const m = String(Math.floor(mechTimerSeconds / 60)).padStart(2, '0');
-                const s = String(mechTimerSeconds % 60).padStart(2, '0');
-                document.getElementById('mechTimerDisplay').textContent = m + ':' + s;
-            }, 1000);
-        }
-
-        function mechTimerStop() {
-            if (!mechTimerRunning) return;
-            clearInterval(mechTimerInterval);
-            mechTimerRunning = false;
-            document.getElementById('mechTimerStopBtn').style.display  = 'none';
-            document.getElementById('mechTimerStartBtn').style.display = 'block';
-            document.getElementById('mechTimerResetBtn').style.display = 'block';
-            // Auto-fill elapsed time in minutes and calculate
-            const minutes = mechTimerSeconds / 60;
-            document.getElementById('mechTime').value = minutes.toFixed(4);
-            calcMechFlow();
-        }
-
-        function mechTimerReset() {
-            clearInterval(mechTimerInterval);
-            mechTimerRunning  = false;
-            mechTimerSeconds  = 0;
-            document.getElementById('mechTimerDisplay').textContent    = '00:00';
-            document.getElementById('mechTimerStartBtn').style.display = 'block';
-            document.getElementById('mechTimerStopBtn').style.display  = 'none';
-            document.getElementById('mechTimerResetBtn').style.display = 'none';
-            document.getElementById('mechTime').value = '';
-            const resultEl = document.getElementById('mechResult');
-            const useBtn   = document.getElementById('mechUseBtn');
-            resultEl.style.display = 'none';
-            useBtn.style.display   = 'none';
-        }
-
         function toggleMechCalc() {
             const panel = document.getElementById('mechCalcPanel');
             const icon  = document.getElementById('mechCalcToggleIcon');
@@ -5219,21 +4689,15 @@ let siteMap = null;
             const mult    = parseFloat(document.getElementById('mechMultiplier').value);
             const resultEl = document.getElementById('mechResult');
             const useBtn   = document.getElementById('mechUseBtn');
-            if (isNaN(start)||isNaN(end)||isNaN(minutes)||minutes<=0||end<=start) {
-                resultEl.style.display='none'; useBtn.style.display='none'; return;
-            }
-            const gallons = (end - start) * mult;
-            const gpm = gallons / minutes;
-            const mgd = gpm * 1440 / 1000000;
-            const gph = gpm * 60;
+            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
+            const gallons = (end-start)*mult;
+            const gpm = gallons/minutes;
+            const mgd = gpm*1440/1000000;
+            const gph = gpm*60;
             document.getElementById('mechGPM').textContent = gpm.toFixed(2);
             document.getElementById('mechMGD').textContent = mgd.toFixed(4);
             document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
-            const mStr = mechTimerSeconds > 0
-                ? Math.floor(mechTimerSeconds/60)+'m '+( mechTimerSeconds%60)+'s'
-                : minutes + ' min';
-            document.getElementById('mechCalcDetail').textContent =
-                '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toFixed(2)+' gal ÷ '+mStr;
+            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
             resultEl.style.display='block';
             useBtn.style.display='block';
         }
