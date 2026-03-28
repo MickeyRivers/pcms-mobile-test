@@ -1,55 +1,92 @@
-// PCMS Service Worker v68
-const CACHE_NAME = 'pcms-v69';
+const CACHE_NAME = 'pcms-mobile-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/assets/logo.png',
+  '/assetdb.json',
+  'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js',
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap'
+];
 
-// Never cache the HTML file - always get fresh from network
-const NEVER_CACHE = ['index.html', './', '/pcms-mobile-test/', '/pcms-mobile-test/index.html'];
-
-self.addEventListener('install', function(event) {
-    event.waitUntil(self.skipWaiting());
+// Install event - cache assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('Caching app assets');
+        return cache.addAll(ASSETS_TO_CACHE);
+      })
+      .catch((err) => {
+        console.log('Cache failed:', err);
+      })
+  );
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', function(event) {
-    event.waitUntil(
-        caches.keys().then(function(keys) {
-            return Promise.all(keys.map(function(k) { return caches.delete(k); }));
-        }).then(function() { return self.clients.claim(); })
-    );
+// Activate event - clean old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    })
+  );
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', function(event) {
-    var url = event.request.url;
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
 
-    // Skip external APIs
-    if (url.includes('googleapis.com') || url.includes('script.google.com') ||
-        url.includes('run.app') || url.includes('dropbox') ||
-        url.includes('ocr.space') || url.includes('fonts.g') ||
-        url.includes('cdn-cgi')) {
-        return;
-    }
+  event.respondWith(
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
 
-    // Always fetch HTML fresh from network
-    if (url.endsWith('.html') || url.endsWith('/') || url.includes('index.html') ||
-        url === self.location.origin + '/pcms-mobile-test/' ||
-        url === self.location.origin + '/pcms-mobile-test') {
-        event.respondWith(
-            fetch(event.request).catch(function() {
-                return caches.match(event.request);
-            })
-        );
-        return;
-    }
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // Don't cache external resources that might fail
+            if (!networkResponse || networkResponse.status !== 200) {
+              return networkResponse;
+            }
 
-    // Cache everything else
-    event.respondWith(
-        caches.match(event.request).then(function(cached) {
-            if (cached) return cached;
-            return fetch(event.request).then(function(response) {
-                if (event.request.method === 'GET' && response.status === 200) {
-                    var clone = response.clone();
-                    caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, clone); });
-                }
-                return response;
-            });
-        })
-    );
+            // Clone response for caching
+            const responseToCache = networkResponse.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return networkResponse;
+          })
+          .catch(() => {
+            // Return offline fallback for HTML requests
+            if (event.request.headers.get('accept').includes('text/html')) {
+              return caches.match('/index.html');
+            }
+          });
+      })
+  );
 });
+
+// Background sync for pending tests
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-tests') {
+    event.waitUntil(syncPendingTests());
+  }
+});
+
+async function syncPendingTests() {
+  // This would be implemented to sync with Google Sheets
+  console.log('Background sync triggered');
+}
