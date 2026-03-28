@@ -551,6 +551,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            overflow: hidden;
             position: relative;
             background: var(--gray-100);
         }
@@ -756,16 +757,14 @@
             margin: -8px;
             margin-right: 8px;
         }
-    
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
-                <button class="back-btn" id="backBtn" style="display: none;" onclick="showScreen('homeScreen')">←</button>
+                <button class="back-btn" id="backBtn" style="display: none;">←</button>
                 <img src="logo.png" alt="PCMS">
                 <span class="logo-text">PCMS Mobile</span>
             </div>
@@ -883,16 +882,6 @@
                     <div class="action-icon">📊</div>
                     <div class="action-title">Tracker</div>
                     <div class="action-subtitle">Meters due for testing</div>
-                </div>
-                <div class="action-card" onclick="showScreen('mapScreen')">
-                    <div class="action-icon">🗺️</div>
-                    <div class="action-title">Map</div>
-                    <div class="action-subtitle">View meter locations</div>
-                </div>
-                <div class="action-card" onclick="showScreen('flowCalcScreen')">
-                    <div class="action-icon">🧮</div>
-                    <div class="action-title">Flow Calc</div>
-                    <div class="action-subtitle">Calculate flow rates</div>
                 </div>
             </div>
 
@@ -1320,17 +1309,14 @@
             <div class="form-section">
                 <div class="form-section-title">📷 Photos</div>
                 <div class="photo-grid">
-                    <div class="photo-slot" id="photoSlot0">
+                    <div class="photo-slot" onclick="showPhotoOptions(0)">
                         <span class="add-icon">+</span>
-                        <input type="file" id="photoFile0" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,0)">
                     </div>
-                    <div class="photo-slot" id="photoSlot1">
+                    <div class="photo-slot" onclick="showPhotoOptions(1)">
                         <span class="add-icon">+</span>
-                        <input type="file" id="photoFile1" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,1)">
                     </div>
-                    <div class="photo-slot" id="photoSlot2">
+                    <div class="photo-slot" onclick="showPhotoOptions(2)">
                         <span class="add-icon">+</span>
-                        <input type="file" id="photoFile2" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,2)">
                     </div>
                 </div>
                 <p class="form-hint">Tap to capture or upload photos</p>
@@ -1452,101 +1438,6 @@
     </main>
 
     <!-- Bottom Nav for Form -->
-        <!-- Map Screen -->
-        <section class="screen" id="mapScreen">
-            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-                <select id="mapFilterCustomer" onchange="filterMap()" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--gray-300);font-size:13px;">
-                    <option value="all">All Customers</option>
-                </select>
-                <select id="mapFilterStatus" onchange="filterMap()" style="padding:8px;border-radius:8px;border:1px solid var(--gray-300);font-size:13px;">
-                    <option value="all">All Status</option>
-                    <option value="good">✅ Good</option>
-                    <option value="due">⚠️ Due Soon</option>
-                    <option value="overdue">🔴 Overdue</option>
-                </select>
-            </div>
-            <div id="siteMap" style="height:calc(100vh - 280px);border-radius:12px;overflow:hidden;border:1px solid var(--gray-200);"></div>
-            <div style="display:flex;gap:8px;margin-top:8px;">
-                <button onclick="locateMeOnMap()" style="flex:1;padding:12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🎯 Find Me</button>
-                <button onclick="refreshMapIfActive()" style="flex:1;padding:12px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🔄 Refresh</button>
-            </div>
-        </section>
-
-        <!-- Flow Calculator Screen -->
-        <section class="screen" id="flowCalcScreen">
-            <div class="section-title">🧮 Flow Calculator</div>
-
-            <!-- Pipe Flow -->
-            <div class="form-section" style="margin-bottom:16px;">
-                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">🔵 Closed Pipe Flow</div>
-                <div class="form-group">
-                    <label class="form-label">Pipe Diameter (inches O.D.)</label>
-                    <input type="number" step="0.01" class="form-input" id="calcDiameter" placeholder="e.g. 6.625" oninput="calcPipeFlow()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Velocity (ft/s)</label>
-                    <input type="number" step="0.01" class="form-input" id="calcVelocity" placeholder="e.g. 3.5" oninput="calcPipeFlow()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Wall Thickness (inches) <span style="color:var(--gray-400);font-size:11px;">optional</span></label>
-                    <input type="number" step="0.001" class="form-input" id="calcWallThick" placeholder="e.g. 0.28" oninput="calcPipeFlow()">
-                </div>
-                <div id="pipeFlowResult" style="padding:16px;background:var(--navy);color:white;border-radius:12px;display:none;">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                        <div><div style="font-size:11px;color:var(--gray-400);">GPM</div><div id="pipeGPM" style="font-size:22px;font-weight:700;"></div></div>
-                        <div><div style="font-size:11px;color:var(--gray-400);">MGD</div><div id="pipeMGD" style="font-size:22px;font-weight:700;"></div></div>
-                        <div><div style="font-size:11px;color:var(--gray-400);">CFS</div><div id="pipeCFS" style="font-size:22px;font-weight:700;"></div></div>
-                    </div>
-                    <div id="pipeArea" style="font-size:11px;color:var(--gray-400);"></div>
-                </div>
-            </div>
-
-            <!-- % Difference Calculator -->
-            <div class="form-section" style="margin-bottom:16px;">
-                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">📊 % Difference</div>
-                <div style="display:flex;gap:8px;">
-                    <div class="form-group" style="flex:1;">
-                        <label class="form-label">Reference</label>
-                        <input type="number" step="0.01" class="form-input" id="calcRef" placeholder="e.g. 100" oninput="calcPctDiff()">
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label class="form-label">Measured</label>
-                        <input type="number" step="0.01" class="form-input" id="calcMeas" placeholder="e.g. 102" oninput="calcPctDiff()">
-                    </div>
-                </div>
-                <div id="pctDiffResult" style="padding:12px;background:var(--navy);color:white;border-radius:12px;display:none;text-align:center;">
-                    <div style="font-size:11px;color:var(--gray-400);">% Difference</div>
-                    <div id="pctDiffVal" style="font-size:28px;font-weight:700;"></div>
-                </div>
-            </div>
-
-            <!-- Unit Converter -->
-            <div class="form-section">
-                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">🔄 Unit Converter</div>
-                <div class="form-group">
-                    <label class="form-label">Value</label>
-                    <input type="number" step="0.0001" class="form-input" id="calcConvVal" placeholder="Enter value" oninput="calcConvert()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">From</label>
-                    <select class="form-select" id="calcConvFrom" onchange="calcConvert()">
-                        <option value="gpm">GPM</option>
-                        <option value="mgd">MGD</option>
-                        <option value="cfs">CFS</option>
-                        <option value="gph">GPH</option>
-                        <option value="gpd">GPD</option>
-                    </select>
-                </div>
-                <div id="convResult" style="padding:12px;background:var(--navy);color:white;border-radius:12px;display:none;">
-                    <div id="convGPM" style="font-size:13px;margin-bottom:4px;"></div>
-                    <div id="convMGD" style="font-size:13px;margin-bottom:4px;"></div>
-                    <div id="convCFS" style="font-size:13px;margin-bottom:4px;"></div>
-                    <div id="convGPH" style="font-size:13px;margin-bottom:4px;"></div>
-                    <div id="convGPD" style="font-size:13px;"></div>
-                </div>
-            </div>
-        </section>
-
     <div class="bottom-nav" id="formNav" style="display: none;">
         <button class="btn btn-secondary" onclick="showScreen('homeScreen')">Cancel</button>
         <button class="btn btn-gold" onclick="saveTest()">💾 Save Test</button>
@@ -1566,7 +1457,6 @@
     <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // ============================================
         // APP STATE
@@ -1623,170 +1513,6 @@
             }
         }
         
-        function handlePhotoFile(event, index) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                photos[index] = e.target.result;
-                const slot = document.getElementById('photoSlot' + index);
-                if (slot) {
-                    slot.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">' +
-                        '<button class="remove-photo" onclick="removePhoto(' + index + ', event)">×</button>' +
-                        '<input type="file" id="photoFile' + index + '" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,' + index + ')">';
-                }
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
-        // ── Flow Calculator Functions ──────────────────────────
-        function calcPipeFlow() {
-            const dOD = parseFloat(document.getElementById('calcDiameter').value);
-            const v = parseFloat(document.getElementById('calcVelocity').value);
-            const wall = parseFloat(document.getElementById('calcWallThick').value) || 0;
-            if (isNaN(dOD) || isNaN(v) || dOD <= 0 || v <= 0) {
-                document.getElementById('pipeFlowResult').style.display = 'none';
-                return;
-            }
-            const dID = wall > 0 ? dOD - (2 * wall) : dOD;
-            const radiusFt = (dID / 2) / 12;
-            const areaFt2 = Math.PI * radiusFt * radiusFt;
-            const cfs = areaFt2 * v;
-            const gpm = cfs * 448.831;
-            const mgd = gpm * 0.00144;
-            document.getElementById('pipeFlowResult').style.display = 'block';
-            document.getElementById('pipeGPM').textContent = gpm.toFixed(1);
-            document.getElementById('pipeMGD').textContent = mgd.toFixed(3);
-            document.getElementById('pipeCFS').textContent = cfs.toFixed(3);
-            document.getElementById('pipeArea').textContent = 'ID: ' + dID.toFixed(3) + '" | Area: ' + (areaFt2 * 144).toFixed(3) + ' in²';
-        }
-
-        function calcPctDiff() {
-            const ref = parseFloat(document.getElementById('calcRef').value);
-            const meas = parseFloat(document.getElementById('calcMeas').value);
-            if (isNaN(ref) || isNaN(meas) || ref === 0) {
-                document.getElementById('pctDiffResult').style.display = 'none';
-                return;
-            }
-            const pct = ((meas - ref) / ref) * 100;
-            const el = document.getElementById('pctDiffResult');
-            el.style.display = 'block';
-            const val = document.getElementById('pctDiffVal');
-            val.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-            val.style.color = Math.abs(pct) <= 2 ? '#68d391' : Math.abs(pct) <= 5 ? '#f6e05e' : '#fc8181';
-        }
-
-        function calcConvert() {
-            const val = parseFloat(document.getElementById('calcConvVal').value);
-            const from = document.getElementById('calcConvFrom').value;
-            if (isNaN(val)) { document.getElementById('convResult').style.display = 'none'; return; }
-            // Convert to GPM first
-            const toGPM = { gpm: 1, mgd: 694.444, cfs: 448.831, gph: 1/60, gpd: 1/1440 };
-            const fromGPM = { gpm: 1, mgd: 1/694.444, cfs: 1/448.831, gph: 60, gpd: 1440 };
-            const gpm = val * toGPM[from];
-            document.getElementById('convResult').style.display = 'block';
-            document.getElementById('convGPM').textContent = '= ' + gpm.toFixed(2) + ' GPM';
-            document.getElementById('convMGD').textContent = '= ' + (gpm * fromGPM.mgd).toFixed(4) + ' MGD';
-            document.getElementById('convCFS').textContent = '= ' + (gpm * fromGPM.cfs).toFixed(4) + ' CFS';
-            document.getElementById('convGPH').textContent = '= ' + (gpm * fromGPM.gph).toFixed(1) + ' GPH';
-            document.getElementById('convGPD').textContent = '= ' + (gpm * fromGPM.gpd).toFixed(0) + ' GPD';
-        }
-
-        // ── Map Functions ─────────────────────────────────────
-        let siteMap = null;
-        let mapMarkers = [];
-        let mapSites = [];
-
-        function initMap() {
-            if (siteMap) return;
-            siteMap = L.map('siteMap').setView([29.65, -98.35], 10);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors', maxZoom: 19
-            }).addTo(siteMap);
-            loadMapSites();
-        }
-
-        function loadMapSites() {
-            if (!Array.isArray(assetDB) || assetDB.length === 0) return;
-            mapSites = [];
-            assetDB.forEach(function(a) {
-                const gps = a['GPS Coordinates'] || a['gpsCoordinates'] || '';
-                if (!gps) return;
-                const parts = gps.split(',');
-                if (parts.length < 2) return;
-                const lat = parseFloat(parts[0]);
-                const lng = parseFloat(parts[1]);
-                if (isNaN(lat) || isNaN(lng)) return;
-                mapSites.push({ lat, lng, asset: a });
-            });
-            populateMapFilter();
-            renderMapMarkers(mapSites);
-        }
-
-        function populateMapFilter() {
-            const sel = document.getElementById('mapFilterCustomer');
-            if (!sel) return;
-            const customers = [...new Set(mapSites.map(s => s.asset['Customer'] || '').filter(c => c))].sort();
-            sel.innerHTML = '<option value="all">All Customers</option>';
-            customers.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
-        }
-
-        function filterMap() {
-            const cust = document.getElementById('mapFilterCustomer').value;
-            const status = document.getElementById('mapFilterStatus').value;
-            let filtered = mapSites;
-            if (cust !== 'all') filtered = filtered.filter(s => (s.asset['Customer'] || '') === cust);
-            renderMapMarkers(filtered);
-        }
-
-        function getMarkerColor(asset) {
-            const lastTest = asset['Last Test Date'] || '';
-            if (!lastTest) return 'red';
-            const d = new Date(lastTest);
-            const months = (new Date() - d) / (1000 * 60 * 60 * 24 * 30);
-            if (months < 10) return 'green';
-            if (months < 12) return 'orange';
-            return 'red';
-        }
-
-        function renderMapMarkers(sites) {
-            mapMarkers.forEach(function(m) { siteMap.removeLayer(m); });
-            mapMarkers = [];
-            if (!siteMap) return;
-            sites.forEach(function(s) {
-                const color = getMarkerColor(s.asset);
-                const icon = L.divIcon({
-                    html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
-                    className: '', iconSize: [14, 14], iconAnchor: [7, 7]
-                });
-                const m = L.marker([s.lat, s.lng], { icon }).addTo(siteMap);
-                const a = s.asset;
-                m.bindPopup('<strong>' + (a['Customer'] || '') + '</strong><br>' +
-                    (a['Facility/Location'] || a['location'] || '') + '<br>' +
-                    '<small>' + (a['Manufacturer/Model'] || '') + ' | SN: ' + (a['Serial Number'] || '') + '</small>');
-                mapMarkers.push(m);
-            });
-            if (sites.length > 0) {
-                const bounds = L.latLngBounds(sites.map(s => [s.lat, s.lng]));
-                siteMap.fitBounds(bounds, { padding: [30, 30] });
-            }
-        }
-
-        function locateMeOnMap() {
-            if (!siteMap) return;
-            navigator.geolocation.getCurrentPosition(function(pos) {
-                siteMap.setView([pos.coords.latitude, pos.coords.longitude], 14);
-                L.marker([pos.coords.latitude, pos.coords.longitude], {
-                    icon: L.divIcon({ html: '📍', className: '', iconSize: [20, 20] })
-                }).addTo(siteMap).bindPopup('You are here').openPopup();
-            }, function() { alert('Could not get your location'); });
-        }
-
-        function refreshMapIfActive() {
-            if (siteMap) loadMapSites();
-        }
-
         function saveRecoveryEmail() {
             const email = document.getElementById('recoveryEmail').value.trim();
             if (!email || !email.includes('@')) {
@@ -3125,11 +2851,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 updateFailedCertsUI();
             }
             
-            // Initialize map when navigating to it
-            if (screenId === 'mapScreen') {
-                setTimeout(function() { initMap(); }, 100);
-            }
-
             // Update pending count
             updatePendingCount();
         }
@@ -4174,6 +3895,5 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 .catch(err => console.log('Service Worker registration failed:', err));
         }
     </script>
-
 </body>
 </html>
