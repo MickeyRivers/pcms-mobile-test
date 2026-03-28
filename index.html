@@ -764,7 +764,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
-                <button class="back-btn" id="backBtn" style="display: none;">←</button>
+                <button class="back-btn" id="backBtn" style="display: none;" onclick="showScreen('homeScreen')">←</button>
                 <img src="logo.png" alt="PCMS">
                 <span class="logo-text">PCMS Mobile</span>
             </div>
@@ -847,6 +847,7 @@
             40%, 80% { transform: translateX(10px); }
         }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <!-- Main Container -->
     <main class="container" id="mainContainer" style="display: none;">
@@ -882,6 +883,16 @@
                     <div class="action-icon">📊</div>
                     <div class="action-title">Tracker</div>
                     <div class="action-subtitle">Meters due for testing</div>
+                </div>
+                <div class="action-card" onclick="showScreen('mapScreen')">
+                    <div class="action-icon">🗺️</div>
+                    <div class="action-title">Map</div>
+                    <div class="action-subtitle">View meter locations</div>
+                </div>
+                <div class="action-card" onclick="showScreen('flowCalcScreen')">
+                    <div class="action-icon">🧮</div>
+                    <div class="action-title">Flow Calc</div>
+                    <div class="action-subtitle">Calculate flow rates</div>
                 </div>
             </div>
 
@@ -1438,6 +1449,79 @@
     </main>
 
     <!-- Bottom Nav for Form -->
+        <!-- Map Screen -->
+        <section class="screen" id="mapScreen">
+            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <select id="mapFilterCustomer" onchange="filterMap()" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--gray-300);font-size:13px;">
+                    <option value="all">All Customers</option>
+                </select>
+                <select id="mapFilterStatus" onchange="filterMap()" style="padding:8px;border-radius:8px;border:1px solid var(--gray-300);font-size:13px;">
+                    <option value="all">All Status</option>
+                    <option value="good">✅ Good</option>
+                    <option value="due">⚠️ Due Soon</option>
+                    <option value="overdue">🔴 Overdue</option>
+                </select>
+            </div>
+            <div id="siteMap" style="height:calc(100vh - 280px);border-radius:12px;overflow:hidden;border:1px solid var(--gray-200);"></div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+                <button onclick="locateMeOnMap()" style="flex:1;padding:12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🎯 Find Me</button>
+                <button onclick="loadMapSites()" style="flex:1;padding:12px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🔄 Refresh</button>
+            </div>
+        </section>
+
+        <!-- Flow Calculator Screen -->
+        <section class="screen" id="flowCalcScreen">
+            <div class="section-title">🧮 Flow Calculator</div>
+            <div class="form-section" style="margin-bottom:16px;">
+                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">🔵 Closed Pipe Flow</div>
+                <div class="form-group">
+                    <label class="form-label">Pipe Diameter O.D. (inches)</label>
+                    <input type="number" step="0.01" class="form-input" id="calcDiameter" placeholder="e.g. 6.625" oninput="calcPipeFlow()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Velocity (ft/s)</label>
+                    <input type="number" step="0.01" class="form-input" id="calcVelocity" placeholder="e.g. 3.5" oninput="calcPipeFlow()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Wall Thickness (inches) <span style="color:var(--gray-400);font-size:11px;">optional</span></label>
+                    <input type="number" step="0.001" class="form-input" id="calcWallThick" placeholder="e.g. 0.28" oninput="calcPipeFlow()">
+                </div>
+                <div id="pipeFlowResult" style="padding:16px;background:var(--navy);color:white;border-radius:12px;display:none;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <div><div style="font-size:11px;color:var(--gray-400);">GPM</div><div id="pipeGPM" style="font-size:22px;font-weight:700;"></div></div>
+                        <div><div style="font-size:11px;color:var(--gray-400);">MGD</div><div id="pipeMGD" style="font-size:22px;font-weight:700;"></div></div>
+                        <div><div style="font-size:11px;color:var(--gray-400);">CFS</div><div id="pipeCFS" style="font-size:22px;font-weight:700;"></div></div>
+                    </div>
+                    <div id="pipeArea" style="font-size:11px;color:var(--gray-400);"></div>
+                </div>
+            </div>
+            <div class="form-section" style="margin-bottom:16px;">
+                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">📊 % Difference</div>
+                <div style="display:flex;gap:8px;">
+                    <div class="form-group" style="flex:1;"><label class="form-label">Reference</label><input type="number" step="0.01" class="form-input" id="calcRef" oninput="calcPctDiff()"></div>
+                    <div class="form-group" style="flex:1;"><label class="form-label">Measured</label><input type="number" step="0.01" class="form-input" id="calcMeas" oninput="calcPctDiff()"></div>
+                </div>
+                <div id="pctDiffResult" style="padding:12px;background:var(--navy);color:white;border-radius:12px;display:none;text-align:center;">
+                    <div style="font-size:11px;color:var(--gray-400);">% Difference</div>
+                    <div id="pctDiffVal" style="font-size:28px;font-weight:700;"></div>
+                </div>
+            </div>
+            <div class="form-section">
+                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">🔄 Unit Converter</div>
+                <div style="display:flex;gap:8px;align-items:flex-end;">
+                    <div class="form-group" style="flex:1;"><label class="form-label">Value</label><input type="number" step="0.0001" class="form-input" id="calcConvVal" oninput="calcConvert()"></div>
+                    <div class="form-group" style="flex:1;"><label class="form-label">From</label>
+                        <select class="form-select" id="calcConvFrom" onchange="calcConvert()">
+                            <option value="gpm">GPM</option><option value="mgd">MGD</option><option value="cfs">CFS</option><option value="gph">GPH</option><option value="gpd">GPD</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="convResult" style="padding:12px;background:var(--navy);color:white;border-radius:12px;display:none;font-size:13px;line-height:2;">
+                    <div id="convGPM"></div><div id="convMGD"></div><div id="convCFS"></div><div id="convGPH"></div><div id="convGPD"></div>
+                </div>
+            </div>
+        </section>
+
     <div class="bottom-nav" id="formNav" style="display: none;">
         <button class="btn btn-secondary" onclick="showScreen('homeScreen')">Cancel</button>
         <button class="btn btn-gold" onclick="saveTest()">💾 Save Test</button>
@@ -2851,6 +2935,10 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 updateFailedCertsUI();
             }
             
+            // Initialize map when navigating to it
+            if (screenId === 'mapScreen') {
+                setTimeout(function() { initMap(); }, 150);
+            }
             // Update pending count
             updatePendingCount();
         }
@@ -3893,6 +3981,107 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker registered'))
                 .catch(err => console.log('Service Worker registration failed:', err));
+        }
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Map functions
+        var siteMap = null, mapMarkers = [], mapSites = [];
+        function initMap() {
+            if (siteMap) return;
+            siteMap = L.map('siteMap').setView([29.65, -98.35], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap', maxZoom:19}).addTo(siteMap);
+            loadMapSites();
+        }
+        function loadMapSites() {
+            if (!Array.isArray(assetDB) || !assetDB.length) return;
+            mapSites = [];
+            assetDB.forEach(function(a) {
+                var gps = a['GPS Coordinates'] || '';
+                if (!gps) return;
+                var p = gps.split(',');
+                if (p.length < 2) return;
+                var lat = parseFloat(p[0]), lng = parseFloat(p[1]);
+                if (isNaN(lat) || isNaN(lng)) return;
+                mapSites.push({lat:lat, lng:lng, asset:a});
+            });
+            populateMapFilter();
+            renderMapMarkers(mapSites);
+        }
+        function populateMapFilter() {
+            var sel = document.getElementById('mapFilterCustomer');
+            if (!sel) return;
+            var customers = [...new Set(mapSites.map(function(s){return s.asset['Customer']||''}).filter(function(c){return c}))].sort();
+            sel.innerHTML = '<option value="all">All Customers</option>';
+            customers.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+        }
+        function filterMap() {
+            var cust = document.getElementById('mapFilterCustomer').value;
+            var filtered = cust === 'all' ? mapSites : mapSites.filter(function(s){return (s.asset['Customer']||'')===cust;});
+            renderMapMarkers(filtered);
+        }
+        function renderMapMarkers(sites) {
+            mapMarkers.forEach(function(m){siteMap.removeLayer(m);});
+            mapMarkers = [];
+            if (!siteMap) return;
+            sites.forEach(function(s) {
+                var months = 99;
+                var lt = s.asset['Last Test Date'] || '';
+                if (lt) months = (new Date() - new Date(lt)) / (1000*60*60*24*30);
+                var color = months < 10 ? 'green' : months < 12 ? 'orange' : 'red';
+                var icon = L.divIcon({html:'<div style="width:12px;height:12px;border-radius:50%;background:'+color+';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',className:'',iconSize:[12,12],iconAnchor:[6,6]});
+                var m = L.marker([s.lat,s.lng],{icon:icon}).addTo(siteMap);
+                var a = s.asset;
+                m.bindPopup('<strong>'+(a['Customer']||'')+'</strong><br>'+(a['Facility/Location']||'')+'<br><small>'+(a['Manufacturer/Model']||'')+' SN:'+(a['Serial Number']||'')+'</small>');
+                mapMarkers.push(m);
+            });
+            if (sites.length) siteMap.fitBounds(L.latLngBounds(sites.map(function(s){return [s.lat,s.lng];})),{padding:[30,30]});
+        }
+        function locateMeOnMap() {
+            if (!siteMap) return;
+            navigator.geolocation.getCurrentPosition(function(pos){
+                siteMap.setView([pos.coords.latitude,pos.coords.longitude],14);
+                L.marker([pos.coords.latitude,pos.coords.longitude],{icon:L.divIcon({html:'📍',className:'',iconSize:[20,20]})}).addTo(siteMap).bindPopup('You are here').openPopup();
+            });
+        }
+        // Flow calc functions
+        function calcPipeFlow() {
+            var d = parseFloat(document.getElementById('calcDiameter').value);
+            var v = parseFloat(document.getElementById('calcVelocity').value);
+            var w = parseFloat(document.getElementById('calcWallThick').value)||0;
+            if (isNaN(d)||isNaN(v)||d<=0||v<=0){document.getElementById('pipeFlowResult').style.display='none';return;}
+            var id = w>0 ? d-(2*w) : d;
+            var r = (id/2)/12;
+            var area = Math.PI*r*r;
+            var cfs = area*v, gpm = cfs*448.831, mgd = gpm*0.00144;
+            document.getElementById('pipeFlowResult').style.display='block';
+            document.getElementById('pipeGPM').textContent=gpm.toFixed(1);
+            document.getElementById('pipeMGD').textContent=mgd.toFixed(3);
+            document.getElementById('pipeCFS').textContent=cfs.toFixed(3);
+            document.getElementById('pipeArea').textContent='ID: '+id.toFixed(3)+'" | Area: '+(area*144).toFixed(3)+' in²';
+        }
+        function calcPctDiff() {
+            var ref = parseFloat(document.getElementById('calcRef').value);
+            var meas = parseFloat(document.getElementById('calcMeas').value);
+            if (isNaN(ref)||isNaN(meas)||ref===0){document.getElementById('pctDiffResult').style.display='none';return;}
+            var pct = ((meas-ref)/ref)*100;
+            document.getElementById('pctDiffResult').style.display='block';
+            var v = document.getElementById('pctDiffVal');
+            v.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+            v.style.color=Math.abs(pct)<=2?'#68d391':Math.abs(pct)<=5?'#f6e05e':'#fc8181';
+        }
+        function calcConvert() {
+            var val = parseFloat(document.getElementById('calcConvVal').value);
+            var from = document.getElementById('calcConvFrom').value;
+            if (isNaN(val)){document.getElementById('convResult').style.display='none';return;}
+            var toGPM={gpm:1,mgd:694.444,cfs:448.831,gph:1/60,gpd:1/1440};
+            var gpm = val*toGPM[from];
+            document.getElementById('convResult').style.display='block';
+            document.getElementById('convGPM').textContent='= '+gpm.toFixed(2)+' GPM';
+            document.getElementById('convMGD').textContent='= '+(gpm/694.444).toFixed(4)+' MGD';
+            document.getElementById('convCFS').textContent='= '+(gpm/448.831).toFixed(4)+' CFS';
+            document.getElementById('convGPH').textContent='= '+(gpm*60).toFixed(1)+' GPH';
+            document.getElementById('convGPD').textContent='= '+(gpm*1440).toFixed(0)+' GPD';
         }
     </script>
 </body>
