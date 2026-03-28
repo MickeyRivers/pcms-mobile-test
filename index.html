@@ -883,6 +883,16 @@
                     <div class="action-title">Tracker</div>
                     <div class="action-subtitle">Meters due for testing</div>
                 </div>
+                <div class="action-card" onclick="showScreen('mapScreen')">
+                    <div class="action-icon">🗺️</div>
+                    <div class="action-title">Map</div>
+                    <div class="action-subtitle">View meter locations</div>
+                </div>
+                <div class="action-card" onclick="showScreen('flowCalcScreen')">
+                    <div class="action-icon">🧮</div>
+                    <div class="action-title">Flow Calc</div>
+                    <div class="action-subtitle">Calculate flow rates</div>
+                </div>
             </div>
 
             <div class="section-title">Recent Activity</div>
@@ -1299,14 +1309,17 @@
             <div class="form-section">
                 <div class="form-section-title">📷 Photos</div>
                 <div class="photo-grid">
-                    <div class="photo-slot" onclick="showPhotoOptions(0)">
+                    <div class="photo-slot" id="photoSlot0">
                         <span class="add-icon">+</span>
+                        <input type="file" id="photoFile0" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,0)">
                     </div>
-                    <div class="photo-slot" onclick="showPhotoOptions(1)">
+                    <div class="photo-slot" id="photoSlot1">
                         <span class="add-icon">+</span>
+                        <input type="file" id="photoFile1" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,1)">
                     </div>
-                    <div class="photo-slot" onclick="showPhotoOptions(2)">
+                    <div class="photo-slot" id="photoSlot2">
                         <span class="add-icon">+</span>
+                        <input type="file" id="photoFile2" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,2)">
                     </div>
                 </div>
                 <p class="form-hint">Tap to capture or upload photos</p>
@@ -1428,6 +1441,42 @@
     </main>
 
     <!-- Bottom Nav for Form -->
+        <!-- Map Screen -->
+        <section class="screen" id="mapScreen">
+            <div class="section-title">📍 Meter Map</div>
+            <div id="mapContainer" style="width:100%;height:60vh;border-radius:12px;overflow:hidden;background:#e8f4f8;display:flex;align-items:center;justify-content:center;">
+                <div id="map" style="width:100%;height:100%;"></div>
+                <div id="mapPlaceholder" style="text-align:center;color:#666;padding:20px;">
+                    <div style="font-size:48px;margin-bottom:16px;">🗺️</div>
+                    <p>Map loading...</p>
+                </div>
+            </div>
+            <div style="margin-top:12px;padding:0 16px;">
+                <p style="color:var(--gray-500);font-size:13px;text-align:center;">Showing all meter locations from AssetDB</p>
+            </div>
+        </section>
+
+        <!-- Flow Calculator Screen -->
+        <section class="screen" id="flowCalcScreen">
+            <div class="section-title">🧮 Flow Calculator</div>
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label">Pipe Diameter (inches)</label>
+                    <input type="number" step="0.01" class="form-input" id="calcDiameter" placeholder="e.g. 6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Velocity (ft/s)</label>
+                    <input type="number" step="0.01" class="form-input" id="calcVelocity" placeholder="e.g. 3.5">
+                </div>
+                <button class="btn btn-gold btn-block" onclick="calculateFlow()" style="margin-top:16px;">Calculate</button>
+                <div id="flowCalcResult" style="margin-top:16px;padding:16px;background:var(--navy);color:white;border-radius:12px;display:none;">
+                    <div style="font-size:13px;color:var(--gray-400);margin-bottom:4px;">Flow Rate</div>
+                    <div id="flowCalcGPM" style="font-size:28px;font-weight:700;"></div>
+                    <div id="flowCalcMGD" style="font-size:14px;color:var(--gray-400);margin-top:4px;"></div>
+                </div>
+            </div>
+        </section>
+
     <div class="bottom-nav" id="formNav" style="display: none;">
         <button class="btn btn-secondary" onclick="showScreen('homeScreen')">Cancel</button>
         <button class="btn btn-gold" onclick="saveTest()">💾 Save Test</button>
@@ -1464,7 +1513,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
 
         // ============================================
         // PIN SECURITY
@@ -1503,6 +1552,39 @@
             }
         }
         
+        function handlePhotoFile(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photos[index] = e.target.result;
+                const slot = document.getElementById('photoSlot' + index);
+                if (slot) {
+                    slot.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">' +
+                        '<button class="remove-photo" onclick="removePhoto(' + index + ', event)">×</button>' +
+                        '<input type="file" id="photoFile' + index + '" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,' + index + ')">';
+                }
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function calculateFlow() {
+            const d = parseFloat(document.getElementById('calcDiameter').value);
+            const v = parseFloat(document.getElementById('calcVelocity').value);
+            if (isNaN(d) || isNaN(v) || d <= 0 || v <= 0) {
+                alert('Please enter valid diameter and velocity values');
+                return;
+            }
+            const area = Math.PI * Math.pow(d / 24, 2); // radius in feet
+            const cfs = area * v;
+            const gpm = cfs * 448.831;
+            const mgd = gpm * 0.00144;
+            document.getElementById('flowCalcResult').style.display = 'block';
+            document.getElementById('flowCalcGPM').textContent = gpm.toFixed(1) + ' GPM';
+            document.getElementById('flowCalcMGD').textContent = mgd.toFixed(3) + ' MGD';
+        }
+
         function saveRecoveryEmail() {
             const email = document.getElementById('recoveryEmail').value.trim();
             if (!email || !email.includes('@')) {
@@ -1710,7 +1792,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -1748,7 +1830,7 @@
         }
 
         async function loadTestHistory() {
-            const HISTORY_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec?action=history';
+            const HISTORY_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec?action=history';
             
             try {
                 const response = await fetch(HISTORY_URL);
@@ -1858,6 +1940,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         let allCustomerStats = [];
         
         function initTracker() {
+            if (!Array.isArray(assetDB) || assetDB.length === 0) return;
             // Get unique customers from AssetDB
             const customers = [...new Set(assetDB.map(a => a['Customer']).filter(c => c))].sort();
             
@@ -3638,9 +3721,9 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
         }
 
-        const CLOUD_FUNCTION_URL = 'https://generate-certificate-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbylCjhUdLU-Pg5mfjl16Qsf4-9uin-ZgD4T2qxhvVnnQ0dv8kMDQ6EZTEcNxosLfEZFmg/exec';
+        const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
