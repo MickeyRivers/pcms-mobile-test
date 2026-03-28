@@ -1073,6 +1073,16 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Flow Units</label>
+                    <select class="form-select" id="formFlowUnitsCP">
+                        <option value="GPM">GPM</option>
+                        <option value="MGD">MGD</option>
+                        <option value="CFS">CFS</option>
+                        <option value="GPD">GPD</option>
+                    </select>
+                </div>
+
                 <div class="form-group before-field">
                     <label class="form-label">Flow Rate - Validating Meter (Before)</label>
                     <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="GPM">
@@ -1299,17 +1309,14 @@
             <div class="form-section">
                 <div class="form-section-title">📷 Photos</div>
                 <div class="photo-grid">
-                    <div class="photo-slot" id="photoSlot0">
+                    <div class="photo-slot" onclick="showPhotoOptions(0)">
                         <span class="add-icon">+</span>
-                        <input type="file" id="photoFile0" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,0)">
                     </div>
-                    <div class="photo-slot" id="photoSlot1">
+                    <div class="photo-slot" onclick="showPhotoOptions(1)">
                         <span class="add-icon">+</span>
-                        <input type="file" id="photoFile1" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,1)">
                     </div>
-                    <div class="photo-slot" id="photoSlot2">
+                    <div class="photo-slot" onclick="showPhotoOptions(2)">
                         <span class="add-icon">+</span>
-                        <input type="file" id="photoFile2" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,2)">
                     </div>
                 </div>
                 <p class="form-hint">Tap to capture or upload photos</p>
@@ -1506,23 +1513,6 @@
             }
         }
         
-        function handlePhotoFile(event, index) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                photos[index] = e.target.result;
-                const slot = document.getElementById('photoSlot' + index);
-                if (slot) {
-                    slot.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">' +
-                        '<button class="remove-photo" onclick="removePhoto(' + index + ', event)">×</button>' +
-                        '<input type="file" id="photoFile' + index + '" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;" onchange="handlePhotoFile(event,' + index + ')">';
-                }
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
         function saveRecoveryEmail() {
             const email = document.getElementById('recoveryEmail').value.trim();
             if (!email || !email.includes('@')) {
