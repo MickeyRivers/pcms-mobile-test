@@ -1471,55 +1471,122 @@
 
         <!-- Flow Calculator Screen -->
         <section class="screen" id="flowCalcScreen">
-            <div class="section-title">🧮 Flow Calculator</div>
-            <div class="form-section" style="margin-bottom:16px;">
-                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">🔵 Closed Pipe Flow</div>
-                <div class="form-group">
-                    <label class="form-label">Pipe Diameter O.D. (inches)</label>
-                    <input type="number" step="0.01" class="form-input" id="calcDiameter" placeholder="e.g. 6.625" oninput="calcPipeFlow()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Velocity (ft/s)</label>
-                    <input type="number" step="0.01" class="form-input" id="calcVelocity" placeholder="e.g. 3.5" oninput="calcPipeFlow()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Wall Thickness (inches) <span style="color:var(--gray-400);font-size:11px;">optional</span></label>
-                    <input type="number" step="0.001" class="form-input" id="calcWallThick" placeholder="e.g. 0.28" oninput="calcPipeFlow()">
-                </div>
-                <div id="pipeFlowResult" style="padding:16px;background:var(--navy);color:white;border-radius:12px;display:none;">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                        <div><div style="font-size:11px;color:var(--gray-400);">GPM</div><div id="pipeGPM" style="font-size:22px;font-weight:700;"></div></div>
-                        <div><div style="font-size:11px;color:var(--gray-400);">MGD</div><div id="pipeMGD" style="font-size:22px;font-weight:700;"></div></div>
-                        <div><div style="font-size:11px;color:var(--gray-400);">CFS</div><div id="pipeCFS" style="font-size:22px;font-weight:700;"></div></div>
-                    </div>
-                    <div id="pipeArea" style="font-size:11px;color:var(--gray-400);"></div>
-                </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div class="section-title" style="margin:0;">🧮 Flow Calculator</div>
             </div>
-            <div class="form-section" style="margin-bottom:16px;">
-                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">📊 % Difference</div>
-                <div style="display:flex;gap:8px;">
-                    <div class="form-group" style="flex:1;"><label class="form-label">Reference</label><input type="number" step="0.01" class="form-input" id="calcRef" oninput="calcPctDiff()"></div>
-                    <div class="form-group" style="flex:1;"><label class="form-label">Measured</label><input type="number" step="0.01" class="form-input" id="calcMeas" oninput="calcPctDiff()"></div>
-                </div>
-                <div id="pctDiffResult" style="padding:12px;background:var(--navy);color:white;border-radius:12px;display:none;text-align:center;">
-                    <div style="font-size:11px;color:var(--gray-400);">% Difference</div>
-                    <div id="pctDiffVal" style="font-size:28px;font-weight:700;"></div>
-                </div>
-            </div>
+
             <div class="form-section">
-                <div style="font-weight:600;color:var(--navy);margin-bottom:12px;font-size:15px;">🔄 Unit Converter</div>
-                <div style="display:flex;gap:8px;align-items:flex-end;">
-                    <div class="form-group" style="flex:1;"><label class="form-label">Value</label><input type="number" step="0.0001" class="form-input" id="calcConvVal" oninput="calcConvert()"></div>
-                    <div class="form-group" style="flex:1;"><label class="form-label">From</label>
-                        <select class="form-select" id="calcConvFrom" onchange="calcConvert()">
-                            <option value="gpm">GPM</option><option value="mgd">MGD</option><option value="cfs">CFS</option><option value="gph">GPH</option><option value="gpd">GPD</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Primary Device</label>
+                    <select class="form-select" id="fcDevice" onchange="fcDeviceChanged()">
+                        <optgroup label="Parshall Flumes">
+                            <option value="parshall_3">3" Parshall Flume</option>
+                            <option value="parshall_6">6" Parshall Flume</option>
+                            <option value="parshall_9">9" Parshall Flume</option>
+                            <option value="parshall_12" selected>12" Parshall Flume</option>
+                            <option value="parshall_18">18" Parshall Flume</option>
+                            <option value="parshall_24">24" Parshall Flume</option>
+                            <option value="parshall_36">36" Parshall Flume</option>
+                            <option value="parshall_48">48" Parshall Flume</option>
+                            <option value="parshall_60">60" Parshall Flume</option>
+                            <option value="parshall_72">72" Parshall Flume</option>
+                        </optgroup>
+                        <optgroup label="V-Notch Weirs">
+                            <option value="vnotch_22.5">22.5° V-Notch Weir</option>
+                            <option value="vnotch_30">30° V-Notch Weir</option>
+                            <option value="vnotch_45">45° V-Notch Weir</option>
+                            <option value="vnotch_60">60° V-Notch Weir</option>
+                            <option value="vnotch_90">90° V-Notch Weir</option>
+                            <option value="vnotch_120">120° V-Notch Weir</option>
+                            <option value="vnotch_custom">Custom Angle V-Notch</option>
+                        </optgroup>
+                        <optgroup label="Palmer-Bowlus Flumes">
+                            <option value="pb_4">4" Palmer-Bowlus</option>
+                            <option value="pb_6">6" Palmer-Bowlus</option>
+                            <option value="pb_8">8" Palmer-Bowlus</option>
+                            <option value="pb_10">10" Palmer-Bowlus</option>
+                            <option value="pb_12">12" Palmer-Bowlus</option>
+                            <option value="pb_15">15" Palmer-Bowlus</option>
+                            <option value="pb_18">18" Palmer-Bowlus</option>
+                            <option value="pb_24">24" Palmer-Bowlus</option>
+                        </optgroup>
+                        <optgroup label="Rectangular Weirs">
+                            <option value="rect_suppressed">Suppressed Rectangular Weir</option>
+                            <option value="rect_contracted">Contracted Rectangular Weir</option>
+                        </optgroup>
+                    </select>
                 </div>
-                <div id="convResult" style="padding:12px;background:var(--navy);color:white;border-radius:12px;display:none;font-size:13px;line-height:2;">
-                    <div id="convGPM"></div><div id="convMGD"></div><div id="convCFS"></div><div id="convGPH"></div><div id="convGPD"></div>
+                <div class="form-group" id="fcCustomAngleGroup" style="display:none;">
+                    <label class="form-label">Notch Angle (degrees)</label>
+                    <input type="number" class="form-input" id="fcCustomAngle" placeholder="e.g. 76.6" min="20" max="120" oninput="fcCalculate()">
+                </div>
+                <div class="form-group" id="fcWeirLengthGroup" style="display:none;">
+                    <label class="form-label">Weir Crest Length (ft)</label>
+                    <input type="number" class="form-input" id="fcWeirLength" placeholder="e.g. 2.0" step="0.01" oninput="fcCalculate()">
                 </div>
             </div>
+
+            <div class="form-section">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+                    <button id="fcModeH" onclick="fcSetMode('H')" style="padding:12px; background:var(--teal); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Head → Flow</button>
+                    <button id="fcModeQ" onclick="fcSetMode('Q')" style="padding:12px; background:var(--gray-200); color:var(--gray-700); border:none; border-radius:8px; font-weight:600; cursor:pointer;">Flow → Head</button>
+                </div>
+                <div id="fcHeadInputGroup">
+                    <div class="form-group">
+                        <label class="form-label">Head / Level (H)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" class="form-input" id="fcHeadIn" placeholder="0.00" step="0.001" oninput="fcCalculate()" style="flex:1;">
+                            <select class="form-select" id="fcHeadUnit" onchange="fcCalculate()" style="width:90px;">
+                                <option value="ft">ft</option>
+                                <option value="in">inches</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="fcFlowInputGroup" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">Flow Rate (Q)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" class="form-input" id="fcFlowIn" placeholder="0.00" step="0.001" oninput="fcCalculate()" style="flex:1;">
+                            <select class="form-select" id="fcFlowUnitIn" onchange="fcCalculate()" style="width:90px;">
+                                <option value="cfs">CFS</option>
+                                <option value="gpm">GPM</option>
+                                <option value="mgd">MGD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fcResult" style="display:none; background:linear-gradient(135deg,var(--navy),#1a3a5c); border-radius:16px; padding:24px; text-align:center; color:white; margin-bottom:16px;">
+                <div style="font-size:12px; opacity:0.8; margin-bottom:4px;" id="fcResultLabel">Flow Rate</div>
+                <div id="fcPrimary" style="font-size:40px; font-weight:700; letter-spacing:-1px; margin-bottom:4px;">—</div>
+                <div id="fcPrimaryUnit" style="font-size:14px; opacity:0.85; margin-bottom:16px;">—</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                        <div style="font-size:10px; opacity:0.7; margin-bottom:2px;">CFS</div>
+                        <div id="fcCFS" style="font-size:15px; font-weight:600;">—</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                        <div style="font-size:10px; opacity:0.7; margin-bottom:2px;">GPM</div>
+                        <div id="fcGPM" style="font-size:15px; font-weight:600;">—</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                        <div style="font-size:10px; opacity:0.7; margin-bottom:2px;">MGD</div>
+                        <div id="fcMGD" style="font-size:15px; font-weight:600;">—</div>
+                    </div>
+                </div>
+                <div id="fcEquation" style="margin-top:12px; font-size:11px; opacity:0.6; font-style:italic;">—</div>
+            </div>
+
+            <div id="fcError" style="display:none; background:#fee2e2; border-radius:10px; padding:14px; color:#991b1b; font-size:13px; margin-bottom:16px;"></div>
+
+            <div class="form-section" style="font-size:12px; color:var(--gray-500);">
+                <div style="font-weight:600; color:var(--gray-700); margin-bottom:6px;">📐 Equation Reference</div>
+                <div id="fcEquationRef">Select a device to see the equation used.</div>
+            </div>
+
+            <div class="bottom-spacer"></div>
         </section>
 
     <div class="bottom-nav" id="formNav" style="display: none;">
@@ -3985,7 +4052,117 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Map functions
+        // ============================================
+        // FLOW CALCULATOR
+        // ============================================
+        const PARSHALL = {
+            'parshall_3':  { C: 0.992,  n: 1.547, label: '3" Parshall Flume'  },
+            'parshall_6':  { C: 2.06,   n: 1.58,  label: '6" Parshall Flume'  },
+            'parshall_9':  { C: 3.07,   n: 1.53,  label: '9" Parshall Flume'  },
+            'parshall_12': { C: 4.00,   n: 1.52,  label: '12" Parshall Flume' },
+            'parshall_18': { C: 6.00,   n: 1.53,  label: '18" Parshall Flume' },
+            'parshall_24': { C: 8.00,   n: 1.53,  label: '24" Parshall Flume' },
+            'parshall_36': { C: 12.00,  n: 1.56,  label: '36" Parshall Flume' },
+            'parshall_48': { C: 16.00,  n: 1.56,  label: '48" Parshall Flume' },
+            'parshall_60': { C: 20.00,  n: 1.58,  label: '60" Parshall Flume' },
+            'parshall_72': { C: 24.00,  n: 1.59,  label: '72" Parshall Flume' },
+        };
+        const PALMER_BOWLUS = {
+            'pb_4':  { C: 1.73,  k: 0.00588,  n: 1.9573, label: '4" Palmer-Bowlus'  },
+            'pb_6':  { C: 2.071, k: 0.005421, n: 1.9025, label: '6" Palmer-Bowlus'  },
+            'pb_8':  { C: 2.537, k: 0.01456,  n: 1.9724, label: '8" Palmer-Bowlus'  },
+            'pb_10': { C: 2.843, k: 0.01610,  n: 1.9530, label: '10" Palmer-Bowlus' },
+            'pb_12': { C: 3.372, k: 0.01656,  n: 1.9540, label: '12" Palmer-Bowlus' },
+            'pb_15': { C: 4.151, k: 0.02016,  n: 1.9479, label: '15" Palmer-Bowlus' },
+            'pb_18': { C: 4.932, k: 0.02435,  n: 1.9398, label: '18" Palmer-Bowlus' },
+            'pb_24': { C: 6.573, k: 0.02891,  n: 1.9411, label: '24" Palmer-Bowlus' },
+        };
+        function vnotchCe(theta) { return 0.607165052 - 0.000874466963*theta + 6.10393334e-6*theta*theta; }
+        function vnotchK(theta)  { return 0.0144902648 - 0.00033955535*theta + 3.29819003e-6*theta*theta - 1.06215442e-8*theta*theta*theta; }
+
+        var fcMode = 'H';
+        function fcSetMode(mode) {
+            fcMode = mode;
+            document.getElementById('fcModeH').style.background = mode==='H' ? 'var(--teal)' : 'var(--gray-200)';
+            document.getElementById('fcModeH').style.color = mode==='H' ? 'white' : 'var(--gray-700)';
+            document.getElementById('fcModeQ').style.background = mode==='Q' ? 'var(--teal)' : 'var(--gray-200)';
+            document.getElementById('fcModeQ').style.color = mode==='Q' ? 'white' : 'var(--gray-700)';
+            document.getElementById('fcHeadInputGroup').style.display = mode==='H' ? 'block' : 'none';
+            document.getElementById('fcFlowInputGroup').style.display = mode==='Q' ? 'block' : 'none';
+            document.getElementById('fcResult').style.display = 'none';
+            document.getElementById('fcError').style.display = 'none';
+        }
+        function fcDeviceChanged() {
+            var dev = document.getElementById('fcDevice').value;
+            document.getElementById('fcCustomAngleGroup').style.display = dev==='vnotch_custom' ? 'block' : 'none';
+            document.getElementById('fcWeirLengthGroup').style.display = (dev==='rect_suppressed'||dev==='rect_contracted') ? 'block' : 'none';
+            fcUpdateEquationRef(); fcCalculate();
+        }
+        function fcGetHeadFt() {
+            var val = parseFloat(document.getElementById('fcHeadIn').value);
+            var unit = document.getElementById('fcHeadUnit').value;
+            if (isNaN(val)||val<=0) return null;
+            return unit==='in' ? val/12 : val;
+        }
+        function fcGetFlowCFS() {
+            var val = parseFloat(document.getElementById('fcFlowIn').value);
+            var unit = document.getElementById('fcFlowUnitIn').value;
+            if (isNaN(val)||val<=0) return null;
+            if (unit==='gpm') return val/448.831;
+            if (unit==='mgd') return val*1.5472;
+            return val;
+        }
+        function fcCalcQfromH(dev, Hft) {
+            if (PARSHALL[dev]) { var p=PARSHALL[dev]; return p.C * Math.pow(Hft, p.n); }
+            if (PALMER_BOWLUS[dev]) { var pb=PALMER_BOWLUS[dev]; return pb.C * Math.pow(Hft+pb.k, pb.n); }
+            if (dev.startsWith('vnotch_')) {
+                var theta = dev==='vnotch_custom' ? parseFloat(document.getElementById('fcCustomAngle').value) : parseFloat(dev.split('_')[1]);
+                if (isNaN(theta)||theta<20||theta>120) return null;
+                return 4.28 * vnotchCe(theta) * Math.tan(theta/2*Math.PI/180) * Math.pow(Hft+vnotchK(theta), 2.5);
+            }
+            if (dev==='rect_suppressed') { var L=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L)||L<=0)return null; return 3.33*L*Math.pow(Hft,1.5); }
+            if (dev==='rect_contracted') { var L2=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L2)||L2<=0)return null; return 3.33*(L2-0.2*Hft)*Math.pow(Hft,1.5); }
+            return null;
+        }
+        function fcCalcHfromQ(dev, Qcfs) {
+            var lo=0.001, hi=20;
+            for (var i=0; i<60; i++) {
+                var mid=(lo+hi)/2, q=fcCalcQfromH(dev,mid);
+                if (q===null) return null;
+                if (q<Qcfs) lo=mid; else hi=mid;
+                if (hi-lo<0.00001) break;
+            }
+            return (lo+hi)/2;
+        }
+        function fcCalculate() {
+            var dev=document.getElementById('fcDevice').value;
+            var resultEl=document.getElementById('fcResult'), errorEl=document.getElementById('fcError');
+            errorEl.style.display='none'; resultEl.style.display='none';
+            var Qcfs=null, Hft=null;
+            if (fcMode==='H') { Hft=fcGetHeadFt(); if(!Hft)return; Qcfs=fcCalcQfromH(dev,Hft); }
+            else { Qcfs=fcGetFlowCFS(); if(!Qcfs)return; Hft=fcCalcHfromQ(dev,Qcfs); Qcfs=fcCalcQfromH(dev,Hft); }
+            if (Qcfs===null||isNaN(Qcfs)||Qcfs<0) { errorEl.textContent='Invalid input — check values.'; errorEl.style.display='block'; return; }
+            var gpm=Qcfs*448.831, mgd=Qcfs/1.5472;
+            if (fcMode==='H') { document.getElementById('fcResultLabel').textContent='Flow Rate (Q)'; document.getElementById('fcPrimary').textContent=gpm.toFixed(2); document.getElementById('fcPrimaryUnit').textContent='GPM'; }
+            else { document.getElementById('fcResultLabel').textContent='Head (H)'; document.getElementById('fcPrimary').textContent=(Hft*12).toFixed(3); document.getElementById('fcPrimaryUnit').textContent='inches  ('+Hft.toFixed(4)+' ft)'; }
+            document.getElementById('fcCFS').textContent=Qcfs.toFixed(4);
+            document.getElementById('fcGPM').textContent=gpm.toFixed(2);
+            document.getElementById('fcMGD').textContent=mgd.toFixed(4);
+            document.getElementById('fcEquation').textContent='H = '+Hft.toFixed(4)+' ft  →  Q = '+Qcfs.toFixed(4)+' cfs';
+            resultEl.style.display='block'; fcUpdateEquationRef();
+        }
+        function fcUpdateEquationRef() {
+            var dev=document.getElementById('fcDevice').value, el=document.getElementById('fcEquationRef');
+            if (PARSHALL[dev]) { var p=PARSHALL[dev]; el.innerHTML='<b>'+p.label+'</b><br>Q = '+p.C+' × Ha<sup>'+p.n+'</sup> (cfs, Ha in ft)<br><small>Source: USBR Water Measurement Manual</small>'; }
+            else if (PALMER_BOWLUS[dev]) { var pb=PALMER_BOWLUS[dev]; el.innerHTML='<b>'+pb.label+'</b><br>Q = '+pb.C+' × (H + '+pb.k+')<sup>'+pb.n+'</sup> (cfs, H in ft)<br><small>Source: Plasti-fab / Palmer-Bowlus equations</small>'; }
+            else if (dev.startsWith('vnotch_')) { el.innerHTML='<b>V-Notch Weir (Kindsvater-Shen)</b><br>Q = 4.28 × Ce × tan(θ/2) × (H + k)<sup>2.5</sup> (cfs, H in ft)<br><small>Valid: 20° ≤ θ ≤ 120° — Source: USBR/ISO</small>'; }
+            else if (dev==='rect_suppressed') { el.innerHTML='<b>Suppressed Rectangular Weir</b><br>Q = 3.33 × L × H<sup>1.5</sup> (cfs, ft)<br><small>Source: USBR Water Measurement Manual</small>'; }
+            else if (dev==='rect_contracted') { el.innerHTML='<b>Contracted Rectangular Weir</b><br>Q = 3.33 × (L − 0.2H) × H<sup>1.5</sup> (cfs, ft)<br><small>Source: USBR Water Measurement Manual</small>'; }
+        }
+
+        // ============================================
+        // MAP functions
+        // ============================================
         var siteMap = null, mapMarkers = [], mapSites = [];
         function initMap() {
             if (siteMap) return;
