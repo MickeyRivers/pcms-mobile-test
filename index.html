@@ -757,14 +757,47 @@
             margin: -8px;
             margin-right: 8px;
         }
+        .map-chip {
+            padding: 10px 18px;
+            border-radius: 24px;
+            border: 2px solid var(--gray-300);
+            background: white;
+            color: var(--navy);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .map-chip.active {
+            border-color: var(--teal);
+            background: var(--teal);
+            color: white;
+        }
+        .map-chip:active { opacity: 0.8; }
+
+        .unit-badge {
+            display: inline-block;
+            background: var(--teal);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+            margin-left: 4px;
+            vertical-align: middle;
+            letter-spacing: 0.5px;
+        }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="logo-section">
-                <button class="back-btn" id="backBtn" style="display: none;" onclick="showScreen('homeScreen')">←</button>
+                <button class="back-btn" id="backBtn" style="display: none;">←</button>
                 <img src="logo.png" alt="PCMS">
                 <span class="logo-text">PCMS Mobile</span>
             </div>
@@ -847,7 +880,6 @@
             40%, 80% { transform: translateX(10px); }
         }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <!-- Main Container -->
     <main class="container" id="mainContainer" style="display: none;">
@@ -879,20 +911,18 @@
                     <div class="action-title">History</div>
                     <div class="action-subtitle">Look up past tests</div>
                 </div>
+                <div class="action-card" onclick="showScreen('mapScreen')">
+                    <div class="action-icon">🗺️</div>
+                    <div class="action-label">Site Map</div>
+                </div>
+                <div class="action-card" onclick="showScreen('flowCalcScreen')">
+                    <div class="action-icon">🧮</div>
+                    <div class="action-label">Flow Calc</div>
+                </div>
                 <div class="action-card" onclick="showScreen('trackerScreen')">
                     <div class="action-icon">📊</div>
                     <div class="action-title">Tracker</div>
                     <div class="action-subtitle">Meters due for testing</div>
-                </div>
-                <div class="action-card" onclick="showScreen('mapScreen')">
-                    <div class="action-icon">🗺️</div>
-                    <div class="action-title">Map</div>
-                    <div class="action-subtitle">View meter locations</div>
-                </div>
-                <div class="action-card" onclick="showScreen('flowCalcScreen')">
-                    <div class="action-icon">🧮</div>
-                    <div class="action-title">Flow Calc</div>
-                    <div class="action-subtitle">Calculate flow rates</div>
                 </div>
             </div>
 
@@ -968,7 +998,10 @@
 
             <!-- Meter Info Section -->
             <div class="form-section">
-                <div class="form-section-title">📍 Meter Information</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div class="form-section-title">📍 Meter Information</div>
+                    <div id="draftSavedIndicator" style="font-size:11px;color:var(--teal);opacity:0;transition:opacity 0.5s;font-weight:600;">✓ Draft saved</div>
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label required">Customer</label>
@@ -1086,7 +1119,17 @@
 
                 <div class="form-group">
                     <label class="form-label">Flow Units</label>
-                    <select class="form-select" id="formFlowUnitsCP">
+                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
+                        <option value="GPM">GPM</option>
+                        <option value="MGD">MGD</option>
+                        <option value="CFS">CFS</option>
+                        <option value="GPD">GPD</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Flow Units</label>
+                    <select class="form-select" id="formFlowUnitsCP" onchange="updateUnitLabels('CP')">
                         <option value="GPM">GPM</option>
                         <option value="MGD">MGD</option>
                         <option value="CFS">CFS</option>
@@ -1095,23 +1138,84 @@
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Flow Rate - Validating Meter (Before)</label>
-                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="GPM">
+                    <label class="form-label">Flow Rate - Validating Meter (Before) <span class="unit-badge" id="unitBadgeCPValBefore">GPM</span></label>
+                    <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="0.00">
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Customer Meter - Flow Rate (Before)</label>
+                    <label class="form-label">Customer Meter - Flow Rate (Before) <span class="unit-badge" id="unitBadgeCPCusBefore">GPM</span></label>
                     <input type="number" step="0.1" class="form-input" id="formCusFlowBefore" placeholder="GPM">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Flow Rate - Validating Meter (After)</label>
+                    <label class="form-label">Flow Rate - Validating Meter (After) <span class="unit-badge" id="unitBadgeCPValAfter">GPM</span></label>
                     <input type="number" step="0.1" class="form-input" id="formValFlowAfter" placeholder="GPM">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Customer Meter - Flow Rate (After)</label>
+                    <label class="form-label">Customer Meter - Flow Rate (After) <span class="unit-badge" id="unitBadgeCPCusAfter">GPM</span></label>
                     <input type="number" step="0.1" class="form-input" id="formCusFlowAfter" placeholder="GPM">
+                </div>
+            </div>
+
+                <!-- Mechanical meter timed flow calculator -->
+                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
+                    <div onclick="toggleMechCalc()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+                        <span style="font-weight:600; font-size:14px; color:var(--navy);">⚙️ Mechanical Meter Calculator</span>
+                        <span id="mechCalcToggleIcon" style="font-size:18px; color:var(--gray-500);">＋</span>
+                    </div>
+                    <div id="mechCalcPanel" style="display:none; margin-top:14px;">
+                        <div class="form-group">
+                            <label class="form-label">Register Multiplier</label>
+                            <select class="form-select" id="mechMultiplier" onchange="calcMechFlow()">
+                                <option value="1">×1 — reads actual gallons</option>
+                                <option value="10">×10 — last digit = 10 gal</option>
+                                <option value="100">×100 — last digit = 100 gal</option>
+                                <option value="1000">×1,000 — last digit = 1,000 gal</option>
+                                <option value="10000">×10,000 — last digit = 10,000 gal</option>
+                            </select>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label">Start Reading</label>
+                                <input type="number" step="0.1" class="form-input" id="mechStart" placeholder="0.0" oninput="calcMechFlow()">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label">End Reading</label>
+                                <input type="number" step="0.1" class="form-input" id="mechEnd" placeholder="0.0" oninput="calcMechFlow()">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Elapsed Time</label>
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                <div id="mechTimerDisplay" style="font-size:32px; font-weight:700; font-family:monospace; color:var(--navy); min-width:110px;">00:00</div>
+                                <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                                    <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
+                                    <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
+                                    <button id="mechTimerResetBtn" onclick="mechTimerReset()" style="padding:8px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
+                                </div>
+                            </div>
+                            <div style="font-size:11px; color:var(--gray-500);">Or enter time manually (minutes):</div>
+                            <input type="number" step="0.1" min="0.1" class="form-input" id="mechTime" placeholder="e.g. 1.0" oninput="calcMechFlow()" style="margin-top:4px;">
+                        </div>
+                        <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
+                            <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
+                            <div id="mechGPM" style="font-size:36px; font-weight:700; letter-spacing:-1px;">—</div>
+                            <div style="font-size:13px; opacity:0.85;">GPM</div>
+                            <div style="display:flex; justify-content:center; gap:24px; margin-top:12px; font-size:12px; opacity:0.85;">
+                                <span>= <span id="mechMGD">—</span> MGD</span>
+                                <span>= <span id="mechGPH">—</span> GPH</span>
+                            </div>
+                            <div style="margin-top:8px; font-size:11px; opacity:0.7;" id="mechCalcDetail">—</div>
+                        </div>
+                        <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                            ✓ Use This Flow Rate in Test Record
+                        </button>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Totalizer Reading (at end)</label>
+                            <input type="text" class="form-input" id="mechTotalizerReading" placeholder="e.g. 0045231">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1190,22 +1294,22 @@
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Level in Channel (Before)</label>
+                    <label class="form-label">Level in Channel (Before) <span class="unit-badge" id="unitBadgeOCChanBefore">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelChannelBefore" placeholder="Level">
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Level on Meter (Before)</label>
+                    <label class="form-label">Level on Meter (Before) <span class="unit-badge" id="unitBadgeOCMeterBefore">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelMeterBefore" placeholder="Level">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Level in Channel (After)</label>
+                    <label class="form-label">Level in Channel (After) <span class="unit-badge" id="unitBadgeOCChanAfter">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelChannelAfter" placeholder="Level">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Level on Meter (After)</label>
+                    <label class="form-label">Level on Meter (After) <span class="unit-badge" id="unitBadgeOCMeterAfter">in</span></label>
                     <input type="number" step="0.01" class="form-input" id="formLevelMeterAfter" placeholder="Level">
                 </div>
             </div>
@@ -1261,22 +1365,22 @@
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Value on Meter (Before)</label>
+                    <label class="form-label">Value on Meter (Before) <span class="unit-badge" id="unitBadgeCRMeterBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterBefore">
                 </div>
 
                 <div class="form-group before-field">
-                    <label class="form-label">Value on Chart Recorder (Before)</label>
+                    <label class="form-label">Value on Chart Recorder (Before) <span class="unit-badge" id="unitBadgeCRChartBefore">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartBefore">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Value on Meter (After)</label>
+                    <label class="form-label">Value on Meter (After) <span class="unit-badge" id="unitBadgeCRMeterAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formMeterAfter">
                 </div>
 
                 <div class="form-group after-field">
-                    <label class="form-label">Value on Chart Recorder (After)</label>
+                    <label class="form-label">Value on Chart Recorder (After) <span class="unit-badge" id="unitBadgeCRChartAfter">GPM</span></label>
                     <input type="number" step="0.01" class="form-input" id="formChartAfter">
                 </div>
             </div>
@@ -1449,24 +1553,68 @@
     </main>
 
     <!-- Bottom Nav for Form -->
-        <!-- Map Screen -->
+    <div class="bottom-nav" id="formNav" style="display: none;">
+        <button class="btn btn-secondary" onclick="showScreen('homeScreen')">Cancel</button>
+        <button class="btn btn-gold" onclick="saveTest()">💾 Save Test</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Processing...</div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Hidden inputs -->
         <section class="screen" id="mapScreen">
-            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-                <select id="mapFilterCustomer" onchange="filterMap()" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--gray-300);font-size:13px;">
-                    <option value="all">All Customers</option>
-                </select>
-                <select id="mapFilterStatus" onchange="filterMap()" style="padding:8px;border-radius:8px;border:1px solid var(--gray-300);font-size:13px;">
-                    <option value="all">All Status</option>
-                    <option value="good">✅ Good</option>
-                    <option value="due">⚠️ Due Soon</option>
-                    <option value="overdue">🔴 Overdue</option>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div class="section-title" style="margin: 0;">Site Map</div>
+                <select id="mapCustomerFilter" onchange="filterMapByCustomer()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 13px;">
+                    <option value="">All Customers</option>
                 </select>
             </div>
-            <div id="siteMap" style="height:calc(100vh - 280px);border-radius:12px;overflow:hidden;border:1px solid var(--gray-200);"></div>
-            <div style="display:flex;gap:8px;margin-top:8px;">
-                <button onclick="locateMeOnMap()" style="flex:1;padding:12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🎯 Find Me</button>
-                <button onclick="loadMapSites()" style="flex:1;padding:12px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">🔄 Refresh</button>
+            <div class="map-filter-chips" style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px;">
+                <button class="map-chip active" onclick="filterMapStatus('all', this)">All</button>
+                <button class="map-chip" onclick="filterMapStatus('tested', this)">✓ Tested</button>
+                <button class="map-chip" onclick="filterMapStatus('due', this)">⚠ Due</button>
+                <button class="map-chip" onclick="filterMapStatus('overdue', this)">🚨 Overdue</button>
             </div>
+            <div id="siteMap" style="height: calc(100vh - 380px); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200);"></div>
+            <div class="map-legend" style="display: flex; gap: 16px; justify-content: center; margin: 12px 0; font-size: 12px;">
+                <span><span style="display:inline-block;width:12px;height:12px;background:#4ade80;border-radius:50%;margin-right:4px;"></span>Tested</span>
+                <span><span style="display:inline-block;width:12px;height:12px;background:#fbbf24;border-radius:50%;margin-right:4px;"></span>Due</span>
+                <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:50%;margin-right:4px;"></span>Overdue</span>
+            </div>
+            <div class="map-route-settings" style="background: var(--gray-50); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-weight: 600; font-size: 13px; margin-bottom: 10px;">🗺️ Route Planning</div>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                    <div style="width: 28px; height: 28px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">A</div>
+                    <input type="text" id="routeStart" value="📍 Current Location" readonly style="flex: 1; padding: 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px;">
+                    <button onclick="setRouteStart()" style="padding: 10px; border: 1px solid var(--gray-200); border-radius: 8px; background: white;">📍</button>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="width: 28px; height: 28px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">B</div>
+                    <input type="text" id="routeEnd" value="🏠 Home" readonly style="flex: 1; padding: 10px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px;">
+                    <button onclick="setRouteEnd()" style="padding: 10px; border: 1px solid var(--gray-200); border-radius: 8px; background: white;">✏️</button>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="locateMeOnMap()" style="padding: 14px 16px; background: var(--navy); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">🎯 Find Me</button>
+                <button onclick="planMapRoute('due')" style="flex: 1; padding: 14px; background: var(--gold); color: var(--navy); border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">📍 Route to Due</button>
+                <button onclick="planMapRoute('overdue')" style="flex: 1; padding: 14px; background: var(--teal); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600;">🚨 Route to Overdue</button>
+            </div>
+            <div id="routeInfoBanner" style="display: none; background: var(--teal); color: white; padding: 12px; border-radius: 8px; margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;" id="routeStopsCount">4 stops planned</div>
+                        <div style="font-size: 12px; opacity: 0.9;" id="routeDistance">North → South route</div>
+                    </div>
+                    <button onclick="openRouteInGoogleMaps()" style="background: white; color: var(--teal); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600;">Open in Maps</button>
+                </div>
+            </div>
+            <div class="bottom-spacer"></div>
         </section>
 
         <!-- Flow Calculator Screen -->
@@ -1474,7 +1622,6 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <div class="section-title" style="margin:0;">🧮 Flow Calculator</div>
             </div>
-
             <div class="form-section">
                 <div class="form-group">
                     <label class="form-label">Primary Device</label>
@@ -1525,7 +1672,6 @@
                     <input type="number" class="form-input" id="fcWeirLength" placeholder="e.g. 2.0" step="0.01" oninput="fcCalculate()">
                 </div>
             </div>
-
             <div class="form-section">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
                     <button id="fcModeH" onclick="fcSetMode('H')" style="padding:12px; background:var(--teal); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Head → Flow</button>
@@ -1557,8 +1703,7 @@
                     </div>
                 </div>
             </div>
-
-            <div id="fcResult" style="display:none; background:linear-gradient(135deg,var(--navy),#1a3a5c); border-radius:16px; padding:24px; text-align:center; color:white; margin-bottom:16px;">
+            <div id="fcResult" style="display:none; background:linear-gradient(135deg,var(--navy),var(--navy-light)); border-radius:16px; padding:24px; text-align:center; color:white; margin-bottom:16px;">
                 <div style="font-size:12px; opacity:0.8; margin-bottom:4px;" id="fcResultLabel">Flow Rate</div>
                 <div id="fcPrimary" style="font-size:40px; font-weight:700; letter-spacing:-1px; margin-bottom:4px;">—</div>
                 <div id="fcPrimaryUnit" style="font-size:14px; opacity:0.85; margin-bottom:16px;">—</div>
@@ -1578,17 +1723,15 @@
                 </div>
                 <div id="fcEquation" style="margin-top:12px; font-size:11px; opacity:0.6; font-style:italic;">—</div>
             </div>
-
             <div id="fcError" style="display:none; background:#fee2e2; border-radius:10px; padding:14px; color:#991b1b; font-size:13px; margin-bottom:16px;"></div>
-
             <div class="form-section" style="font-size:12px; color:var(--gray-500);">
                 <div style="font-weight:600; color:var(--gray-700); margin-bottom:6px;">📐 Equation Reference</div>
                 <div id="fcEquationRef">Select a device to see the equation used.</div>
             </div>
-
             <div class="bottom-spacer"></div>
         </section>
 
+    <!-- Bottom Nav for Form -->
     <div class="bottom-nav" id="formNav" style="display: none;">
         <button class="btn btn-secondary" onclick="showScreen('homeScreen')">Cancel</button>
         <button class="btn btn-gold" onclick="saveTest()">💾 Save Test</button>
@@ -1604,7 +1747,9 @@
     <div class="toast" id="toast"></div>
 
     <!-- Hidden inputs -->
+
     <input type="file" id="photoInput" accept="image/*" style="display:none">
+    <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display:none">
     <canvas id="scanCanvas" style="display:none"></canvas>
 
@@ -1851,6 +1996,9 @@
             // Load test history
             await loadTestHistory();
             
+            // Check for unsaved draft
+            checkForDraft();
+
             // Initialize tracker
             initTracker();
             
@@ -1909,25 +2057,55 @@
         }
 
         async function loadTestHistory() {
-            const HISTORY_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec?action=history';
-            
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
+
             try {
-                const response = await fetch(HISTORY_URL);
-                if (response.ok) {
-                    testHistory = await response.json();
+                // Fetch both Field Data and Test History tabs in parallel
+                const [fieldDataRes, testHistoryRes] = await Promise.allSettled([
+                    fetch(BASE_URL + '?action=history'),
+                    fetch(BASE_URL + '?action=testHistory')
+                ]);
+
+                let combined = [];
+
+                if (fieldDataRes.status === 'fulfilled' && fieldDataRes.value.ok) {
+                    const data = await fieldDataRes.value.json();
+                    if (Array.isArray(data)) combined = combined.concat(data);
+                }
+                if (testHistoryRes.status === 'fulfilled' && testHistoryRes.value.ok) {
+                    const data = await testHistoryRes.value.json();
+                    if (Array.isArray(data)) combined = combined.concat(data);
+                }
+
+                if (combined.length > 0) {
+                    testHistory = combined;
                     localStorage.setItem('testHistory', JSON.stringify(testHistory));
-                    console.log(`Loaded ${testHistory.length} history records`);
+                    console.log(`Loaded ${testHistory.length} history records (Field Data + Test History)`);
+                    refreshMapIfActive();
                     return;
                 }
             } catch (e) {
                 console.log('Could not fetch history, trying cache...');
             }
-            
+
             // Fall back to cache
             const cached = localStorage.getItem('testHistory');
             if (cached) {
                 testHistory = JSON.parse(cached);
-                console.log(`Loaded ${testHistory.length} history records from cache`);
+                console.log(`Loaded ${testHistory.length} cached history records`);
+                refreshMapIfActive();
+            }
+        }
+
+        function refreshMapIfActive() {
+            if (siteMap && mapSites.length > 0) {
+                // Recalculate status for all sites then redraw markers
+                mapSites.forEach(site => {
+                    const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
+                    site.status = getTestStatus(siteObj);
+                });
+                updateMapMarkers();
+                console.log('Map markers refreshed after history load');
             }
         }
 
@@ -1952,6 +2130,8 @@
                 const searchTerm = value.trim().toLowerCase();
                 
                 const matches = testHistory.filter(h => {
+                    // Skip records without a Date (e.g. AssetDB entries leaked into history)
+                    if (!h['Date'] || !String(h['Date']).trim()) return false;
                     const serial = String(h['Serial Number'] || '').toLowerCase();
                     const customer = String(h['Customer'] || '').toLowerCase();
                     const location = String(h['Facility/Location'] || '').toLowerCase();
@@ -2962,12 +3142,24 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             }
             
             showToast('Meter data loaded!', 'success');
+            showTechNotesPopup(asset['Serial Number'] || asset['Asset_ID']);
         }
 
         // ============================================
         // SCREEN MANAGEMENT
         // ============================================
         function showScreen(screenId) {
+            if (screenId === 'formScreen') {
+                startAutosave();
+            } else {
+                stopAutosave();
+            }
+            if (screenId === 'mapScreen') {
+                setTimeout(() => {
+                    initSiteMap();
+                    if (siteMap) siteMap.invalidateSize();
+                }, 100);
+            }
             // Hide all screens
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             
@@ -3002,10 +3194,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 updateFailedCertsUI();
             }
             
-            // Initialize map when navigating to it
-            if (screenId === 'mapScreen') {
-                setTimeout(function() { initMap(); }, 150);
-            }
             // Update pending count
             updatePendingCount();
         }
@@ -3013,7 +3201,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -3253,6 +3441,79 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // FORM HANDLING
         // ============================================
+        // ── Form Draft Autosave ─────────────────────────────────────────────────
+        let autosaveInterval = null;
+
+        function getAllFormFields() {
+            const fields = {};
+            document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(el => {
+                if (el.id) fields[el.id] = el.value;
+            });
+            return fields;
+        }
+
+        function saveDraft() {
+            const fields = getAllFormFields();
+            // Only save if there's meaningful data
+            const hasData = fields['formSerial'] || fields['formCustomer'] || fields['formLocation'];
+            if (!hasData) return;
+            const draft = {
+                timestamp: new Date().toISOString(),
+                fields: fields
+            };
+            localStorage.setItem('pcms_form_draft', JSON.stringify(draft));
+            // Show brief indicator
+            const indicator = document.getElementById('draftSavedIndicator');
+            if (indicator) {
+                indicator.style.opacity = '1';
+                setTimeout(() => indicator.style.opacity = '0', 1500);
+            }
+        }
+
+        function startAutosave() {
+            stopAutosave();
+            autosaveInterval = setInterval(saveDraft, 10000); // every 10 seconds
+        }
+
+        function stopAutosave() {
+            if (autosaveInterval) { clearInterval(autosaveInterval); autosaveInterval = null; }
+        }
+
+        function clearDraft() {
+            localStorage.removeItem('pcms_form_draft');
+        }
+
+        function checkForDraft() {
+            const raw = localStorage.getItem('pcms_form_draft');
+            if (!raw) return;
+            try {
+                const draft = JSON.parse(raw);
+                const age = (new Date() - new Date(draft.timestamp)) / 60000; // minutes
+                if (age > 1440) { clearDraft(); return; } // discard drafts older than 24hrs
+                const timeStr = new Date(draft.timestamp).toLocaleTimeString();
+                const dateStr = new Date(draft.timestamp).toLocaleDateString();
+                if (confirm('Unsaved draft found from ' + dateStr + ' at ' + timeStr + '. Restore it?')) {
+                    restoreDraft(draft.fields);
+                } else {
+                    clearDraft();
+                }
+            } catch(e) { clearDraft(); }
+        }
+
+        function restoreDraft(fields) {
+            showScreen('formScreen');
+            Object.entries(fields).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el && val !== undefined) {
+                    el.value = val;
+                    // Trigger change events for conditional fields
+                    el.dispatchEvent(new Event('change'));
+                }
+            });
+            showToast('Draft restored!', 'success');
+            startAutosave();
+        }
+
         function resetForm() {
             // Clear editing state
             editingTestId = null;
@@ -3260,6 +3521,10 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Hide match card
             document.getElementById('matchCard').style.display = 'none';
             
+            // Clear draft and stop autosave
+            clearDraft();
+            stopAutosave();
+
             // Clear all inputs
             document.querySelectorAll('.form-input, .form-select, .form-textarea').forEach(input => {
                 if (input.id === 'formTestedBy') {
@@ -3374,8 +3639,21 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
 
         function capturePhoto(index) {
             currentPhotoIndex = index;
-            document.getElementById('photoInput').click();
+            const sheet = document.createElement('div');
+            sheet.id = 'photoSheet';
+            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+            sheet.innerHTML = `
+                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
+                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
+                    <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
+            document.body.appendChild(sheet);
         }
+
 
         function handlePhotoCapture(event) {
             const file = event.target.files[0];
@@ -3452,7 +3730,31 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // SAVE & SYNC
         // ============================================
+        function sanitizeText(val) {
+            if (typeof val !== 'string') return val;
+            return val
+                .replace(/[“”]/g, '"')   // smart double quotes
+                .replace(/[‘’]/g, "'")    // smart single quotes
+                .replace(/–/g, '-')            // en dash
+                .replace(/—/g, '--')           // em dash
+                .replace(/…/g, '...')          // ellipsis
+                .replace(/[à-ÿ]/g, c => { // accented chars
+                    const map = {'é':'e','è':'e','ê':'e','à':'a','á':'a','â':'a','ó':'o','ò':'o','ô':'o','ú':'u','ü':'u','ñ':'n'};
+                    return map[c] || c;
+                });
+        }
+
+        function sanitizeRecord(obj) {
+            const clean = {};
+            for (const [k, v] of Object.entries(obj)) {
+                clean[k] = typeof v === 'string' ? sanitizeText(v) : v;
+            }
+            return clean;
+        }
+
         function saveTest() {
+            clearDraft();
+            stopAutosave();
             // Validate required fields
             const customer = document.getElementById('formCustomer').value.trim();
             const location = document.getElementById('formLocation').value.trim();
@@ -3543,12 +3845,12 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 const index = pendingTests.findIndex(t => t.id === editingTestId);
                 if (index !== -1) {
                     testRecord.id = editingTestId;
-                    pendingTests[index] = testRecord;
+                    pendingTests[index] = sanitizeRecord(testRecord);
                 }
                 editingTestId = null;
             } else {
                 // Add new test
-                pendingTests.push(testRecord);
+                pendingTests.push(sanitizeRecord(testRecord));
             }
             savePendingTests();
             
@@ -3656,7 +3958,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         function loadPendingTests() {
             const stored = localStorage.getItem('pendingTests');
             if (stored) {
-                pendingTests = JSON.parse(stored);
+                pendingTests = JSON.parse(stored).map(t => sanitizeRecord(t));
+                savePendingTests(); // re-save with sanitized data
             }
             updatePendingCount();
             updatePendingList();
@@ -3728,14 +4031,23 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         let failedCerts = JSON.parse(localStorage.getItem('pcms_failed_certs') || '[]');
 
         function saveFailedCert(test, errorMsg) {
+            // Store only key fields to avoid localStorage quota issues
             const failedCert = {
-                ...test,
+                id: test.id,
+                serialNumber: test.serialNumber,
+                customer: test.customer,
+                location: test.location,
+                serviceType: test.serviceType,
                 failedAt: new Date().toISOString(),
                 errorMessage: errorMsg
             };
             failedCerts.push(failedCert);
-            localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
-            console.log('Saved failed cert for retry:', test.serialNumber);
+            try {
+                localStorage.setItem('pcms_failed_certs', JSON.stringify(failedCerts));
+                console.log('Saved failed cert for retry:', test.serialNumber);
+            } catch(e) {
+                console.log('Could not save failed cert (storage full):', e.message);
+            }
         }
 
         function getFailedCerts() {
@@ -4044,43 +4356,455 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         // ============================================
         // SERVICE WORKER REGISTRATION
         // ============================================
+
+
+        function showTechNotesPopup(serial) {
+            if (!serial || !testHistory || testHistory.length === 0) return;
+
+            // Find most recent test with tech notes for this serial
+            // Build a fake site object to use findHistoryMatches
+            const siteForLookup = assetDB ? assetDB.find(a => String(a['Serial Number'] || '').trim() === String(serial).trim()) : null;
+            const allMatches = siteForLookup ? findHistoryMatches(siteForLookup) :
+                testHistory.filter(h => String(h['Serial Number'] || '').trim() === String(serial).trim());
+            const matches = allMatches
+                .filter(h => h['Tech Notes'] && String(h['Tech Notes']).trim())
+                .sort((a, b) => new Date(b['Date'] || 0) - new Date(a['Date'] || 0));
+
+            if (matches.length === 0) return;
+
+            const latest = matches[0];
+            const techNotes = String(latest['Tech Notes']).trim();
+            const dateStr = latest['Date'] ? new Date(latest['Date']).toLocaleDateString() : 'Unknown date';
+            const noteCount = matches.length;
+
+            const modal = document.createElement('div');
+            modal.id = 'techNotesModal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;margin:20px;border-radius:16px;overflow:hidden;max-width:380px;width:100%;">
+                    <div style="background:var(--navy);color:white;padding:16px;">
+                        <h3 style="margin:0;font-size:14px;">📋 Tech Notes — ${serial}</h3>
+                        <p style="margin:4px 0 0;font-size:12px;opacity:0.8;">Last visited ${dateStr}${noteCount > 1 ? ' · ' + noteCount + ' previous notes' : ''}</p>
+                    </div>
+                    <div style="padding:16px;font-size:14px;line-height:1.6;color:#333;max-height:300px;overflow-y:auto;">
+                        ${techNotes.replace(/\n/g, '<br>')}
+                    </div>
+                    <div style="padding:0 16px 16px;">
+                        <button onclick="document.getElementById('techNotesModal').remove()" style="width:100%;padding:14px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
+                            Got it — Start Test
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+
+        function updateUnitLabels(section) {
+            if (section==='CP') {
+                const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
+                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fu;});
+            }
+            if (section==='OC') {
+                const lu=document.getElementById('formLevelUnitsOC')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=luS;});
+            }
+            if (section==='CR') {
+                const type=document.getElementById('formMeasurementType')?.value||'Flow';
+                const fu=document.getElementById('formFlowUnitsCR')?.value||'GPM';
+                const lu=document.getElementById('formLevelUnitsCR')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                const unit=type==='Flow'?fu:luS;
+                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=unit;});
+            }
+        }
+
+        // ============================================
+        // SERVICE WORKER REGISTRATION
+        // ============================================
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
                 .then(reg => console.log('Service Worker registered'))
                 .catch(err => console.log('Service Worker registration failed:', err));
         }
-    </script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
+
+
+function capturePhoto(index) {
+            currentPhotoIndex = index;
+            const sheet = document.createElement('div');
+            sheet.id = 'photoSheet';
+            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+            sheet.innerHTML = `
+                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
+                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
+                    <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
+            document.body.appendChild(sheet);
+        }
+
+
+let siteMap = null;
+        let mapMarkers = [];
+        let mapRouteLine = null;
+        let mapSites = [];
+        let currentMapFilter = 'all';
+        let routeStartCoords = null;
+        let routeEndCoords = { lat: 29.5478, lng: -98.4936 };
+        let plannedRoute = [];
+        let myLocationMarker = null;
+
+        function parseGPS(raw) {
+            if (!raw) return null;
+            const str = raw.toString().trim();
+            const parts = str.split(',');
+            if (parts.length !== 2) return null;
+            function parsePart(s) {
+                s = s.trim();
+                const neg = /[WwSs]/.test(s);
+                const val = parseFloat(s.replace(/[^0-9.-]/g, ''));
+                if (isNaN(val)) return null;
+                return neg ? -val : val;
+            }
+            const lat = parsePart(parts[0]);
+            const lng = parsePart(parts[1]);
+            if (lat === null || lng === null) return null;
+            return { lat, lng };
+        }
+
+        function initSiteMap() {
+            if (siteMap) return;
+            siteMap = L.map('siteMap').setView([29.65, -98.35], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(siteMap);
+            loadMapSites();
+        }
+
+        async function loadMapSites() {
+            if (!assetDB || assetDB.length === 0) {
+                await loadAssetDB();
+            }
+            if (assetDB && assetDB.length > 0) {
+                processMapData(assetDB);
+            }
+        }
+
+        function processMapData(data) {
+            if (!data || !Array.isArray(data)) return;
+            mapSites = data.filter(site => {
+                const gps = site['GPS Coordinates'] || '';
+                return gps && gps.toString().includes(',');
+            }).map(site => {
+                const coords = parseGPS(site['GPS Coordinates'] || '');
+                if (!coords) return null;
+                return {
+                    name: site['Facility/Location'] || site['Location'] || 'Unknown',
+                    'Facility/Location': site['Facility/Location'] || site['Location'] || '',
+                    customer: site['Customer'] || '',
+                    'Customer': site['Customer'] || '',
+                    serial: String(site['Serial Number'] || ''),
+                    'Serial Number': String(site['Serial Number'] || ''),
+                    'Service Frequency': site['Service Frequency'] || '',
+                    lat: coords.lat,
+                    lng: coords.lng,
+                    status: getTestStatus(site),
+                    serviceType: site['Service Type'] || ''
+                };
+            }).filter(s => s !== null);
+            populateMapCustomerFilter();
+            updateMapMarkers();
+            if (mapSites.length > 0 && siteMap) {
+                const bounds = L.latLngBounds(mapSites.map(s => [s.lat, s.lng]));
+                siteMap.fitBounds(bounds, { padding: [30, 30] });
+            }
+        }
+
+        // Normalize location string for fuzzy matching
+        function normalizeLocation(str) {
+            return String(str || '').toLowerCase()
+                .replace(/number\s*/g, '#')       // "Number 2" → "#2"
+                .replace(/no\.\s*/g, '#')          // "No. 2" → "#2"
+                .replace(/wwtp/g, 'wwtp')
+                .replace(/wtp/g, 'wtp')
+                .replace(/[^a-z0-9#]/g, ' ')       // strip punctuation
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Score how similar two location strings are (0-1)
+        function locationSimilarity(a, b) {
+            const na = normalizeLocation(a);
+            const nb = normalizeLocation(b);
+            if (na === nb) return 1.0;
+            const wordsA = na.split(' ').filter(w => w.length > 2);
+            const wordsB = new Set(nb.split(' ').filter(w => w.length > 2));
+            if (wordsA.length === 0 || wordsB.size === 0) return 0;
+            const overlap = wordsA.filter(w => wordsB.has(w)).length;
+            return overlap / Math.max(wordsA.length, wordsB.size);
+        }
+
+        // Find history matches by serial, falling back to location (exact then fuzzy)
+        // Only returns records that have a valid Date field (filters out AssetDB records)
+        function findHistoryMatches(site) {
+            const serial = String(site['Serial Number'] || '').trim();
+            const location = String(site['Facility/Location'] || '').trim();
+            const customer = String(site['Customer'] || '').trim().toLowerCase();
+            const isBlankSerial = !serial || serial.toLowerCase() === 'n/a' || serial === '####';
+
+            // Only consider records that have a Date field
+            const historyOnly = testHistory.filter(h => h['Date'] && String(h['Date']).trim());
+
+            // 1. Match by serial number
+            if (!isBlankSerial) {
+                const bySerial = historyOnly.filter(h =>
+                    String(h['Serial Number'] || '').trim() === serial
+                );
+                if (bySerial.length > 0) return bySerial;
+            }
+
+            if (!location) return [];
+
+            // Filter to same customer first
+            const custHistory = customer
+                ? historyOnly.filter(h => String(h['Customer'] || '').trim().toLowerCase() === customer)
+                : historyOnly;
+
+            // 2. Exact location match
+            const exactLoc = custHistory.filter(h =>
+                normalizeLocation(h['Facility/Location']) === normalizeLocation(location)
+            );
+            if (exactLoc.length > 0) return exactLoc;
+
+            // 3. Fuzzy location match (≥0.75 similarity)
+            const fuzzyMatches = custHistory
+                .map(h => ({ h, score: locationSimilarity(h['Facility/Location'], location) }))
+                .filter(x => x.score >= 0.75)
+                .sort((a, b) => b.score - a.score);
+            if (fuzzyMatches.length > 0) return fuzzyMatches.map(x => x.h);
+
+            return [];
+        }
+
+        function getTestStatus(site) {
+            const matches = findHistoryMatches(site);
+            if (matches.length === 0) return 'overdue';
+
+            matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+            const lastTestDate = new Date(matches[0]['Date']);
+            if (isNaN(lastTestDate)) return 'overdue';
+
+            const now = new Date();
+            const daysSince = (now - lastTestDate) / (1000 * 60 * 60 * 24);
+
+            const customer = site['Customer'] || '';
+            const freq = (site['Service Frequency'] || '').toLowerCase();
+            const semiAnnualCustomers = ['New Braunfels Utilities', 'MidSouth', 'Guadalupe-Blanco River Authority', 'GBRA'];
+            const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()))
+                        || freq.includes('semi') || freq.includes('6 month') || freq.includes('twice');
+
+            const cycle = isSemi ? 180 : 365;
+            const testedThreshold = cycle - 30;
+            const dueThreshold = cycle;
+
+            if (daysSince <= testedThreshold) return 'tested';
+            if (daysSince <= dueThreshold)    return 'due';
+            return 'overdue';
+        }
+
+        function populateMapCustomerFilter() {
+            const customers = [...new Set(mapSites.map(s => s.customer).filter(c => c))].sort();
+            const select = document.getElementById('mapCustomerFilter');
+            if (!select) return;
+            select.innerHTML = '<option value="">All Customers</option>' +
+                customers.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+        }
+
+        function filterMapByCustomer() { updateMapMarkers(); }
+
+        function filterMapStatus(status, btn) {
+            currentMapFilter = status;
+            document.querySelectorAll('.map-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            updateMapMarkers();
+        }
+
+        function updateMapMarkers() {
+            mapMarkers.forEach(m => siteMap.removeLayer(m));
+            mapMarkers = [];
+            const customerFilter = document.getElementById('mapCustomerFilter') ?
+                document.getElementById('mapCustomerFilter').value : '';
+            mapSites.forEach(site => {
+                if (customerFilter && site.customer !== customerFilter) return;
+                if (currentMapFilter !== 'all' && site.status !== currentMapFilter) return;
+
+                // Icon: green checkmark, yellow exclamation, red X
+                const iconColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
+                const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : '✕';
+                const icon = L.divIcon({
+                    className: '',
+                    html: '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>',
+                    iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
+                });
+
+                const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
+                const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
+                const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
+                const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
+                const matches = findHistoryMatches(siteObj);
+                matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+                const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
+
+                const popupEl = document.createElement('div');
+                popupEl.style.cssText = 'min-width:200px;font-family:sans-serif;';
+                popupEl.innerHTML =
+                    '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + site.name + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:2px;">👤 ' + site.customer + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:2px;">🔢 ' + site.serial + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:8px;">📅 Last: ' + lastStr + '</div>' +
+                    '<div style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;background:' + statusColor + ';margin-bottom:10px;">' + statusText + '</div>' +
+                    '<div style="display:flex;gap:6px;">' +
+                    '<button id="btn-test-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="flex:1;padding:8px 4px;background:#1a365d;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">▶ Start Test</button>' +
+                    '<button id="btn-nav-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="flex:1;padding:8px 4px;background:#319795;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">📍 Nav</button>' +
+                    '<button id="btn-cfg-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="padding:8px 10px;background:#718096;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">⚙️</button>' +
+                    '</div>';
+
+                const popup = L.popup({ minWidth: 210 }).setContent(popupEl);
+                marker.bindPopup(popup);
+
+                // Wire up buttons after popup opens (avoids inline onclick sandboxing issues)
+                marker.on('popupopen', function() {
+                    const sid = site.serial.replace(/[^a-z0-9]/gi,'_');
+                    const btnTest = document.getElementById('btn-test-' + sid);
+                    const btnNav  = document.getElementById('btn-nav-'  + sid);
+                    const btnCfg  = document.getElementById('btn-cfg-'  + sid);
+                    if (btnTest) btnTest.addEventListener('click', function() { siteMap.closePopup(); startTestFromMap(site.serial); });
+                    if (btnNav)  btnNav.addEventListener('click',  function() { navigateToSite(site.lat, site.lng); });
+                    if (btnCfg)  btnCfg.addEventListener('click',  function() { showMeterOptions(site.serial, site.name); });
+                });
+
+                marker.siteData = site;
+                mapMarkers.push(marker);
+            });
+        }
+
+        function startTestFromMap(serial) {
+            siteMap.closePopup();
+            const asset = assetDB.find(a => String(a['Serial Number']) === serial);
+            if (asset) { populateFromAsset(asset); }
+            else { showScreen('formScreen'); resetForm(); document.getElementById('formSerial').value = serial; }
+        }
+
+        function navigateToSite(lat, lng) {
+            window.open('https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lng, '_blank');
+        }
+
+        function locateMeOnMap() {
+            if (!siteMap) return;
+            if (!navigator.geolocation) { showToast('GPS not supported', 'error'); return; }
+            showToast('Getting your location...', 'info');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    routeStartCoords = { lat, lng };
+                    if (myLocationMarker) siteMap.removeLayer(myLocationMarker);
+                    const icon = L.divIcon({
+                        className: 'map-marker-wrapper',
+                        html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 6px rgba(59,130,246,0.3);"></div>',
+                        iconSize: [20,20], iconAnchor: [10,10]
+                    });
+                    myLocationMarker = L.marker([lat, lng], { icon }).addTo(siteMap)
+                        .bindPopup('<b>📍 You are here</b>').openPopup();
+                    siteMap.setView([lat, lng], 13);
+                    showToast('Location found!', 'success');
+                },
+                () => showToast('Could not get location', 'error'),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function setRouteStart() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    routeStartCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    document.getElementById('routeStart').value = '📍 Current Location';
+                    showToast('Start point set', 'success');
+                });
+            }
+        }
+
+        function setRouteEnd() {
+            const address = prompt('Enter end address:', '');
+            if (address) document.getElementById('routeEnd').value = '🏠 ' + address;
+        }
+
+        function planMapRoute(statusFilter) {
+            const customerFilter = document.getElementById('mapCustomerFilter').value;
+            let routeSites = mapSites.filter(s => {
+                if (customerFilter && s.customer !== customerFilter) return false;
+                if (statusFilter === 'overdue') return s.status === 'overdue';
+                if (statusFilter === 'due') return s.status === 'due' || s.status === 'overdue';
+                return true;
+            });
+            if (routeSites.length === 0) { showToast('No sites to route to', 'info'); return; }
+            routeSites.sort((a, b) => b.lat - a.lat);
+            plannedRoute = routeSites;
+            if (mapRouteLine) siteMap.removeLayer(mapRouteLine);
+            const startPoint = routeStartCoords || { lat: routeSites[0].lat + 0.05, lng: routeSites[0].lng };
+            const routePoints = [[startPoint.lat, startPoint.lng],
+                ...routeSites.map(s => [s.lat, s.lng]),
+                [routeEndCoords.lat, routeEndCoords.lng]];
+            mapRouteLine = L.polyline(routePoints, { color: '#2a9d8f', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(siteMap);
+            siteMap.fitBounds(mapRouteLine.getBounds(), { padding: [50, 50] });
+            document.getElementById('routeInfoBanner').style.display = 'block';
+            document.getElementById('routeStopsCount').textContent = routeSites.length + ' stops planned';
+            document.getElementById('routeDistance').textContent = 'Route: North to South';
+        }
+
+        function openRouteInGoogleMaps() {
+            if (plannedRoute.length === 0) { showToast('No route planned', 'error'); return; }
+            const start = routeStartCoords ? routeStartCoords.lat + ',' + routeStartCoords.lng : '';
+            const end = routeEndCoords.lat + ',' + routeEndCoords.lng;
+            const waypoints = plannedRoute.map(s => s.lat + ',' + s.lng).join('|');
+            let url = 'https://www.google.com/maps/dir/?api=1&destination=' + end + '&travelmode=driving';
+            if (start) url += '&origin=' + start;
+            if (waypoints) url += '&waypoints=' + waypoints;
+            window.open(url, '_blank');
+        }
+
         // ============================================
         // FLOW CALCULATOR
         // ============================================
         const PARSHALL = {
-            'parshall_3':  { C: 0.992,  n: 1.547, label: '3" Parshall Flume'  },
-            'parshall_6':  { C: 2.06,   n: 1.58,  label: '6" Parshall Flume'  },
-            'parshall_9':  { C: 3.07,   n: 1.53,  label: '9" Parshall Flume'  },
-            'parshall_12': { C: 4.00,   n: 1.52,  label: '12" Parshall Flume' },
-            'parshall_18': { C: 6.00,   n: 1.53,  label: '18" Parshall Flume' },
-            'parshall_24': { C: 8.00,   n: 1.53,  label: '24" Parshall Flume' },
-            'parshall_36': { C: 12.00,  n: 1.56,  label: '36" Parshall Flume' },
-            'parshall_48': { C: 16.00,  n: 1.56,  label: '48" Parshall Flume' },
-            'parshall_60': { C: 20.00,  n: 1.58,  label: '60" Parshall Flume' },
-            'parshall_72': { C: 24.00,  n: 1.59,  label: '72" Parshall Flume' },
+            parshall_3:  { C: 0.992,  n: 1.547, label: '3" Parshall Flume'  },
+            parshall_6:  { C: 2.06,   n: 1.58,  label: '6" Parshall Flume'  },
+            parshall_9:  { C: 3.07,   n: 1.53,  label: '9" Parshall Flume'  },
+            parshall_12: { C: 4.00,   n: 1.52,  label: '12" Parshall Flume' },
+            parshall_18: { C: 6.00,   n: 1.53,  label: '18" Parshall Flume' },
+            parshall_24: { C: 8.00,   n: 1.53,  label: '24" Parshall Flume' },
+            parshall_36: { C: 12.00,  n: 1.56,  label: '36" Parshall Flume' },
+            parshall_48: { C: 16.00,  n: 1.56,  label: '48" Parshall Flume' },
+            parshall_60: { C: 20.00,  n: 1.58,  label: '60" Parshall Flume' },
+            parshall_72: { C: 24.00,  n: 1.59,  label: '72" Parshall Flume' }
         };
         const PALMER_BOWLUS = {
-            'pb_4':  { C: 1.73,  k: 0.00588,  n: 1.9573, label: '4" Palmer-Bowlus'  },
-            'pb_6':  { C: 2.071, k: 0.005421, n: 1.9025, label: '6" Palmer-Bowlus'  },
-            'pb_8':  { C: 2.537, k: 0.01456,  n: 1.9724, label: '8" Palmer-Bowlus'  },
-            'pb_10': { C: 2.843, k: 0.01610,  n: 1.9530, label: '10" Palmer-Bowlus' },
-            'pb_12': { C: 3.372, k: 0.01656,  n: 1.9540, label: '12" Palmer-Bowlus' },
-            'pb_15': { C: 4.151, k: 0.02016,  n: 1.9479, label: '15" Palmer-Bowlus' },
-            'pb_18': { C: 4.932, k: 0.02435,  n: 1.9398, label: '18" Palmer-Bowlus' },
-            'pb_24': { C: 6.573, k: 0.02891,  n: 1.9411, label: '24" Palmer-Bowlus' },
+            pb_4:  { C: 1.73,  k: 0.00588,  n: 1.9573, label: '4" Palmer-Bowlus'  },
+            pb_6:  { C: 2.071, k: 0.005421, n: 1.9025, label: '6" Palmer-Bowlus'  },
+            pb_8:  { C: 2.537, k: 0.01456,  n: 1.9724, label: '8" Palmer-Bowlus'  },
+            pb_10: { C: 2.843, k: 0.01610,  n: 1.9530, label: '10" Palmer-Bowlus' },
+            pb_12: { C: 3.372, k: 0.01656,  n: 1.9540, label: '12" Palmer-Bowlus' },
+            pb_15: { C: 4.151, k: 0.02016,  n: 1.9479, label: '15" Palmer-Bowlus' },
+            pb_18: { C: 4.932, k: 0.02435,  n: 1.9398, label: '18" Palmer-Bowlus' },
+            pb_24: { C: 6.573, k: 0.02891,  n: 1.9411, label: '24" Palmer-Bowlus' }
         };
-        function vnotchCe(theta) { return 0.607165052 - 0.000874466963*theta + 6.10393334e-6*theta*theta; }
-        function vnotchK(theta)  { return 0.0144902648 - 0.00033955535*theta + 3.29819003e-6*theta*theta - 1.06215442e-8*theta*theta*theta; }
+        function vnotchCe(t) { return 0.607165052 - 0.000874466963*t + 6.10393334e-6*t*t; }
+        function vnotchK(t)  { return 0.0144902648 - 0.00033955535*t + 3.29819003e-6*t*t - 1.06215442e-8*t*t*t; }
+        let fcMode = 'H';
 
-        var fcMode = 'H';
         function fcSetMode(mode) {
             fcMode = mode;
             document.getElementById('fcModeH').style.background = mode==='H' ? 'var(--teal)' : 'var(--gray-200)';
@@ -4090,175 +4814,277 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             document.getElementById('fcHeadInputGroup').style.display = mode==='H' ? 'block' : 'none';
             document.getElementById('fcFlowInputGroup').style.display = mode==='Q' ? 'block' : 'none';
             document.getElementById('fcResult').style.display = 'none';
-            document.getElementById('fcError').style.display = 'none';
         }
+
         function fcDeviceChanged() {
-            var dev = document.getElementById('fcDevice').value;
+            const dev = document.getElementById('fcDevice').value;
             document.getElementById('fcCustomAngleGroup').style.display = dev==='vnotch_custom' ? 'block' : 'none';
             document.getElementById('fcWeirLengthGroup').style.display = (dev==='rect_suppressed'||dev==='rect_contracted') ? 'block' : 'none';
-            fcUpdateEquationRef(); fcCalculate();
+            fcUpdateEquationRef();
+            fcCalculate();
         }
-        function fcGetHeadFt() {
-            var val = parseFloat(document.getElementById('fcHeadIn').value);
-            var unit = document.getElementById('fcHeadUnit').value;
-            if (isNaN(val)||val<=0) return null;
-            return unit==='in' ? val/12 : val;
-        }
-        function fcGetFlowCFS() {
-            var val = parseFloat(document.getElementById('fcFlowIn').value);
-            var unit = document.getElementById('fcFlowUnitIn').value;
-            if (isNaN(val)||val<=0) return null;
-            if (unit==='gpm') return val/448.831;
-            if (unit==='mgd') return val*1.5472;
-            return val;
-        }
+
         function fcCalcQfromH(dev, Hft) {
-            if (PARSHALL[dev]) { var p=PARSHALL[dev]; return p.C * Math.pow(Hft, p.n); }
-            if (PALMER_BOWLUS[dev]) { var pb=PALMER_BOWLUS[dev]; return pb.C * Math.pow(Hft+pb.k, pb.n); }
+            if (PARSHALL[dev]) { const {C,n} = PARSHALL[dev]; return C * Math.pow(Hft, n); }
+            if (PALMER_BOWLUS[dev]) { const {C,k,n} = PALMER_BOWLUS[dev]; return C * Math.pow(Hft+k, n); }
             if (dev.startsWith('vnotch_')) {
-                var theta = dev==='vnotch_custom' ? parseFloat(document.getElementById('fcCustomAngle').value) : parseFloat(dev.split('_')[1]);
+                let theta = dev==='vnotch_custom' ? parseFloat(document.getElementById('fcCustomAngle').value) : parseFloat(dev.split('_')[1]);
                 if (isNaN(theta)||theta<20||theta>120) return null;
                 return 4.28 * vnotchCe(theta) * Math.tan(theta/2*Math.PI/180) * Math.pow(Hft+vnotchK(theta), 2.5);
             }
-            if (dev==='rect_suppressed') { var L=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L)||L<=0)return null; return 3.33*L*Math.pow(Hft,1.5); }
-            if (dev==='rect_contracted') { var L2=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L2)||L2<=0)return null; return 3.33*(L2-0.2*Hft)*Math.pow(Hft,1.5); }
+            if (dev==='rect_suppressed') { const L=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L)||L<=0) return null; return 3.33*L*Math.pow(Hft,1.5); }
+            if (dev==='rect_contracted') { const L=parseFloat(document.getElementById('fcWeirLength').value); if(isNaN(L)||L<=0) return null; return 3.33*(L-0.2*Hft)*Math.pow(Hft,1.5); }
             return null;
         }
+
         function fcCalcHfromQ(dev, Qcfs) {
-            var lo=0.001, hi=20;
-            for (var i=0; i<60; i++) {
-                var mid=(lo+hi)/2, q=fcCalcQfromH(dev,mid);
+            let lo=0.001, hi=20;
+            for (let i=0; i<60; i++) {
+                const mid=(lo+hi)/2, q=fcCalcQfromH(dev,mid);
                 if (q===null) return null;
                 if (q<Qcfs) lo=mid; else hi=mid;
                 if (hi-lo<0.00001) break;
             }
             return (lo+hi)/2;
         }
+
         function fcCalculate() {
-            var dev=document.getElementById('fcDevice').value;
-            var resultEl=document.getElementById('fcResult'), errorEl=document.getElementById('fcError');
-            errorEl.style.display='none'; resultEl.style.display='none';
-            var Qcfs=null, Hft=null;
-            if (fcMode==='H') { Hft=fcGetHeadFt(); if(!Hft)return; Qcfs=fcCalcQfromH(dev,Hft); }
-            else { Qcfs=fcGetFlowCFS(); if(!Qcfs)return; Hft=fcCalcHfromQ(dev,Qcfs); Qcfs=fcCalcQfromH(dev,Hft); }
-            if (Qcfs===null||isNaN(Qcfs)||Qcfs<0) { errorEl.textContent='Invalid input — check values.'; errorEl.style.display='block'; return; }
-            var gpm=Qcfs*448.831, mgd=Qcfs/1.5472;
-            if (fcMode==='H') { document.getElementById('fcResultLabel').textContent='Flow Rate (Q)'; document.getElementById('fcPrimary').textContent=gpm.toFixed(2); document.getElementById('fcPrimaryUnit').textContent='GPM'; }
-            else { document.getElementById('fcResultLabel').textContent='Head (H)'; document.getElementById('fcPrimary').textContent=(Hft*12).toFixed(3); document.getElementById('fcPrimaryUnit').textContent='inches  ('+Hft.toFixed(4)+' ft)'; }
+            const dev = document.getElementById('fcDevice').value;
+            document.getElementById('fcError').style.display = 'none';
+            document.getElementById('fcResult').style.display = 'none';
+            let Qcfs=null, Hft=null;
+            if (fcMode==='H') {
+                const v=parseFloat(document.getElementById('fcHeadIn').value);
+                const u=document.getElementById('fcHeadUnit').value;
+                if (isNaN(v)||v<=0) return;
+                Hft = u==='in' ? v/12 : v;
+                Qcfs = fcCalcQfromH(dev, Hft);
+            } else {
+                const v=parseFloat(document.getElementById('fcFlowIn').value);
+                const u=document.getElementById('fcFlowUnitIn').value;
+                if (isNaN(v)||v<=0) return;
+                Qcfs = u==='gpm' ? v/448.831 : u==='mgd' ? v*1.5472 : v;
+                Hft = fcCalcHfromQ(dev, Qcfs);
+                Qcfs = fcCalcQfromH(dev, Hft);
+            }
+            if (!Qcfs||isNaN(Qcfs)||Qcfs<0) { document.getElementById('fcError').textContent='Invalid input.'; document.getElementById('fcError').style.display='block'; return; }
+            const gpm=Qcfs*448.831, mgd=Qcfs/1.5472;
+            if (fcMode==='H') {
+                document.getElementById('fcResultLabel').textContent='Flow Rate (Q)';
+                document.getElementById('fcPrimary').textContent=gpm.toFixed(2);
+                document.getElementById('fcPrimaryUnit').textContent='GPM';
+            } else {
+                document.getElementById('fcResultLabel').textContent='Head (H)';
+                document.getElementById('fcPrimary').textContent=(Hft*12).toFixed(3);
+                document.getElementById('fcPrimaryUnit').textContent='inches  (' + Hft.toFixed(4) + ' ft)';
+            }
             document.getElementById('fcCFS').textContent=Qcfs.toFixed(4);
             document.getElementById('fcGPM').textContent=gpm.toFixed(2);
             document.getElementById('fcMGD').textContent=mgd.toFixed(4);
-            document.getElementById('fcEquation').textContent='H = '+Hft.toFixed(4)+' ft  →  Q = '+Qcfs.toFixed(4)+' cfs';
-            resultEl.style.display='block'; fcUpdateEquationRef();
+            if (Hft) document.getElementById('fcEquation').textContent='H = '+Hft.toFixed(4)+' ft  →  Q = '+Qcfs.toFixed(4)+' cfs';
+            document.getElementById('fcResult').style.display='block';
+            fcUpdateEquationRef();
         }
+
         function fcUpdateEquationRef() {
-            var dev=document.getElementById('fcDevice').value, el=document.getElementById('fcEquationRef');
-            if (PARSHALL[dev]) { var p=PARSHALL[dev]; el.innerHTML='<b>'+p.label+'</b><br>Q = '+p.C+' × Ha<sup>'+p.n+'</sup> (cfs, Ha in ft)<br><small>Source: USBR Water Measurement Manual</small>'; }
-            else if (PALMER_BOWLUS[dev]) { var pb=PALMER_BOWLUS[dev]; el.innerHTML='<b>'+pb.label+'</b><br>Q = '+pb.C+' × (H + '+pb.k+')<sup>'+pb.n+'</sup> (cfs, H in ft)<br><small>Source: Plasti-fab / Palmer-Bowlus equations</small>'; }
-            else if (dev.startsWith('vnotch_')) { el.innerHTML='<b>V-Notch Weir (Kindsvater-Shen)</b><br>Q = 4.28 × Ce × tan(θ/2) × (H + k)<sup>2.5</sup> (cfs, H in ft)<br><small>Valid: 20° ≤ θ ≤ 120° — Source: USBR/ISO</small>'; }
-            else if (dev==='rect_suppressed') { el.innerHTML='<b>Suppressed Rectangular Weir</b><br>Q = 3.33 × L × H<sup>1.5</sup> (cfs, ft)<br><small>Source: USBR Water Measurement Manual</small>'; }
-            else if (dev==='rect_contracted') { el.innerHTML='<b>Contracted Rectangular Weir</b><br>Q = 3.33 × (L − 0.2H) × H<sup>1.5</sup> (cfs, ft)<br><small>Source: USBR Water Measurement Manual</small>'; }
+            const dev=document.getElementById('fcDevice').value;
+            const el=document.getElementById('fcEquationRef');
+            if (PARSHALL[dev]) { const {C,n,label}=PARSHALL[dev]; el.innerHTML='<b>'+label+'</b><br>Q = '+C+' × Ha<sup>'+n+'</sup> (cfs, Ha in ft)<br>Source: USBR Water Measurement Manual'; }
+            else if (PALMER_BOWLUS[dev]) { const {C,k,n,label}=PALMER_BOWLUS[dev]; el.innerHTML='<b>'+label+'</b><br>Q = '+C+' × (H + '+k+')<sup>'+n+'</sup> (cfs, H in ft)<br>Source: Palmer-Bowlus equations'; }
+            else if (dev.startsWith('vnotch_')) { el.innerHTML='<b>V-Notch Weir (Kindsvater-Shen)</b><br>Q = 4.28 × Ce × tan(θ/2) × (H + k)<sup>2.5</sup> (cfs, H in ft)<br>Valid: 20° ≤ θ ≤ 120°'; }
+            else if (dev==='rect_suppressed') { el.innerHTML='<b>Suppressed Rectangular Weir</b><br>Q = 3.33 × L × H<sup>1.5</sup> (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual'; }
+            else if (dev==='rect_contracted') { el.innerHTML='<b>Contracted Rectangular Weir</b><br>Q = 3.33 × (L − 0.2H) × H<sup>1.5</sup> (cfs, L & H in ft)<br>Source: USBR Water Measurement Manual'; }
         }
 
         // ============================================
-        // MAP functions
+        // MECHANICAL METER CALCULATOR
         // ============================================
-        var siteMap = null, mapMarkers = [], mapSites = [];
-        function initMap() {
-            if (siteMap) return;
-            siteMap = L.map('siteMap').setView([29.65, -98.35], 10);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap', maxZoom:19}).addTo(siteMap);
-            loadMapSites();
+        // ── Mechanical Meter Timer ───────────────────────────────────────────────
+        let mechTimerInterval = null;
+        let mechTimerSeconds  = 0;
+        let mechTimerRunning  = false;
+
+        function mechTimerStart() {
+            if (mechTimerRunning) return;
+            mechTimerRunning = true;
+            document.getElementById('mechTimerStartBtn').style.display = 'none';
+            document.getElementById('mechTimerStopBtn').style.display  = 'block';
+            document.getElementById('mechTimerResetBtn').style.display = 'none';
+            mechTimerInterval = setInterval(() => {
+                mechTimerSeconds++;
+                const m = String(Math.floor(mechTimerSeconds / 60)).padStart(2, '0');
+                const s = String(mechTimerSeconds % 60).padStart(2, '0');
+                document.getElementById('mechTimerDisplay').textContent = m + ':' + s;
+            }, 1000);
         }
-        function loadMapSites() {
-            if (!Array.isArray(assetDB) || !assetDB.length) return;
-            mapSites = [];
-            assetDB.forEach(function(a) {
-                var gps = a['GPS Coordinates'] || '';
-                if (!gps) return;
-                var p = gps.split(',');
-                if (p.length < 2) return;
-                var lat = parseFloat(p[0]), lng = parseFloat(p[1]);
-                if (isNaN(lat) || isNaN(lng)) return;
-                mapSites.push({lat:lat, lng:lng, asset:a});
-            });
-            populateMapFilter();
-            renderMapMarkers(mapSites);
+
+        function mechTimerStop() {
+            if (!mechTimerRunning) return;
+            clearInterval(mechTimerInterval);
+            mechTimerRunning = false;
+            document.getElementById('mechTimerStopBtn').style.display  = 'none';
+            document.getElementById('mechTimerStartBtn').style.display = 'block';
+            document.getElementById('mechTimerResetBtn').style.display = 'block';
+            // Auto-fill elapsed time in minutes and calculate
+            const minutes = mechTimerSeconds / 60;
+            document.getElementById('mechTime').value = minutes.toFixed(4);
+            calcMechFlow();
         }
-        function populateMapFilter() {
-            var sel = document.getElementById('mapFilterCustomer');
-            if (!sel) return;
-            var customers = [...new Set(mapSites.map(function(s){return s.asset['Customer']||''}).filter(function(c){return c}))].sort();
-            sel.innerHTML = '<option value="all">All Customers</option>';
-            customers.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+
+        function mechTimerReset() {
+            clearInterval(mechTimerInterval);
+            mechTimerRunning  = false;
+            mechTimerSeconds  = 0;
+            document.getElementById('mechTimerDisplay').textContent    = '00:00';
+            document.getElementById('mechTimerStartBtn').style.display = 'block';
+            document.getElementById('mechTimerStopBtn').style.display  = 'none';
+            document.getElementById('mechTimerResetBtn').style.display = 'none';
+            document.getElementById('mechTime').value = '';
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            resultEl.style.display = 'none';
+            useBtn.style.display   = 'none';
         }
-        function filterMap() {
-            var cust = document.getElementById('mapFilterCustomer').value;
-            var filtered = cust === 'all' ? mapSites : mapSites.filter(function(s){return (s.asset['Customer']||'')===cust;});
-            renderMapMarkers(filtered);
+
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
         }
-        function renderMapMarkers(sites) {
-            mapMarkers.forEach(function(m){siteMap.removeLayer(m);});
-            mapMarkers = [];
-            if (!siteMap) return;
-            sites.forEach(function(s) {
-                var months = 99;
-                var lt = s.asset['Last Test Date'] || '';
-                if (lt) months = (new Date() - new Date(lt)) / (1000*60*60*24*30);
-                var color = months < 10 ? 'green' : months < 12 ? 'orange' : 'red';
-                var icon = L.divIcon({html:'<div style="width:12px;height:12px;border-radius:50%;background:'+color+';border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',className:'',iconSize:[12,12],iconAnchor:[6,6]});
-                var m = L.marker([s.lat,s.lng],{icon:icon}).addTo(siteMap);
-                var a = s.asset;
-                m.bindPopup('<strong>'+(a['Customer']||'')+'</strong><br>'+(a['Facility/Location']||'')+'<br><small>'+(a['Manufacturer/Model']||'')+' SN:'+(a['Serial Number']||'')+'</small>');
-                mapMarkers.push(m);
-            });
-            if (sites.length) siteMap.fitBounds(L.latLngBounds(sites.map(function(s){return [s.lat,s.lng];})),{padding:[30,30]});
+
+        function calcMechFlow() {
+            const start   = parseFloat(document.getElementById('mechStart').value);
+            const end     = parseFloat(document.getElementById('mechEnd').value);
+            const minutes = parseFloat(document.getElementById('mechTime').value);
+            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            if (isNaN(start)||isNaN(end)||isNaN(minutes)||minutes<=0||end<=start) {
+                resultEl.style.display='none'; useBtn.style.display='none'; return;
+            }
+            const gallons = (end - start) * mult;
+            const gpm = gallons / minutes;
+            const mgd = gpm * 1440 / 1000000;
+            const gph = gpm * 60;
+            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
+            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
+            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
+            const mStr = mechTimerSeconds > 0
+                ? Math.floor(mechTimerSeconds/60)+'m '+( mechTimerSeconds%60)+'s'
+                : minutes + ' min';
+            document.getElementById('mechCalcDetail').textContent =
+                '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toFixed(2)+' gal ÷ '+mStr;
+            resultEl.style.display='block';
+            useBtn.style.display='block';
         }
-        function locateMeOnMap() {
-            if (!siteMap) return;
-            navigator.geolocation.getCurrentPosition(function(pos){
-                siteMap.setView([pos.coords.latitude,pos.coords.longitude],14);
-                L.marker([pos.coords.latitude,pos.coords.longitude],{icon:L.divIcon({html:'📍',className:'',iconSize:[20,20]})}).addTo(siteMap).bindPopup('You are here').openPopup();
-            });
+
+        function useMechResult() {
+            const gpm = document.getElementById('mechGPM').textContent;
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+            if (!cusBefore.value && !cusAfter.value) {
+                cusBefore.value = gpm;
+                showToast(gpm + ' GPM → Customer Before field', 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field', 'success');
+            } else {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            }
+            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
+            const existing = document.getElementById('formNotes').value;
+            const note = 'Mechanical timed test: ' + gpm + ' GPM';
+            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
         }
-        // Flow calc functions
-        function calcPipeFlow() {
-            var d = parseFloat(document.getElementById('calcDiameter').value);
-            var v = parseFloat(document.getElementById('calcVelocity').value);
-            var w = parseFloat(document.getElementById('calcWallThick').value)||0;
-            if (isNaN(d)||isNaN(v)||d<=0||v<=0){document.getElementById('pipeFlowResult').style.display='none';return;}
-            var id = w>0 ? d-(2*w) : d;
-            var r = (id/2)/12;
-            var area = Math.PI*r*r;
-            var cfs = area*v, gpm = cfs*448.831, mgd = gpm*0.00144;
-            document.getElementById('pipeFlowResult').style.display='block';
-            document.getElementById('pipeGPM').textContent=gpm.toFixed(1);
-            document.getElementById('pipeMGD').textContent=mgd.toFixed(3);
-            document.getElementById('pipeCFS').textContent=cfs.toFixed(3);
-            document.getElementById('pipeArea').textContent='ID: '+id.toFixed(3)+'" | Area: '+(area*144).toFixed(3)+' in²';
+
+        // Updates unit badge labels when units dropdowns change
+        function updateUnitLabels(section) {
+            if (section==='CP') {
+                const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
+                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fu;});
+            }
+            if (section==='OC') {
+                const lu=document.getElementById('formLevelUnitsOC')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=luS;});
+            }
+            if (section==='CR') {
+                const type=document.getElementById('formMeasurementType')?.value||'Flow';
+                const fu=document.getElementById('formFlowUnitsCR')?.value||'GPM';
+                const lu=document.getElementById('formLevelUnitsCR')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                const unit=type==='Flow'?fu:luS;
+                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=unit;});
+            }
         }
-        function calcPctDiff() {
-            var ref = parseFloat(document.getElementById('calcRef').value);
-            var meas = parseFloat(document.getElementById('calcMeas').value);
-            if (isNaN(ref)||isNaN(meas)||ref===0){document.getElementById('pctDiffResult').style.display='none';return;}
-            var pct = ((meas-ref)/ref)*100;
-            document.getElementById('pctDiffResult').style.display='block';
-            var v = document.getElementById('pctDiffVal');
-            v.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
-            v.style.color=Math.abs(pct)<=2?'#68d391':Math.abs(pct)<=5?'#f6e05e':'#fc8181';
+
+        // ============================================
+        // SERVICE WORKER REGISTRATION
+        // ============================================
+
+        
+
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
         }
-        function calcConvert() {
-            var val = parseFloat(document.getElementById('calcConvVal').value);
-            var from = document.getElementById('calcConvFrom').value;
-            if (isNaN(val)){document.getElementById('convResult').style.display='none';return;}
-            var toGPM={gpm:1,mgd:694.444,cfs:448.831,gph:1/60,gpd:1/1440};
-            var gpm = val*toGPM[from];
-            document.getElementById('convResult').style.display='block';
-            document.getElementById('convGPM').textContent='= '+gpm.toFixed(2)+' GPM';
-            document.getElementById('convMGD').textContent='= '+(gpm/694.444).toFixed(4)+' MGD';
-            document.getElementById('convCFS').textContent='= '+(gpm/448.831).toFixed(4)+' CFS';
-            document.getElementById('convGPH').textContent='= '+(gpm*60).toFixed(1)+' GPH';
-            document.getElementById('convGPD').textContent='= '+(gpm*1440).toFixed(0)+' GPD';
+
+
+        function calcMechFlow() {
+            const start   = parseFloat(document.getElementById('mechStart').value);
+            const end     = parseFloat(document.getElementById('mechEnd').value);
+            const minutes = parseFloat(document.getElementById('mechTime').value);
+            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
+            const gallons = (end-start)*mult;
+            const gpm = gallons/minutes;
+            const mgd = gpm*1440/1000000;
+            const gph = gpm*60;
+            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
+            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
+            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
+            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
+            resultEl.style.display='block';
+            useBtn.style.display='block';
+        }
+
+
+        function useMechResult() {
+            const gpm = document.getElementById('mechGPM').textContent;
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+            if (!cusBefore.value && !cusAfter.value) {
+                cusBefore.value = gpm;
+                showToast(gpm + ' GPM → Customer Before field', 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field', 'success');
+            } else {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            }
+            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
+            const existing = document.getElementById('formNotes').value;
+            const note = 'Mechanical timed test: ' + gpm + ' GPM';
+            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
+        }
+
+        // Updates unit badge labels when units dropdowns change
+
+                if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed:', err));
         }
     </script>
 </body>
