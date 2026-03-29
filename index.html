@@ -2039,7 +2039,8 @@
             try {
                 const response = await fetch(ASSETDB_URL);
                 if (response.ok) {
-                    assetDB = await response.json();
+                    const result = await response.json();
+                    assetDB = result.data || result;
                     localStorage.setItem('assetDB', JSON.stringify(assetDB));
                     localStorage.setItem('assetDB_updated', new Date().toISOString());
                     console.log(`Loaded ${assetDB.length} assets from Google Sheets`);
@@ -2061,7 +2062,7 @@
             try {
                 const response = await fetch('assetdb.json');
                 if (response.ok) {
-                    assetDB = await response.json();
+                    const _r = await response.json(); assetDB = _r.data || _r;
                     localStorage.setItem('assetDB', JSON.stringify(assetDB));
                     console.log(`Loaded ${assetDB.length} assets from file`);
                 }
