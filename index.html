@@ -1188,7 +1188,7 @@
                         <div class="form-group" style="margin-top:12px;">
                             <label class="form-label">Elapsed Time</label>
                             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                                <div id="mechTimerDisplay" style="font-size:32px; font-weight:700; font-family:monospace; color:var(--navy); min-width:110px;">00:00</div>
+                                <div id="mechTimerDisplay" style="font-size:28px; font-weight:700; font-family:monospace; color:var(--navy); min-width:140px;">00:00.00</div>
                                 <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
                                     <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
                                     <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
@@ -1196,7 +1196,22 @@
                                 </div>
                             </div>
                             <div style="font-size:11px; color:var(--gray-500);">Or enter time manually (minutes):</div>
-                            <input type="number" step="0.1" min="0.1" class="form-input" id="mechTime" placeholder="e.g. 1.0" oninput="calcMechFlow()" style="margin-top:4px;">
+                            <select class="form-select" id="mechTime" onchange="calcMechFlow()" style="margin-top:4px;">
+                                <option value="0.25">15 seconds</option>
+                                <option value="0.5">30 seconds</option>
+                                <option value="0.75">45 seconds</option>
+                                <option value="1" selected>1 minute</option>
+                                <option value="1.5">1 min 30 sec</option>
+                                <option value="2">2 minutes</option>
+                                <option value="3">3 minutes</option>
+                                <option value="5">5 minutes</option>
+                                <option value="10">10 minutes</option>
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                            <input type="number" step="0.01" min="0.01" class="form-input" id="mechTimeCustom" placeholder="Minutes (e.g. 2.5)" oninput="calcMechFlow()" style="margin-top:4px;display:none;">
                         </div>
                         <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
                             <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
@@ -1769,7 +1784,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
+        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
         // ============================================
         // PIN SECURITY
@@ -2018,7 +2033,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2056,7 +2071,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -3613,7 +3628,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px;padding-bottom:32px;">
                     <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
                     <button onclick="takePhoto()" style="width:100%;padding:14px;margin-bottom:8px;background:var(--gold);border:none;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
-                    <button onclick="chooseFromGallery()" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;">🖼️ Choose from Gallery</button>
+                    <button onclick="chooseFromGallery()" style="width:100%;padding:14px;margin-bottom:8px;background:#1a2e4a;color:white;border:none;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;">🖼️ Choose from Gallery</button>
                     <button onclick="closePhotoDialog()" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Cancel</button>
                 </div>
             `;
@@ -4116,8 +4131,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxb8leTGeV4CfMpEp-7aDDJ4GFzs27PxCSDVabEwU6mbM0uyUWhMSBXvbpREXuRfA7RZw/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -4900,7 +4915,7 @@ let siteMap = null;
         // ============================================
         // ── Mechanical Meter Timer ───────────────────────────────────────────────
         let mechTimerInterval = null;
-        let mechTimerSeconds  = 0;
+        let mechTimerCs       = 0;  // centiseconds (1/100 sec)
         let mechTimerRunning  = false;
 
         function mechTimerStart() {
@@ -4910,11 +4925,13 @@ let siteMap = null;
             document.getElementById('mechTimerStopBtn').style.display  = 'block';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
             mechTimerInterval = setInterval(() => {
-                mechTimerSeconds++;
-                const m = String(Math.floor(mechTimerSeconds / 60)).padStart(2, '0');
-                const s = String(mechTimerSeconds % 60).padStart(2, '0');
-                document.getElementById('mechTimerDisplay').textContent = m + ':' + s;
-            }, 1000);
+                mechTimerCs++;
+                const totalSec = Math.floor(mechTimerCs / 100);
+                const m  = String(Math.floor(totalSec / 60)).padStart(2, '0');
+                const s  = String(totalSec % 60).padStart(2, '0');
+                const cs = String(mechTimerCs % 100).padStart(2, '0');
+                document.getElementById('mechTimerDisplay').textContent = m + ':' + s + '.' + cs;
+            }, 10);
         }
 
         function mechTimerStop() {
@@ -4925,16 +4942,17 @@ let siteMap = null;
             document.getElementById('mechTimerStartBtn').style.display = 'block';
             document.getElementById('mechTimerResetBtn').style.display = 'block';
             // Auto-fill elapsed time in minutes and calculate
-            const minutes = mechTimerSeconds / 60;
-            document.getElementById('mechTime').value = minutes.toFixed(4);
+            const minutes = mechTimerCs / 6000;
+            const selEl = document.getElementById('mechTime');
+            if (selEl.tagName === 'SELECT') { selEl.value = 'custom'; document.getElementById('mechTimeCustom').style.display='block'; document.getElementById('mechTimeCustom').value = minutes.toFixed(4); } else { selEl.value = minutes.toFixed(4); }
             calcMechFlow();
         }
 
         function mechTimerReset() {
             clearInterval(mechTimerInterval);
             mechTimerRunning  = false;
-            mechTimerSeconds  = 0;
-            document.getElementById('mechTimerDisplay').textContent    = '00:00';
+            mechTimerCs = 0;
+            document.getElementById('mechTimerDisplay').textContent    = '00:00.00';
             document.getElementById('mechTimerStartBtn').style.display = 'block';
             document.getElementById('mechTimerStopBtn').style.display  = 'none';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
@@ -4954,6 +4972,12 @@ let siteMap = null;
         }
 
         function calcMechFlow() {
+            // Handle custom time input visibility
+            const timeEl = document.getElementById('mechTime');
+            const customEl = document.getElementById('mechTimeCustom');
+            if (timeEl && customEl) {
+                customEl.style.display = timeEl.value === 'custom' ? 'block' : 'none';
+            }
             const start   = parseFloat(document.getElementById('mechStart').value);
             const end     = parseFloat(document.getElementById('mechEnd').value);
             const minutes = parseFloat(document.getElementById('mechTime').value);
@@ -4970,8 +4994,8 @@ let siteMap = null;
             document.getElementById('mechGPM').textContent = gpm.toFixed(2);
             document.getElementById('mechMGD').textContent = mgd.toFixed(4);
             document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
-            const mStr = mechTimerSeconds > 0
-                ? Math.floor(mechTimerSeconds/60)+'m '+( mechTimerSeconds%60)+'s'
+            const mStr = mechTimerCs > 0
+                ? Math.floor(mechTimerCs/6000)+'m '+(Math.floor(mechTimerCs/100)%60)+'.'+(mechTimerCs%100).toString().padStart(2,'0')+'s'
                 : minutes + ' min';
             document.getElementById('mechCalcDetail').textContent =
                 '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toFixed(2)+' gal ÷ '+mStr;
