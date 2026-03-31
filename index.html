@@ -2634,9 +2634,10 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             
             // Sort: due meters first, then by location
             trackableMeters.sort((a, b) => {
-                if (a.isDue && !b.isDue) return -1;
-                if (!a.isDue && b.isDue) return 1;
-                return (a['Facility/Location'] || '').localeCompare(b['Facility/Location'] || '');
+                // Sort by days until due ascending (most overdue/due soonest first)
+                const daysA = a.lastTestDate ? Math.floor((new Date() - a.lastTestDate) / (1000*60*60*24)) : 99999;
+                const daysB = b.lastTestDate ? Math.floor((new Date() - b.lastTestDate) / (1000*60*60*24)) : 99999;
+                return daysB - daysA; // most days since last test = most overdue = first
             });
             
             // Check if customer has any semi-annual meters
