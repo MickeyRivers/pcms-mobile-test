@@ -4663,19 +4663,23 @@ let siteMap = null;
             const now = new Date();
             const daysSince = (now - lastTestDate) / (1000 * 60 * 60 * 24);
 
-            const customer = site['Customer'] || '';
             const freq = (site['Service Frequency'] || '').toLowerCase();
-            const semiAnnualCustomers = ['New Braunfels Utilities', 'MidSouth', 'Guadalupe-Blanco River Authority', 'GBRA'];
-            const isSemi = semiAnnualCustomers.some(sc => customer.toLowerCase().includes(sc.toLowerCase()))
-                        || freq.includes('semi') || freq.includes('6 month') || freq.includes('twice');
+            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi');
 
-            const cycle = isSemi ? 180 : 365;
-            const testedThreshold = cycle - 30;
-            const dueThreshold = cycle;
+            // Cycle lengths
+            const cycleDays = isSemi ? 183 : 365;  // 6 months or 12 months
 
-            if (daysSince <= testedThreshold) return 'tested';
-            if (daysSince <= dueThreshold)    return 'due';
-            return 'overdue';
+            // Tested: within last 4 months (semi) or 9 months (annual)
+            const testedDays = isSemi ? 120 : 270;
+
+            // Due: next required date is within 6 weeks (42 days)
+            const nextDueDate = lastTestDate.getTime() + (cycleDays * 24 * 60 * 60 * 1000);
+            const daysUntilDue = (nextDueDate - now.getTime()) / (1000 * 60 * 60 * 24);
+
+            if (daysSince <= testedDays) return 'tested';          // green
+            if (daysUntilDue >= 0 && daysUntilDue <= 42) return 'due';  // yellow — due within 6 weeks
+            if (daysUntilDue < 0) return 'overdue';                // red — past due date
+            return 'tested';                                        // between tested threshold and 6 weeks out — still green
         }
 
         function populateMapCustomerFilter() {
