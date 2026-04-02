@@ -1854,6 +1854,7 @@
         let currentPhotoIndex = 0;
         let videoStream = null;
         let assetDB = [];
+        var _assetSearchResults = [];
         let pendingTests = [];
         let testHistory = [];
         let enteredPin = '';
@@ -4818,8 +4819,6 @@ let siteMap = null;
 
             resultsEl.innerHTML = html;
         }
-
-        var _assetSearchResults = [];
 
         function assetSearchStartTestByIdx(idx) {
             var asset = _assetSearchResults[parseInt(idx)];
