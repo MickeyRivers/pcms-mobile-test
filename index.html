@@ -4714,7 +4714,7 @@ let siteMap = null;
             const daysUntilDue = (nextDueDate - now.getTime()) / (1000 * 60 * 60 * 24);
 
             if (daysSince <= testedDays) return 'tested';          // green
-            if (daysUntilDue >= 0 && daysUntilDue <= 42) return 'due';  // yellow — due within 6 weeks
+            if (daysUntilDue >= 0 && daysUntilDue <= 56) return 'due';  // yellow — due within 8 weeks
             if (daysUntilDue < 0) return 'overdue';                // red — past due date
             return 'tested';                                        // between tested threshold and 6 weeks out — still green
         }
