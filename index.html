@@ -915,6 +915,10 @@
                     <div class="action-icon">🗺️</div>
                     <div class="action-label">Site Map</div>
                 </div>
+                <div class="action-card" onclick="showScreen('assetSearchScreen')">
+                    <div class="action-icon">🔎</div>
+                    <div class="action-label">Asset Search</div>
+                </div>
                 <div class="action-card" onclick="showScreen('flowCalcScreen')">
                     <div class="action-icon">🧮</div>
                     <div class="action-label">Flow Calc</div>
@@ -1578,9 +1582,12 @@
         <section class="screen" id="mapScreen">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="section-title" style="margin: 0;">Site Map</div>
-                <select id="mapCustomerFilter" onchange="filterMapByCustomer()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 13px;">
-                    <option value="">All Customers</option>
-                </select>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <select id="mapCustomerFilter" onchange="filterMapByCustomer()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 13px;">
+                        <option value="">All Customers</option>
+                    </select>
+                    <button id="mapListToggleBtn" onclick="toggleMapListView()" style="padding:8px 12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📋 List</button>
+                </div>
             </div>
             <div class="map-filter-chips" style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px;">
                 <button class="map-chip active" onclick="filterMapStatus('all', this)">All</button>
@@ -1621,6 +1628,35 @@
                     <button onclick="openRouteInGoogleMaps()" style="background: white; color: var(--teal); border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600;">Open in Maps</button>
                 </div>
             </div>
+            <!-- Site List View -->
+            <div id="mapListView" style="display:none; margin-top:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="font-weight:600;font-size:14px;color:var(--navy);" id="mapListTitle">Site List</div>
+                    <button onclick="exportMapList()" style="padding:6px 12px;background:var(--teal);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">📤 Export</button>
+                </div>
+                <div id="mapListContainer" style="max-height:calc(100vh - 300px);overflow-y:auto;"></div>
+            </div>
+
+            <div class="bottom-spacer"></div>
+        </section>
+
+        <!-- Asset Search Screen -->
+        <section class="screen" id="assetSearchScreen">
+            <div class="section-title">🔎 Asset Search</div>
+            <div class="form-section" style="margin-bottom:12px;">
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="assetSearchInput" class="form-input" placeholder="Search by name, well #, SN, customer, location..." oninput="searchAssets()" style="flex:1;">
+                    <button onclick="document.getElementById('assetSearchInput').value=''; searchAssets();" style="padding:12px;background:var(--gray-200);border:none;border-radius:8px;cursor:pointer;">✕</button>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                    <button onclick="setAssetFilter('all',this)" class="map-chip active" id="assetFilterAll">All</button>
+                    <button onclick="setAssetFilter('Closed Pipe',this)" class="map-chip">Closed Pipe</button>
+                    <button onclick="setAssetFilter('Open Channel',this)" class="map-chip">Open Channel</button>
+                    <button onclick="setAssetFilter('Chart Recorder',this)" class="map-chip">Chart Recorder</button>
+                </div>
+            </div>
+            <div id="assetSearchCount" style="font-size:12px;color:var(--gray-500);margin-bottom:8px;padding:0 4px;"></div>
+            <div id="assetSearchResults" style="overflow-y:auto;max-height:calc(100vh - 320px);"></div>
             <div class="bottom-spacer"></div>
         </section>
 
@@ -3263,7 +3299,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'assetSearchScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -4697,6 +4733,206 @@ let siteMap = null;
             document.querySelectorAll('.map-chip').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
             updateMapMarkers();
+        }
+
+        // ============================================
+        // ASSET SEARCH
+        // ============================================
+        var assetSearchFilter = 'all';
+
+        function setAssetFilter(filter, btn) {
+            assetSearchFilter = filter;
+            document.querySelectorAll('#assetSearchScreen .map-chip').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            searchAssets();
+        }
+
+        function searchAssets() {
+            const query = (document.getElementById('assetSearchInput').value || '').toLowerCase().trim();
+            const countEl = document.getElementById('assetSearchCount');
+            const resultsEl = document.getElementById('assetSearchResults');
+
+            if (!assetDB || !assetDB.length) {
+                resultsEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-500);">AssetDB not loaded yet. Please wait...</div>';
+                return;
+            }
+
+            let results = assetDB.filter(function(a) {
+                // Service type filter
+                if (assetSearchFilter !== 'all') {
+                    const st = (a['Service Type'] || '').toLowerCase();
+                    if (!st.includes(assetSearchFilter.toLowerCase())) return false;
+                }
+                // Text search — search ALL fields
+                if (!query) return true;
+                return Object.values(a).some(function(v) {
+                    return v && String(v).toLowerCase().includes(query);
+                });
+            });
+
+            countEl.textContent = results.length + ' result' + (results.length !== 1 ? 's' : '') + (query ? ' for "' + query + '"' : '');
+
+            if (!results.length) {
+                resultsEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--gray-500);"><div style="font-size:32px;margin-bottom:8px;">🔍</div>No assets found</div>';
+                return;
+            }
+
+            var html = '';
+            results.slice(0, 100).forEach(function(a) {
+                const sn = a['Serial Number'] || a['Asset_ID'] || '';
+                const customer = a['Customer'] || '';
+                const location = a['Facility/Location'] || a['Location'] || '';
+                const mfg = a['Manufacturer/Model'] || '';
+                const svcType = a['Service Type'] || '';
+                const freq = a['Service Frequency'] || '';
+                const gps = a['GPS Coordinates'] || '';
+                const waterType = a['Water/Wastewater'] || '';
+
+                // Get last test date
+                var matches = findHistoryMatches(a);
+                matches.sort(function(a,b){return new Date(b['Date']||b['Date Tested']||0)-new Date(a['Date']||a['Date Tested']||0);});
+                var lastStr = matches.length > 0 ? new Date(matches[0]['Date']||matches[0]['Date Tested']).toLocaleDateString() : 'Never tested';
+
+                html += '<div style="background:white;border:1px solid var(--gray-200);border-radius:10px;padding:14px;margin-bottom:8px;">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">' +
+                    '<div style="font-weight:700;font-size:14px;color:var(--navy);">' + (location || customer || 'Unknown') + '</div>' +
+                    (svcType ? '<span style="padding:2px 8px;background:var(--teal);color:white;border-radius:10px;font-size:11px;font-weight:600;">' + svcType + '</span>' : '') +
+                    '</div>' +
+                    (customer ? '<div style="font-size:12px;color:var(--gray-600);margin-bottom:2px;">👤 ' + customer + '</div>' : '') +
+                    (sn ? '<div style="font-size:12px;color:var(--gray-600);margin-bottom:2px;font-family:monospace;">🔢 ' + sn + '</div>' : '<div style="font-size:12px;color:var(--gray-400);margin-bottom:2px;font-style:italic;">No serial number</div>') +
+                    (mfg ? '<div style="font-size:12px;color:var(--gray-600);margin-bottom:2px;">⚙️ ' + mfg + '</div>' : '') +
+                    (waterType ? '<div style="font-size:12px;color:var(--gray-600);margin-bottom:2px;">💧 ' + waterType + '</div>' : '') +
+                    (freq ? '<div style="font-size:12px;color:var(--gray-600);margin-bottom:2px;">📅 ' + freq + '</div>' : '') +
+                    '<div style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">🕐 Last test: ' + lastStr + '</div>' +
+                    '<div style="display:flex;gap:6px;">' +
+                    '<button onclick="assetSearchStartTest(' + JSON.stringify(a).replace(/'/g, "\'") + ')" style="flex:1;padding:8px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">📝 Start Test</button>' +
+                    (gps ? '<button onclick="assetSearchNavigate('' + gps + '')" style="padding:8px 10px;background:var(--teal);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">📍 Nav</button>' : '') +
+                    '</div>' +
+                    '</div>';
+            });
+
+            if (results.length > 100) {
+                html += '<div style="text-align:center;padding:12px;color:var(--gray-500);font-size:12px;">Showing first 100 of ' + results.length + ' results — refine your search</div>';
+            }
+
+            resultsEl.innerHTML = html;
+        }
+
+        function assetSearchStartTest(asset) {
+            populateFromAsset(asset);
+            showScreen('formScreen');
+        }
+
+        function assetSearchNavigate(gps) {
+            const parts = gps.replace(/[NnSsEeWw°]/g, '').split(',');
+            if (parts.length < 2) return;
+            const lat = parseFloat(parts[0].trim());
+            const lng = parseFloat(parts[1].trim());
+            if (isNaN(lat) || isNaN(lng)) return;
+            window.open('https://maps.google.com/?q=' + lat + ',' + lng, '_blank');
+        }
+
+        var mapListVisible = false;
+
+        function toggleMapListView() {
+            mapListVisible = !mapListVisible;
+            document.getElementById('mapListView').style.display = mapListVisible ? 'block' : 'none';
+            document.getElementById('siteMap').style.display = mapListVisible ? 'none' : 'block';
+            document.getElementById('mapListToggleBtn').textContent = mapListVisible ? '🗺️ Map' : '📋 List';
+            if (mapListVisible) renderMapList();
+        }
+
+        function renderMapList() {
+            var customerFilter = document.getElementById('mapCustomerFilter') ? document.getElementById('mapCustomerFilter').value : '';
+            var statusFilter = typeof currentMapFilter !== 'undefined' ? currentMapFilter : 'all';
+            var statusLabel = { tested: '✅ Tested', due: '⚠️ Due Soon', overdue: '🔴 Overdue' };
+            var statusBg = { tested: '#38a169', due: '#d69e2e', overdue: '#e53e3e' };
+            var statusOrder = { overdue: 0, due: 1, tested: 2 };
+
+            var sites = mapSites.filter(function(s) {
+                if (customerFilter && s.customer !== customerFilter) return false;
+                if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+                return true;
+            });
+            sites.sort(function(a, b) {
+                var so = (statusOrder[a.status]||0) - (statusOrder[b.status]||0);
+                if (so !== 0) return so;
+                return (a.nextDueDate||0) - (b.nextDueDate||0);
+            });
+
+            var title = (customerFilter || 'All Customers') + (statusFilter !== 'all' ? ' — ' + (statusLabel[statusFilter]||statusFilter) : '');
+            document.getElementById('mapListTitle').textContent = title + ' (' + sites.length + ' meters)';
+
+            if (!sites.length) {
+                document.getElementById('mapListContainer').innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-500);">No meters match the current filter.</div>';
+                return;
+            }
+
+            var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+                '<thead><tr style="background:var(--navy);color:white;">' +
+                '<th style="padding:6px 8px;text-align:left;">Customer</th>' +
+                '<th style="padding:6px 8px;text-align:left;">Location</th>' +
+                '<th style="padding:6px 8px;text-align:left;">S/N</th>' +
+                '<th style="padding:6px 8px;text-align:left;">Last Test</th>' +
+                '<th style="padding:6px 8px;text-align:left;">Due Date</th>' +
+                '<th style="padding:6px 8px;text-align:center;">Status</th>' +
+                '</tr></thead><tbody>';
+
+            sites.forEach(function(s, i) {
+                var siteObj = {'Serial Number': s.serial, 'Customer': s.customer, 'Service Frequency': s['Service Frequency']||''};
+                var matches = findHistoryMatches(siteObj);
+                matches.sort(function(a, b) { return new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0); });
+                var lastDate = matches.length > 0 ? new Date(matches[0]['Date']||matches[0]['Date Tested']) : null;
+                var lastStr = lastDate && !isNaN(lastDate) ? lastDate.toLocaleDateString() : 'Never';
+                var freq = (s['Service Frequency']||'').toLowerCase();
+                var isSemi = freq.includes('semi')||freq.includes('6 month')||freq.includes('bi');
+                var cycleDays = isSemi ? 183 : 365;
+                var dueDate = lastDate && !isNaN(lastDate) ? new Date(lastDate.getTime() + cycleDays*86400000) : null;
+                var dueStr = dueDate ? dueDate.toLocaleDateString() : 'N/A';
+                var bg = i % 2 === 0 ? 'white' : '#f7fafc';
+                var badge = '<span style="padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;color:white;background:'+(statusBg[s.status]||'#718096')+'">'+(statusLabel[s.status]||s.status)+'</span>';
+                html += '<tr style="background:'+bg+';border-bottom:1px solid #e2e8f0;">' +
+                    '<td style="padding:6px 8px;">'+(s.customer||'')+'</td>' +
+                    '<td style="padding:6px 8px;">'+(s.name||'')+'</td>' +
+                    '<td style="padding:6px 8px;font-family:monospace;font-size:11px;">'+(s.serial||'')+'</td>' +
+                    '<td style="padding:6px 8px;">'+(lastStr||'')+'</td>' +
+                    '<td style="padding:6px 8px;">'+(dueStr||'')+'</td>' +
+                    '<td style="padding:6px 8px;text-align:center;">'+badge+'</td>' +
+                    '</tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('mapListContainer').innerHTML = html;
+        }
+
+        function exportMapList() {
+            var customerFilter = document.getElementById('mapCustomerFilter') ? document.getElementById('mapCustomerFilter').value : '';
+            var statusFilter = typeof currentMapFilter !== 'undefined' ? currentMapFilter : 'all';
+            var sites = mapSites.filter(function(s) {
+                if (customerFilter && s.customer !== customerFilter) return false;
+                if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+                return true;
+            });
+            var statusOrder = { overdue: 0, due: 1, tested: 2 };
+            sites.sort(function(a, b) { return (statusOrder[a.status]||0) - (statusOrder[b.status]||0); });
+            var csv = 'Customer,Location,Serial Number,Last Test,Due Date,Status
+';
+            sites.forEach(function(s) {
+                var matches = findHistoryMatches({'Serial Number': s.serial});
+                matches.sort(function(a, b) { return new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0); });
+                var lastDate = matches.length > 0 ? new Date(matches[0]['Date']||matches[0]['Date Tested']) : null;
+                var lastStr = lastDate && !isNaN(lastDate) ? lastDate.toLocaleDateString() : 'Never';
+                var freq = (s['Service Frequency']||'').toLowerCase();
+                var isSemi = freq.includes('semi')||freq.includes('6 month')||freq.includes('bi');
+                var dueDate = lastDate && !isNaN(lastDate) ? new Date(lastDate.getTime() + (isSemi?183:365)*86400000) : null;
+                var dueStr = dueDate ? dueDate.toLocaleDateString() : 'N/A';
+                csv += '"'+(s.customer||'')+'","'+(s.name||'')+'","'+(s.serial||'')+'","'+lastStr+'","'+dueStr+'","'+s.status+'"
+';
+            });
+            var blob = new Blob([csv], {type:'text/csv'});
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'site-list-' + new Date().toISOString().slice(0,10) + '.csv';
+            a.click();
         }
 
         function updateMapMarkers() {
