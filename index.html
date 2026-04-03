@@ -2196,6 +2196,10 @@
         }
 
         function refreshMapIfActive() {
+            if (siteMap) {
+                // Reload all map data from fresh assetDB
+                processMapData(assetDB);
+            }
             if (siteMap && mapSites.length > 0) {
                 // Recalculate status for all sites then redraw markers
                 mapSites.forEach(site => {
