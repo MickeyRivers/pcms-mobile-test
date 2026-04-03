@@ -2196,10 +2196,6 @@
         }
 
         function refreshMapIfActive() {
-            if (siteMap) {
-                // Reload all map data from fresh assetDB
-                processMapData(assetDB);
-            }
             if (siteMap && mapSites.length > 0) {
                 // Recalculate status for all sites then redraw markers
                 mapSites.forEach(site => {
@@ -4601,12 +4597,7 @@ let siteMap = null;
             if (!data || !Array.isArray(data)) return;
             mapSites = data.filter(site => {
                 const gps = site['GPS Coordinates'] || '';
-                if (!gps || !gps.toString().includes(',')) return false;
-                const status = (site['Status'] || '').toLowerCase();
-                if (status === 'inactive' || status === 'decommissioned') return false;
-                const locName = (site['Facility/Location'] || '').toLowerCase();
-                if (locName.includes('(inactive)') || locName.includes('(decommissioned)')) return false;
-                return true;
+                return gps && gps.toString().includes(',');
             }).map(site => {
                 const coords = parseGPS(site['GPS Coordinates'] || '');
                 if (!coords) return null;
@@ -4710,9 +4701,7 @@ let siteMap = null;
             const daysSince = (now - lastTestDate) / (1000 * 60 * 60 * 24);
 
             const freq = (site['Service Frequency'] || '').toLowerCase();
-            const customer = site['Customer'] || site['customer'] || '';
-            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi') ||
-                (typeof TWICE_YEARLY_CUSTOMERS !== 'undefined' && TWICE_YEARLY_CUSTOMERS.some(function(tc){ return customer.toLowerCase().includes(tc.toLowerCase()); }));
+            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi');
 
             // Cycle lengths
             const cycleDays = isSemi ? 183 : 365;  // 6 months or 12 months
@@ -4724,10 +4713,10 @@ let siteMap = null;
             const nextDueDate = lastTestDate.getTime() + (cycleDays * 24 * 60 * 60 * 1000);
             const daysUntilDue = (nextDueDate - now.getTime()) / (1000 * 60 * 60 * 24);
 
-            if (daysUntilDue < 0) return 'overdue';
-            if (daysUntilDue <= 60) return 'due';
-            if (daysSince <= testedDays) return 'tested';
-            return 'tested';
+            if (daysSince <= testedDays) return 'tested';          // green
+            if (daysUntilDue >= 0 && daysUntilDue <= 56) return 'due';  // yellow — due within 8 weeks
+            if (daysUntilDue < 0) return 'overdue';                // red — past due date
+            return 'tested';                                        // between tested threshold and 6 weeks out — still green
         }
 
         function populateMapCustomerFilter() {
@@ -4905,8 +4894,7 @@ let siteMap = null;
                 var lastDate = matches.length > 0 ? new Date(matches[0]['Date']||matches[0]['Date Tested']) : null;
                 var lastStr = lastDate && !isNaN(lastDate) ? lastDate.toLocaleDateString() : 'Never';
                 var freq = (s['Service Frequency']||'').toLowerCase();
-                var isSemi = freq.includes('semi')||freq.includes('6 month')||freq.includes('bi') ||
-                    (typeof TWICE_YEARLY_CUSTOMERS !== 'undefined' && TWICE_YEARLY_CUSTOMERS.some(function(tc){ return (s.customer||'').toLowerCase().includes(tc.toLowerCase()); }));
+                var isSemi = freq.includes('semi')||freq.includes('6 month')||freq.includes('bi');
                 var cycleDays = isSemi ? 183 : 365;
                 var dueDate = lastDate && !isNaN(lastDate) ? new Date(lastDate.getTime() + cycleDays*86400000) : null;
                 var dueStr = dueDate ? dueDate.toLocaleDateString() : 'N/A';
@@ -4976,16 +4964,8 @@ let siteMap = null;
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
                 const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
                 const matches = findHistoryMatches(siteObj);
-                matches.sort((a, b) => new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0));
-                const lastDate = matches.length > 0 ? new Date(matches[0]['Date']||matches[0]['Date Tested']) : null;
-                const lastStr = lastDate && !isNaN(lastDate) ? lastDate.toLocaleDateString() : 'Never';
-                const freq = (site['Service Frequency']||'').toLowerCase();
-                const popupCustomer = site['Customer'] || site.customer || '';
-                const isSemiPopup = freq.includes('semi')||freq.includes('6 month')||freq.includes('bi') ||
-                    (typeof TWICE_YEARLY_CUSTOMERS !== 'undefined' && TWICE_YEARLY_CUSTOMERS.some(function(tc){ return popupCustomer.toLowerCase().includes(tc.toLowerCase()); }));
-                const cycleDaysPopup = isSemiPopup ? 183 : 365;
-                const dueDatePopup = lastDate && !isNaN(lastDate) ? new Date(lastDate.getTime() + cycleDaysPopup*86400000) : null;
-                const dueStrPopup = dueDatePopup ? dueDatePopup.toLocaleDateString() : 'N/A';
+                matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+                const lastStr = matches.length > 0 ? new Date(matches[0]['Date']).toLocaleDateString() : 'Never';
 
                 const popupEl = document.createElement('div');
                 popupEl.style.cssText = 'min-width:200px;font-family:sans-serif;';
@@ -4993,8 +4973,7 @@ let siteMap = null;
                     '<div style="font-weight:700;font-size:14px;margin-bottom:4px;">' + site.name + '</div>' +
                     '<div style="font-size:12px;color:#555;margin-bottom:2px;">👤 ' + site.customer + '</div>' +
                     '<div style="font-size:12px;color:#555;margin-bottom:2px;">🔢 ' + site.serial + '</div>' +
-                    '<div style="font-size:12px;color:#555;margin-bottom:2px;">📅 Last: ' + lastStr + '</div>' +
-                    '<div style="font-size:12px;color:#555;margin-bottom:8px;">🗓️ Due: ' + dueStrPopup + '</div>' +
+                    '<div style="font-size:12px;color:#555;margin-bottom:8px;">📅 Last: ' + lastStr + '</div>' +
                     '<div style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;background:' + statusColor + ';margin-bottom:10px;">' + statusText + '</div>' +
                     '<div style="display:flex;gap:6px;">' +
                     '<button id="btn-test-' + site.serial.replace(/[^a-z0-9]/gi,'_') + '" style="flex:1;padding:8px 4px;background:#1a365d;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">▶ Start Test</button>' +
