@@ -4597,7 +4597,12 @@ let siteMap = null;
             if (!data || !Array.isArray(data)) return;
             mapSites = data.filter(site => {
                 const gps = site['GPS Coordinates'] || '';
-                return gps && gps.toString().includes(',');
+                if (!gps || !gps.toString().includes(',')) return false;
+                const status = (site['Status'] || '').toLowerCase();
+                if (status === 'inactive' || status === 'decommissioned') return false;
+                const locName = (site['Facility/Location'] || '').toLowerCase();
+                if (locName.includes('(inactive)') || locName.includes('(decommissioned)')) return false;
+                return true;
             }).map(site => {
                 const coords = parseGPS(site['GPS Coordinates'] || '');
                 if (!coords) return null;
@@ -4713,10 +4718,10 @@ let siteMap = null;
             const nextDueDate = lastTestDate.getTime() + (cycleDays * 24 * 60 * 60 * 1000);
             const daysUntilDue = (nextDueDate - now.getTime()) / (1000 * 60 * 60 * 24);
 
-            if (daysSince <= testedDays) return 'tested';          // green
-            if (daysUntilDue >= 0 && daysUntilDue <= 56) return 'due';  // yellow — due within 8 weeks
-            if (daysUntilDue < 0) return 'overdue';                // red — past due date
-            return 'tested';                                        // between tested threshold and 6 weeks out — still green
+            if (daysUntilDue < 0) return 'overdue';
+            if (daysUntilDue <= 60) return 'due';
+            if (daysSince <= testedDays) return 'tested';
+            return 'tested';
         }
 
         function populateMapCustomerFilter() {
