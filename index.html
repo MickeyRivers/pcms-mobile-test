@@ -2825,79 +2825,44 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         async function saveMeterSettings(serialNumber) {
             const status = document.getElementById('meterStatus').value;
             const frequency = document.getElementById('meterFrequency').value;
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
-
+            
             document.getElementById('meterOptionsModal').remove();
-
-            // Update local assetDB immediately
-            const meter = assetDB.find(a => String(a['Serial Number']) === String(serialNumber));
-            if (meter) {
-                meter['Status'] = status;
-                meter['Service Frequency'] = frequency;
-            }
-
-            // Send via iframe (no CORS)
-            const iframe = document.createElement('iframe');
-            iframe.name = 'meterSettingsFrame';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = ASSETDB_URL;
-            form.target = 'meterSettingsFrame';
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = JSON.stringify({ action: 'updateMeterSettings', serialNumber: serialNumber, status: status, serviceFrequency: frequency });
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-            setTimeout(() => { try { document.body.removeChild(form); document.body.removeChild(iframe); } catch(e) {} }, 2000);
-
-            showToast('Settings saved', 'success');
-
-            // Handle special statuses
-            if (status === 'Inactive' || status === 'Decommissioned') {
-                // Remove from map and tracker
-                mapSites = mapSites.filter(s => String(s.serial) !== String(serialNumber));
-                updateMapMarkers();
-                initTracker();
-                showToast((status === 'Inactive' ? 'Meter marked inactive' : 'Meter decommissioned') + ' — removed from map', 'success');
-            } else if (status === 'Faulty, Could Not Test') {
-                // Generate a "Could Not Test" cert
-                const asset = meter || assetDB.find(a => String(a['Serial Number']) === String(serialNumber));
-                if (asset) {
-                    const certData = {
-                        id: Date.now().toString(),
-                        timestamp: new Date().toISOString(),
-                        customer: asset['Customer'] || '',
-                        location: asset['Facility/Location'] || asset['Location'] || '',
-                        serialNumber: String(serialNumber),
-                        manufacturer: asset['Manufacturer/Model'] || '',
-                        serviceType: asset['Service Type'] || 'Closed Pipe',
-                        method: '',
-                        notes: 'COULD NOT TEST — Meter reported as faulty. No flow measurements obtained.',
-                        testedBy: localStorage.getItem('pcms_tech_name') || '',
-                        gpsCoordinates: asset['GPS Coordinates'] || '',
-                        couldNotTest: true,
-                        photos: []
-                    };
-                    try {
-                        const res = await fetch('https://generate-certificate-test2-980517620937.us-central1.run.app', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(certData)
-                        });
-                        const result = await res.json();
-                        if (result.success) showToast('Could Not Test cert generated', 'success');
-                        else showToast('Cert failed: ' + (result.error || 'Unknown'), 'error');
-                    } catch(e) {
-                        showToast('Error generating cert: ' + e.message, 'error');
+            showLoading('Saving...');
+            
+            try {
+                const response = await fetch(ASSETDB_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateMeterSettings',
+                        serialNumber: serialNumber,
+                        status: status,
+                        serviceFrequency: frequency
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update local assetDB
+                    const meter = assetDB.find(a => String(a['Serial Number']) === String(serialNumber));
+                    if (meter) {
+                        meter['Status'] = status;
+                        meter['Service Frequency'] = frequency;
                     }
+                    
+                    hideLoading();
+                    showToast('Settings saved', 'success');
+                    
+                    // Refresh tracker view
+                    initTracker();
+                } else {
+                    hideLoading();
+                    showToast('Error: ' + (result.error || 'Unknown error'), 'error');
                 }
-                initTracker();
-            } else {
-                initTracker();
+            } catch (error) {
+                hideLoading();
+                showToast('Error saving settings', 'error');
             }
         }
         
@@ -4595,7 +4560,8 @@ let siteMap = null;
         function parseGPS(raw) {
             if (!raw) return null;
             const str = raw.toString().trim();
-
+            const parts = str.split(',');
+            if (parts.length !== 2) return null;
             function parsePart(s) {
                 s = s.trim();
                 const neg = /[WwSs]/.test(s);
@@ -4603,41 +4569,10 @@ let siteMap = null;
                 if (isNaN(val)) return null;
                 return neg ? -val : val;
             }
-
-            // Try comma separator first
-            let parts = str.split(',');
-            if (parts.length === 2) {
-                const lat = parsePart(parts[0]);
-                const lng = parsePart(parts[1]);
-                if (lat !== null && lng !== null) return { lat, lng };
-            }
-
-            // Try semicolon
-            parts = str.split(';');
-            if (parts.length === 2) {
-                const lat = parsePart(parts[0]);
-                const lng = parsePart(parts[1]);
-                if (lat !== null && lng !== null) return { lat, lng };
-            }
-
-            // Try two numbers separated by whitespace (e.g. "30.123 -97.456")
-            const nums = str.match(/-?\d+\.\d+/g);
-            if (nums && nums.length >= 2) {
-                const lat = parseFloat(nums[0]);
-                const lng = parseFloat(nums[1]);
-                if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
-            }
-
-            // Last resort: extract first two valid coordinate numbers from anywhere in string
-            // Handles repeated/concatenated coords like "29.922, -97.84629.922, -97.846"
-            const coordPairs = str.match(/(-?\d{1,3}\.\d+)/g);
-            if (coordPairs && coordPairs.length >= 2) {
-                const lat = parseFloat(coordPairs[0]);
-                const lng = parseFloat(coordPairs[1]);
-                if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
-            }
-
-            return null;
+            const lat = parsePart(parts[0]);
+            const lng = parsePart(parts[1]);
+            if (lat === null || lng === null) return null;
+            return { lat, lng };
         }
 
         function initSiteMap() {
@@ -4662,12 +4597,7 @@ let siteMap = null;
             if (!data || !Array.isArray(data)) return;
             mapSites = data.filter(site => {
                 const gps = site['GPS Coordinates'] || '';
-                if (!gps || !gps.toString().includes(',')) return false;
-                const status = (site['Status'] || '').toLowerCase();
-                const locName = (site['Facility/Location'] || '').toLowerCase();
-                if (status === 'inactive' || status === 'decommissioned') return false;
-                if (locName.includes('(inactive)') || locName.includes('(decommissioned)')) return false;
-                return true;
+                return gps && gps.toString().includes(',');
             }).map(site => {
                 const coords = parseGPS(site['GPS Coordinates'] || '');
                 if (!coords) return null;
@@ -4760,15 +4690,11 @@ let siteMap = null;
         }
 
         function getTestStatus(site) {
-            // Skip inactive/decommissioned
-            const siteStatus = (site['Status'] || '').toLowerCase();
-            if (siteStatus === 'inactive' || siteStatus === 'decommissioned') return 'inactive';
-
             const matches = findHistoryMatches(site);
             if (matches.length === 0) return 'overdue';
 
-            matches.sort((a, b) => new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0));
-            const lastTestDate = new Date(matches[0]['Date'] || matches[0]['Date Tested']);
+            matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
+            const lastTestDate = new Date(matches[0]['Date']);
             if (isNaN(lastTestDate)) return 'overdue';
 
             const now = new Date();
@@ -4777,16 +4703,20 @@ let siteMap = null;
             const freq = (site['Service Frequency'] || '').toLowerCase();
             const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi');
 
-            const cycleDays = isSemi ? 183 : 365;
-            const testedDays = isSemi ? 120 : 270;  // 4 months or 9 months
+            // Cycle lengths
+            const cycleDays = isSemi ? 183 : 365;  // 6 months or 12 months
 
+            // Tested: within last 4 months (semi) or 9 months (annual)
+            const testedDays = isSemi ? 120 : 270;
+
+            // Due: next required date is within 6 weeks (42 days)
             const nextDueDate = lastTestDate.getTime() + (cycleDays * 24 * 60 * 60 * 1000);
             const daysUntilDue = (nextDueDate - now.getTime()) / (1000 * 60 * 60 * 24);
 
-            if (daysUntilDue < 0) return 'overdue';                     // past due date
-            if (daysUntilDue <= 56) return 'due';                        // due within 8 weeks
-            if (daysSince <= testedDays) return 'tested';                // tested recently
-            return 'tested';                                             // tested but approaching window
+            if (daysSince <= testedDays) return 'tested';          // green
+            if (daysUntilDue >= 0 && daysUntilDue <= 56) return 'due';  // yellow — due within 8 weeks
+            if (daysUntilDue < 0) return 'overdue';                // red — past due date
+            return 'tested';                                        // between tested threshold and 6 weeks out — still green
         }
 
         function populateMapCustomerFilter() {
