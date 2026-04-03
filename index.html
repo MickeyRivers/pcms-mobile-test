@@ -1583,7 +1583,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="section-title" style="margin: 0;">Site Map</div>
                 <div style="display:flex;gap:6px;align-items:center;">
-                    <select id="mapCustomerFilter" onchange="filterMapByCustomer()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 13px;">
+                    <select id="mapCustomerFilter" onchange="filterMapByCustomer()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gray-300); font-size: 13px; max-width:180px;">
                         <option value="">All Customers</option>
                     </select>
                     <button id="mapListToggleBtn" onclick="toggleMapListView()" style="padding:8px 12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📋 List</button>
@@ -4728,11 +4728,57 @@ let siteMap = null;
             const customers = [...new Set(mapSites.map(s => s.customer).filter(c => c))].sort();
             const select = document.getElementById('mapCustomerFilter');
             if (!select) return;
+            const current = select.value;
             select.innerHTML = '<option value="">All Customers</option>' +
-                customers.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+                customers.map(c => `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`).join('');
         }
 
         function filterMapByCustomer() { updateMapMarkers(); }
+
+        function openCustomerPicker() {
+            document.getElementById('customerPickerModal').style.display = 'flex';
+            document.getElementById('customerPickerSearch').value = '';
+            renderCustomerList(_allCustomers);
+            setTimeout(function(){ document.getElementById('customerPickerSearch').focus(); }, 100);
+        }
+
+        function closeCustomerPicker() {
+            document.getElementById('customerPickerModal').style.display = 'none';
+        }
+
+        function filterCustomerList() {
+            var q = document.getElementById('customerPickerSearch').value.toLowerCase();
+            var filtered = _allCustomers.filter(function(c){ return c.toLowerCase().includes(q); });
+            renderCustomerList(filtered);
+        }
+
+        function renderCustomerList(customers) {
+            var current = document.getElementById('mapCustomerFilter').value;
+            var container = document.getElementById('customerPickerList');
+            container.innerHTML = '';
+
+            function makeRow(val, label, selected) {
+                var div = document.createElement('div');
+                div.style.cssText = 'padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:14px;' + (selected ? 'font-weight:700;color:#1a365d;background:#f0f4ff;' : '');
+                div.textContent = label;
+                div.addEventListener('click', function(){ selectCustomer(val, label); });
+                container.appendChild(div);
+            }
+
+            makeRow('', 'All Customers', !current);
+            customers.forEach(function(cust) {
+                makeRow(cust, cust, current === cust);
+            });
+        }
+
+        function selectCustomer(value, label) {
+            document.getElementById('mapCustomerFilter').value = value;
+            var btn = document.getElementById('mapCustomerBtn');
+            btn.textContent = label || 'All Customers';
+            closeCustomerPicker();
+            updateMapMarkers();
+            if (typeof renderMapList === 'function' && mapListVisible) renderMapList();
+        }
 
         function filterMapStatus(status, btn) {
             currentMapFilter = status;
