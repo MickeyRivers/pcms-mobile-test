@@ -2241,8 +2241,8 @@
         }
 
         function refreshMapIfActive() {
-            if (siteMap) {
-                // Reload all map data from fresh assetDB
+            // Always process map data when assetDB loads so customer list is ready
+            if (Array.isArray(assetDB) && assetDB.length > 0) {
                 processMapData(assetDB);
             }
             if (siteMap && mapSites.length > 0) {
@@ -5616,22 +5616,6 @@ let siteMap = null;
                     var bg = i % 2 === 0 ? 'white' : '#f7fafc';
                     html += '<tr style="background:'+bg+';text-align:center;">';
                     row.forEach(function(v){ html += '<td style="padding:6px 8px;">'+(v != null ? v : '—')+'</td>'; });
-                    html += '</tr>';
-                });
-                html += '</table>';
-                el.innerHTML = html;
-
-            } else if (type === 'sv') {
-                var d = PIPE_DATA.sv;
-                var rows = search ? d.rows.filter(function(r){ return String(r[0]).includes(search); }) : d.rows;
-                var html = '<table style="border-collapse:collapse;width:100%;">';
-                html += '<tr style="background:var(--navy);color:white;">';
-                d.headers.forEach(function(h){ html += '<th style="padding:8px 12px;">'+h+'</th>'; });
-                html += '</tr>';
-                rows.forEach(function(row, i){
-                    var bg = i % 2 === 0 ? 'white' : '#f7fafc';
-                    html += '<tr style="background:'+bg+';text-align:center;">';
-                    row.forEach(function(v){ html += '<td style="padding:8px 12px;">'+v+'</td>'; });
                     html += '</tr>';
                 });
                 html += '</table>';
