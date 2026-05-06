@@ -4637,7 +4637,7 @@ let siteMap = null;
                 if (!gps || !gps.toString().includes(',')) return false;
                 const status = (site['Status'] || '').toLowerCase();
                 if (status === 'inactive' || status === 'decommissioned') return false;
-                const locName = (site['Facility/Location'] || '').toLowerCase();
+                const locName = String(site['Facility/Location'] || '').toLowerCase();
                 if (locName.includes('(inactive)') || locName.includes('(decommissioned)')) return false;
                 return true;
             }).map(site => {
