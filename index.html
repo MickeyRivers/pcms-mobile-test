@@ -1594,6 +1594,7 @@
                 <button class="map-chip" onclick="filterMapStatus('tested', this)">✓ Tested</button>
                 <button class="map-chip" onclick="filterMapStatus('due', this)">⚠ Due</button>
                 <button class="map-chip" onclick="filterMapStatus('overdue', this)">🚨 Overdue</button>
+                <button class="map-chip" onclick="filterMapStatus('unknown', this)" style="background:#718096;color:white;">? No History</button>
             </div>
             <div id="siteMap" style="height: calc(100vh - 380px); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200);"></div>
             <div class="map-legend" style="display: flex; gap: 16px; justify-content: center; margin: 12px 0; font-size: 12px;">
@@ -4710,7 +4711,8 @@ let siteMap = null;
             if (status === 'tested') return '#38a169';
             if (status === 'due') return '#d69e2e';
             if (status === 'overdue') return '#e53e3e';
-            return '#a0aec0'; // gray = no test needed yet / N/A
+            if (status === 'unknown') return '#718096';
+            return '#a0aec0';
         }
 
         function getTestStatusBothRounds(site) {
@@ -4724,47 +4726,38 @@ let siteMap = null;
                 return { status, round1Status: status, round2Status: null, isSemi: false };
             }
 
-            // For semi-annual: find last two tests and determine round 1 (Jan-Jun) and round 2 (Jul-Dec)
             const matches = findHistoryMatches(site);
             matches.sort((a, b) => new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0));
 
-            const now = new Date();
-            const currentYear = now.getFullYear();
-
-            function getRoundStatus(roundNum) {
-                // Round 1 = Jan-Jun, Round 2 = Jul-Dec
-                const roundStart = roundNum === 1 ? new Date(currentYear, 0, 1) : new Date(currentYear, 6, 1);
-                const roundEnd = roundNum === 1 ? new Date(currentYear, 5, 30) : new Date(currentYear, 11, 31);
-                const dueDate = roundNum === 1 ? new Date(currentYear, 5, 30) : new Date(currentYear, 11, 31);
-
-                // Check if tested this round
-                const testedThisRound = matches.find(m => {
-                    const d = new Date(m['Date']||m['Date Tested']);
-                    return d >= roundStart && d <= roundEnd;
-                });
-                if (testedThisRound) return 'tested';
-
-                // Check if overdue
-                if (now > dueDate) return 'overdue';
-
-                // Check if due within 2 months
-                const daysUntilDue = (dueDate - now) / (1000 * 60 * 60 * 24);
-                if (daysUntilDue <= 60) return 'due';
-
-                return 'tested'; // not yet in window
+            if (matches.length === 0) {
+                return { status: 'unknown', round1Status: 'unknown', round2Status: null, isSemi: false };
             }
 
-            const round1Status = getRoundStatus(1);
-            const round2Status = getRoundStatus(2);
-            // Overall status = worst of the two
+            const now = new Date();
+
+            // Last test = left half (green = tested)
+            const lastTestDate = new Date(matches[0]['Date'] || matches[0]['Date Tested']);
+            const round1Status = !isNaN(lastTestDate) ? 'tested' : 'overdue';
+
+            // Next test = last test + 6 months = right half
+            let round2Status = 'overdue';
+            if (!isNaN(lastTestDate)) {
+                const nextDue = new Date(lastTestDate);
+                nextDue.setMonth(nextDue.getMonth() + 6);
+                const daysUntilNext = (nextDue - now) / (1000 * 60 * 60 * 24);
+                if (daysUntilNext < 0) round2Status = 'overdue';
+                else if (daysUntilNext <= 60) round2Status = 'due';
+                else round2Status = 'tested'; // not due yet — show as green/ok
+            }
+
             const priority = { overdue: 3, due: 2, tested: 1 };
-            const overall = (priority[round1Status] || 0) >= (priority[round2Status] || 0) ? round1Status : round2Status;
+            const overall = (priority[round1Status]||0) >= (priority[round2Status]||0) ? round1Status : round2Status;
             return { status: overall, round1Status, round2Status, isSemi: true };
         }
 
         function getTestStatus(site) {
             const matches = findHistoryMatches(site);
-            if (matches.length === 0) return 'overdue';
+            if (matches.length === 0) return 'unknown';
 
             matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
             const lastTestDate = new Date(matches[0]['Date']);
@@ -5039,7 +5032,7 @@ let siteMap = null;
                         '</div>';
                 } else {
                     const iconColor = getStatusColor(site.status);
-                    const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : '✕';
+                    const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : site.status === 'unknown' ? '?' : '✕';
                     iconHtml = '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>';
                 }
                 const icon = L.divIcon({
@@ -5049,7 +5042,7 @@ let siteMap = null;
                 });
 
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
-                const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
+                const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : site.status === 'unknown' ? 'No History' : 'Overdue';
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
                 const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
                 const matches = findHistoryMatches(siteObj);
