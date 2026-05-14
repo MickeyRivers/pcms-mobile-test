@@ -4614,6 +4614,7 @@ let siteMap = null;
             }).map(site => {
                 const coords = parseGPS(site['GPS Coordinates'] || '');
                 if (!coords) return null;
+                const siteStatusResult = getTestStatusBothRounds(site);
                 return {
                     name: site['Facility/Location'] || site['Location'] || 'Unknown',
                     'Facility/Location': site['Facility/Location'] || site['Location'] || '',
@@ -4624,7 +4625,10 @@ let siteMap = null;
                     'Service Frequency': site['Service Frequency'] || '',
                     lat: coords.lat,
                     lng: coords.lng,
-                    status: getTestStatus(site),
+                    status: siteStatusResult.status,
+                    round1Status: siteStatusResult.round1Status,
+                    round2Status: siteStatusResult.round2Status,
+                    isSemi: siteStatusResult.isSemi,
                     serviceType: site['Service Type'] || ''
                 };
             }).filter(s => s !== null);
@@ -4700,6 +4704,62 @@ let siteMap = null;
             if (fuzzyMatches.length > 0) return fuzzyMatches.map(x => x.h);
 
             return [];
+        }
+
+        function getStatusColor(status) {
+            if (status === 'tested') return '#38a169';
+            if (status === 'due') return '#d69e2e';
+            if (status === 'overdue') return '#e53e3e';
+            return '#a0aec0'; // gray = no test needed yet / N/A
+        }
+
+        function getTestStatusBothRounds(site) {
+            const freq = (site['Service Frequency'] || '').toLowerCase();
+            const customer = site['Customer'] || '';
+            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi') ||
+                (typeof TWICE_YEARLY_CUSTOMERS !== 'undefined' && TWICE_YEARLY_CUSTOMERS.some(tc => customer.toLowerCase().includes(tc.toLowerCase())));
+
+            if (!isSemi) {
+                const status = getTestStatus(site);
+                return { status, round1Status: status, round2Status: null, isSemi: false };
+            }
+
+            // For semi-annual: find last two tests and determine round 1 (Jan-Jun) and round 2 (Jul-Dec)
+            const matches = findHistoryMatches(site);
+            matches.sort((a, b) => new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0));
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+
+            function getRoundStatus(roundNum) {
+                // Round 1 = Jan-Jun, Round 2 = Jul-Dec
+                const roundStart = roundNum === 1 ? new Date(currentYear, 0, 1) : new Date(currentYear, 6, 1);
+                const roundEnd = roundNum === 1 ? new Date(currentYear, 5, 30) : new Date(currentYear, 11, 31);
+                const dueDate = roundNum === 1 ? new Date(currentYear, 5, 30) : new Date(currentYear, 11, 31);
+
+                // Check if tested this round
+                const testedThisRound = matches.find(m => {
+                    const d = new Date(m['Date']||m['Date Tested']);
+                    return d >= roundStart && d <= roundEnd;
+                });
+                if (testedThisRound) return 'tested';
+
+                // Check if overdue
+                if (now > dueDate) return 'overdue';
+
+                // Check if due within 2 months
+                const daysUntilDue = (dueDate - now) / (1000 * 60 * 60 * 24);
+                if (daysUntilDue <= 60) return 'due';
+
+                return 'tested'; // not yet in window
+            }
+
+            const round1Status = getRoundStatus(1);
+            const round2Status = getRoundStatus(2);
+            // Overall status = worst of the two
+            const priority = { overdue: 3, due: 2, tested: 1 };
+            const overall = (priority[round1Status] || 0) >= (priority[round2Status] || 0) ? round1Status : round2Status;
+            return { status: overall, round1Status, round2Status, isSemi: true };
         }
 
         function getTestStatus(site) {
@@ -4967,11 +5027,24 @@ let siteMap = null;
                 if (currentMapFilter !== 'all' && site.status !== currentMapFilter) return;
 
                 // Icon: green checkmark, yellow exclamation, red X
-                const iconColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
-                const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : '✕';
+                let iconHtml;
+                if (site.isSemi && site.round2Status) {
+                    // Split circle: left = round 1, right = round 2
+                    const c1 = getStatusColor(site.round1Status);
+                    const c2 = getStatusColor(site.round2Status);
+                    iconHtml = '<div style="width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);overflow:hidden;position:relative;">' +
+                        '<div style="position:absolute;left:0;top:0;width:50%;height:100%;background:' + c1 + ';"></div>' +
+                        '<div style="position:absolute;right:0;top:0;width:50%;height:100%;background:' + c2 + ';"></div>' +
+                        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;">2x</div>' +
+                        '</div>';
+                } else {
+                    const iconColor = getStatusColor(site.status);
+                    const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : '✕';
+                    iconHtml = '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>';
+                }
                 const icon = L.divIcon({
                     className: '',
-                    html: '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>',
+                    html: iconHtml,
                     iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
                 });
 
