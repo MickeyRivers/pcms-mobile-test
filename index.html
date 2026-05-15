@@ -1144,26 +1144,26 @@
                         <div style="text-align:center; margin-bottom:12px;">
                             <div id="mechTimerDisplay" style="font-size:42px; font-weight:700; font-family:monospace; color:var(--navy); letter-spacing:2px;">00:00.00</div>
                             <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-                                <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px 20px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
-                                <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px 20px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
-                                <button id="mechTimerResetBtn" onclick="mechTimerReset()" style="padding:10px 16px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
+                                <button id="mechTimerStartBtn" onclick="mechStart()" style="padding:10px 20px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
+                                <button id="mechTimerStopBtn" onclick="mechStop()" style="padding:10px 20px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
+                                <button id="mechTimerResetBtn" onclick="mechReset()" style="padding:10px 16px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
                             </div>
                         </div>
                         <div class="form-group" style="background:var(--gray-100);border-radius:10px;padding:12px;margin-top:8px;">
                             <label class="form-label" style="font-weight:700;color:var(--navy);font-size:14px;">Gallons Collected</label>
-                            <input type="number" step="0.01" class="form-input" id="mechGallons" placeholder="e.g. 12.5" oninput="calcMechFlow()" style="font-size:20px;font-weight:600;text-align:center;border:2px solid var(--teal);">
+                            <input type="number" step="0.01" class="form-input" id="mechGallons" placeholder="e.g. 12.5" oninput="mechCalc()" style="font-size:20px;font-weight:600;text-align:center;border:2px solid var(--teal);">
                         </div>
-                        <div id="mechResult" style="display:none; background:var(--navy); border-radius:12px; padding:16px; margin-top:8px; text-align:center; color:white;">
+                        <div id="mechResultBox" style="display:none; background:var(--navy); border-radius:12px; padding:16px; margin-top:10px; text-align:center; color:white;">
                             <div style="display:flex; justify-content:space-around; margin-bottom:8px;">
-                                <div><div style="font-size:11px; opacity:0.7;">GPM</div><div id="mechGPM" style="font-size:24px; font-weight:700;">—</div></div>
-                                <div><div style="font-size:11px; opacity:0.7;">MGD</div><div id="mechMGD" style="font-size:24px; font-weight:700;">—</div></div>
-                                <div><div style="font-size:11px; opacity:0.7;">GPH</div><div id="mechGPH" style="font-size:24px; font-weight:700;">—</div></div>
+                                <div><div style="font-size:11px; opacity:0.7;">GPM</div><div id="mechGPMVal" style="font-size:24px; font-weight:700;">—</div></div>
+                                <div><div style="font-size:11px; opacity:0.7;">MGD</div><div id="mechMGDVal" style="font-size:24px; font-weight:700;">—</div></div>
+                                <div><div style="font-size:11px; opacity:0.7;">GPH</div><div id="mechGPHVal" style="font-size:24px; font-weight:700;">—</div></div>
                             </div>
                         </div>
-                        <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                        <button onclick="mechUse()" id="mechUseBtnNew" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
                             ✓ Use This Flow Rate
                         </button>
-                    </div>                    </div>
+                    </div>
                 </div>
 
                 <div class="form-group before-field">
@@ -5200,170 +5200,79 @@ let siteMap = null;
         // ============================================
         // MECHANICAL METER CALCULATOR
         // ============================================
-        // ── Mechanical Meter Timer ───────────────────────────────────────────────
-        let mechTimerInterval = null;
-        let mechTimerCs       = 0;  // centiseconds (1/100 sec)
-        let mechTimerRunning  = false;
+        // ── Mechanical Meter Calculator ───────────────────────────────────────────
+        var _mCs = 0, _mInterval = null, _mRunning = false;
 
-        function mechTimerStart() {
-            if (mechTimerRunning) return;
-            mechTimerRunning = true;
+        function toggleMechCalc() {
+            var p = document.getElementById('mechCalcPanel');
+            var ic = document.getElementById('mechCalcToggleIcon');
+            var open = p.style.display === 'none';
+            p.style.display = open ? 'block' : 'none';
+            ic.textContent = open ? '－' : '＋';
+        }
+
+        function mechStart() {
+            if (_mRunning) return;
+            _mRunning = true;
             document.getElementById('mechTimerStartBtn').style.display = 'none';
-            document.getElementById('mechTimerStopBtn').style.display  = 'block';
+            document.getElementById('mechTimerStopBtn').style.display = 'inline-block';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
-            mechTimerInterval = setInterval(() => {
-                mechTimerCs++;
-                const totalSec = Math.floor(mechTimerCs / 100);
-                const m  = String(Math.floor(totalSec / 60)).padStart(2, '0');
-                const s  = String(totalSec % 60).padStart(2, '0');
-                const cs = String(mechTimerCs % 100).padStart(2, '0');
+            _mInterval = setInterval(function() {
+                _mCs++;
+                var tot = Math.floor(_mCs / 100);
+                var m = String(Math.floor(tot / 60)).padStart(2,'0');
+                var s = String(tot % 60).padStart(2,'0');
+                var cs = String(_mCs % 100).padStart(2,'0');
                 document.getElementById('mechTimerDisplay').textContent = m + ':' + s + '.' + cs;
+                mechCalc();
             }, 10);
         }
 
-        function mechTimerStop() {
-            if (!mechTimerRunning) return;
-            clearInterval(mechTimerInterval);
-            mechTimerRunning = false;
-            document.getElementById('mechTimerStopBtn').style.display  = 'none';
-            document.getElementById('mechTimerStartBtn').style.display = 'block';
-            document.getElementById('mechTimerResetBtn').style.display = 'block';
-            calcMechFlow();
+        function mechStop() {
+            if (!_mRunning) return;
+            _mRunning = false;
+            clearInterval(_mInterval);
+            document.getElementById('mechTimerStartBtn').style.display = 'inline-block';
+            document.getElementById('mechTimerStopBtn').style.display = 'none';
+            document.getElementById('mechTimerResetBtn').style.display = 'inline-block';
+            mechCalc();
         }
 
-        function mechTimerReset() {
-            clearInterval(mechTimerInterval);
-            mechTimerRunning  = false;
-            mechTimerCs = 0;
-            document.getElementById('mechTimerDisplay').textContent    = '00:00.00';
-            document.getElementById('mechTimerStartBtn').style.display = 'block';
-            document.getElementById('mechTimerStopBtn').style.display  = 'none';
+        function mechReset() {
+            mechStop();
+            _mCs = 0;
+            _mRunning = false;
+            document.getElementById('mechTimerDisplay').textContent = '00:00.00';
+            document.getElementById('mechTimerStartBtn').style.display = 'inline-block';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
-            const resultEl = document.getElementById('mechResult');
-            const useBtn   = document.getElementById('mechUseBtn');
-            if (resultEl) resultEl.style.display = 'none';
-            if (useBtn) useBtn.style.display = 'none';
-            const gallonsEl = document.getElementById('mechGallons');
-            if (gallonsEl) gallonsEl.value = '';
+            document.getElementById('mechGallons').value = '';
+            document.getElementById('mechResultBox').style.display = 'none';
+            document.getElementById('mechUseBtnNew').style.display = 'none';
         }
 
-        function toggleMechCalc() {
-            const panel = document.getElementById('mechCalcPanel');
-            const icon  = document.getElementById('mechCalcToggleIcon');
-            const open  = panel.style.display === 'none';
-            panel.style.display = open ? 'block' : 'none';
-            icon.textContent    = open ? '－' : '＋';
-        }
-
-        function calcMechFlow() {
-            const gallons = parseFloat(document.getElementById('mechGallons').value);
-            const minutes = mechTimerCs / 6000;
-            const resultEl = document.getElementById('mechResult');
-            const useBtn = document.getElementById('mechUseBtn');
-            if (isNaN(gallons) || gallons <= 0 || mechTimerCs === 0) {
-                resultEl.style.display='none'; useBtn.style.display='none'; return;
+        function mechCalc() {
+            var g = parseFloat(document.getElementById('mechGallons').value);
+            var min = _mCs / 6000;
+            if (isNaN(g) || g <= 0 || _mCs === 0) {
+                document.getElementById('mechResultBox').style.display = 'none';
+                document.getElementById('mechUseBtnNew').style.display = 'none';
+                return;
             }
-            const gpm = gallons / minutes;
-            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
-            document.getElementById('mechMGD').textContent = (gpm * 0.00144).toFixed(4);
-            document.getElementById('mechGPH').textContent = (gpm * 60).toFixed(1);
-            resultEl.style.display='block';
-            useBtn.style.display='block';
+            var gpm = g / min;
+            document.getElementById('mechGPMVal').textContent = gpm.toFixed(2);
+            document.getElementById('mechMGDVal').textContent = (gpm * 0.00144).toFixed(4);
+            document.getElementById('mechGPHVal').textContent = (gpm * 60).toFixed(1);
+            document.getElementById('mechResultBox').style.display = 'block';
+            document.getElementById('mechUseBtnNew').style.display = 'block';
         }
 
-        function useMechResult() {
-            const gpm = document.getElementById('mechGPM').textContent;
-            const field = document.getElementById('formCusFlowBefore');
-            if (field) {
-                field.value = gpm;
-                field.dispatchEvent(new Event('input'));
-                showToast(gpm + ' GPM → Customer Flow Rate (Before)', 'success');
-            }
-        }
-        function updateUnitLabels(section) {
-            if (section==='CP') {
-                const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
-                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fu;});
-            }
-            if (section==='OC') {
-                const lu=document.getElementById('formLevelUnitsOC')?.value||'Inches';
-                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
-                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=luS;});
-            }
-            if (section==='CR') {
-                const type=document.getElementById('formMeasurementType')?.value||'Flow';
-                const fu=document.getElementById('formFlowUnitsCR')?.value||'GPM';
-                const lu=document.getElementById('formLevelUnitsCR')?.value||'Inches';
-                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
-                const unit=type==='Flow'?fu:luS;
-                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=unit;});
-            }
+        function mechUse() {
+            var gpm = document.getElementById('mechGPMVal').textContent;
+            var f = document.getElementById('formCusFlowBefore');
+            if (f) { f.value = gpm; f.dispatchEvent(new Event('input')); }
+            if (typeof showToast === 'function') showToast(gpm + ' GPM → Customer Flow Rate (Before)', 'success');
         }
 
-        // ============================================
-        // SERVICE WORKER REGISTRATION
-        // ============================================
-
-        
-
-        function toggleMechCalc() {
-            const panel = document.getElementById('mechCalcPanel');
-            const icon  = document.getElementById('mechCalcToggleIcon');
-            const open  = panel.style.display === 'none';
-            panel.style.display = open ? 'block' : 'none';
-            icon.textContent    = open ? '－' : '＋';
-        }
-
-
-        function calcMechFlow() {
-            const start   = parseFloat(document.getElementById('mechStart').value);
-            const end     = parseFloat(document.getElementById('mechEnd').value);
-            const minutes = parseFloat(document.getElementById('mechTime').value);
-            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
-            const resultEl = document.getElementById('mechResult');
-            const useBtn   = document.getElementById('mechUseBtn');
-            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
-            const gallons = (end-start)*mult;
-            const gpm = gallons/minutes;
-            const mgd = gpm*1440/1000000;
-            const gph = gpm*60;
-            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
-            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
-            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
-            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
-            resultEl.style.display='block';
-            useBtn.style.display='block';
-        }
-
-
-        function useMechResult() {
-            const gpm = document.getElementById('mechGPM').textContent;
-            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
-            const cusBefore = document.getElementById('formCusFlowBefore');
-            const cusAfter  = document.getElementById('formCusFlowAfter');
-            if (!cusBefore.value && !cusAfter.value) {
-                cusBefore.value = gpm;
-                showToast(gpm + ' GPM → Customer Before field', 'success');
-            } else if (cusBefore.value && !cusAfter.value) {
-                cusAfter.value = gpm;
-                showToast(gpm + ' GPM → Customer After field', 'success');
-            } else {
-                cusAfter.value = gpm;
-                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
-            }
-            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
-            const existing = document.getElementById('formNotes').value;
-            const note = 'Mechanical timed test: ' + gpm + ' GPM';
-            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
-        }
-
-        // Updates unit badge labels when units dropdowns change
-
-                if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed:', err));
-        }
 
         // ── Pipe Charts ──────────────────────────────────────────────────────────
         var currentPipeChart = 'cs';
