@@ -5259,59 +5259,30 @@ let siteMap = null;
         }
 
         function calcMechFlow() {
-            // Handle custom time input visibility
-            const timeEl = document.getElementById('mechTime');
-            const customEl = document.getElementById('mechTimeCustom');
-            if (timeEl && customEl) {
-                customEl.style.display = timeEl.value === 'custom' ? 'block' : 'none';
-            }
-            const start   = parseFloat(document.getElementById('mechStart').value);
-            const end     = parseFloat(document.getElementById('mechEnd').value);
-            const minutes = parseFloat(document.getElementById('mechTime').value);
-            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const gallons = parseFloat(document.getElementById('mechGallons').value);
+            const minutes = mechTimerCs / 6000;
             const resultEl = document.getElementById('mechResult');
-            const useBtn   = document.getElementById('mechUseBtn');
-            if (isNaN(start)||isNaN(end)||isNaN(minutes)||minutes<=0||end<=start) {
+            const useBtn = document.getElementById('mechUseBtn');
+            if (isNaN(gallons) || gallons <= 0 || mechTimerCs === 0) {
                 resultEl.style.display='none'; useBtn.style.display='none'; return;
             }
-            const gallons = (end - start) * mult;
             const gpm = gallons / minutes;
-            const mgd = gpm * 1440 / 1000000;
-            const gph = gpm * 60;
             document.getElementById('mechGPM').textContent = gpm.toFixed(2);
-            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
-            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
-            const mStr = mechTimerCs > 0
-                ? Math.floor(mechTimerCs/6000)+'m '+(Math.floor(mechTimerCs/100)%60)+'.'+(mechTimerCs%100).toString().padStart(2,'0')+'s'
-                : minutes + ' min';
-            document.getElementById('mechCalcDetail').textContent =
-                '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toFixed(2)+' gal ÷ '+mStr;
+            document.getElementById('mechMGD').textContent = (gpm * 0.00144).toFixed(4);
+            document.getElementById('mechGPH').textContent = (gpm * 60).toFixed(1);
             resultEl.style.display='block';
             useBtn.style.display='block';
         }
 
         function useMechResult() {
             const gpm = document.getElementById('mechGPM').textContent;
-            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
-            const cusBefore = document.getElementById('formCusFlowBefore');
-            const cusAfter  = document.getElementById('formCusFlowAfter');
-            if (!cusBefore.value && !cusAfter.value) {
-                cusBefore.value = gpm;
-                showToast(gpm + ' GPM → Customer Before field', 'success');
-            } else if (cusBefore.value && !cusAfter.value) {
-                cusAfter.value = gpm;
-                showToast(gpm + ' GPM → Customer After field', 'success');
-            } else {
-                cusAfter.value = gpm;
-                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            const field = document.getElementById('formCusFlowBefore');
+            if (field) {
+                field.value = gpm;
+                field.dispatchEvent(new Event('input'));
+                showToast(gpm + ' GPM → Customer Flow Rate (Before)', 'success');
             }
-            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
-            const existing = document.getElementById('formNotes').value;
-            const note = 'Mechanical timed test: ' + gpm + ' GPM';
-            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
         }
-
-        // Updates unit badge labels when units dropdowns change
         function updateUnitLabels(section) {
             if (section==='CP') {
                 const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
