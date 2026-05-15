@@ -906,11 +906,7 @@
                     <div class="action-title">Pending</div>
                     <div class="action-subtitle" id="pendingCount">0 tests waiting</div>
                 </div>
-                <div class="action-card" onclick="showScreen('historyScreen')">
-                    <div class="action-icon">🔍</div>
-                    <div class="action-title">History</div>
-                    <div class="action-subtitle">Look up past tests</div>
-                </div>
+
                 <div class="action-card" onclick="showScreen('mapScreen')">
                     <div class="action-icon">🗺️</div>
                     <div class="action-label">Site Map</div>
@@ -922,6 +918,10 @@
                 <div class="action-card" onclick="showScreen('flowCalcScreen')">
                     <div class="action-icon">🧮</div>
                     <div class="action-label">Flow Calc</div>
+                </div>
+                <div class="action-card" onclick="showScreen('pipeChartScreen')">
+                    <div class="action-icon">📐</div>
+                    <div class="action-label">Pipe Charts</div>
                 </div>
                 <div class="action-card" onclick="showScreen('trackerScreen')">
                     <div class="action-icon">📊</div>
@@ -1041,11 +1041,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Meter Reading</label>
-                    <input type="text" class="form-input" id="formMeterReading">
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">Water/Wastewater</label>
                     <select class="form-select" id="formWaterType">
                         <option value="">Select...</option>
@@ -1138,40 +1133,6 @@
 
 
 
-
-
-                <!-- Mechanical meter timed flow calculator -->
-                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
-                    <div onclick="toggleMechCalc()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
-                        <span style="font-weight:600; font-size:14px; color:var(--navy);">⚙️ Mechanical Meter Calculator</span>
-                        <span id="mechCalcToggleIcon" style="font-size:18px; color:var(--gray-500);">＋</span>
-                    </div>
-                    <div id="mechCalcPanel" style="display:none; margin-top:14px;">
-                        <div style="text-align:center; margin-bottom:12px;">
-                            <div id="mechTimerDisplay" style="font-size:42px; font-weight:700; font-family:monospace; color:var(--navy); letter-spacing:2px;">00:00.00</div>
-                            <div style="display:flex; gap:8px; justify-content:center; margin-top:10px;">
-                                <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px 20px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
-                                <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px 20px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
-                                <button id="mechTimerResetBtn" onclick="mechTimerReset()" style="padding:10px 16px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
-                            </div>
-                        </div>
-                        <div class="form-group" style="background:var(--gray-100);border-radius:10px;padding:12px;margin-top:8px;">
-                            <label class="form-label" style="font-weight:700;color:var(--navy);font-size:14px;">Gallons Collected</label>
-                            <input type="number" step="0.01" class="form-input" id="mechGallons" placeholder="e.g. 12.5" oninput="calcMechFlow()" style="font-size:20px;font-weight:600;text-align:center;border:2px solid var(--teal);">
-                        </div>
-                        <div id="mechResult" style="display:none; background:var(--navy); border-radius:12px; padding:16px; margin-top:8px; text-align:center; color:white;">
-                            <div style="display:flex; justify-content:space-around; margin-bottom:8px;">
-                                <div><div style="font-size:11px; opacity:0.7;">GPM</div><div id="mechGPM" style="font-size:24px; font-weight:700;">—</div></div>
-                                <div><div style="font-size:11px; opacity:0.7;">MGD</div><div id="mechMGD" style="font-size:24px; font-weight:700;">—</div></div>
-                                <div><div style="font-size:11px; opacity:0.7;">GPH</div><div id="mechGPH" style="font-size:24px; font-weight:700;">—</div></div>
-                            </div>
-                        </div>
-                        <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
-                            ✓ Use This Flow Rate
-                        </button>
-                    </div>
-                </div>
-
                 <div class="form-group before-field">
                     <label class="form-label">Flow Rate - Validating Meter (Before) <span class="unit-badge" id="unitBadgeCPValBefore">GPM</span></label>
                     <input type="number" step="0.1" class="form-input" id="formValFlowBefore" placeholder="0.00">
@@ -1193,7 +1154,80 @@
                 </div>
             </div>
 
-
+                <!-- Mechanical meter timed flow calculator -->
+                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
+                    <div onclick="toggleMechCalc()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+                        <span style="font-weight:600; font-size:14px; color:var(--navy);">⚙️ Mechanical Meter Calculator</span>
+                        <span id="mechCalcToggleIcon" style="font-size:18px; color:var(--gray-500);">＋</span>
+                    </div>
+                    <div id="mechCalcPanel" style="display:none; margin-top:14px;">
+                        <div class="form-group">
+                            <label class="form-label">Register Multiplier</label>
+                            <select class="form-select" id="mechMultiplier" onchange="calcMechFlow()">
+                                <option value="1">×1 — reads actual gallons</option>
+                                <option value="10">×10 — last digit = 10 gal</option>
+                                <option value="100">×100 — last digit = 100 gal</option>
+                                <option value="1000">×1,000 — last digit = 1,000 gal</option>
+                                <option value="10000">×10,000 — last digit = 10,000 gal</option>
+                            </select>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label">Start Reading</label>
+                                <input type="number" step="0.1" class="form-input" id="mechStart" placeholder="0.0" oninput="calcMechFlow()">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label">End Reading</label>
+                                <input type="number" step="0.1" class="form-input" id="mechEnd" placeholder="0.0" oninput="calcMechFlow()">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Elapsed Time</label>
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                <div id="mechTimerDisplay" style="font-size:28px; font-weight:700; font-family:monospace; color:var(--navy); min-width:140px;">00:00.00</div>
+                                <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                                    <button id="mechTimerStartBtn" onclick="mechTimerStart()" style="padding:10px; background:var(--teal); color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">▶ Start</button>
+                                    <button id="mechTimerStopBtn" onclick="mechTimerStop()" style="padding:10px; background:#e53e3e; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:none;">⏹ Stop</button>
+                                    <button id="mechTimerResetBtn" onclick="mechTimerReset()" style="padding:8px; background:var(--gray-200); color:var(--navy); border:none; border-radius:8px; font-size:13px; cursor:pointer; display:none;">↺ Reset</button>
+                                </div>
+                            </div>
+                            <div style="font-size:11px; color:var(--gray-500);">Or enter time manually (minutes):</div>
+                            <select class="form-select" id="mechTime" onchange="calcMechFlow()" style="margin-top:4px;">
+                                <option value="0.25">15 seconds</option>
+                                <option value="0.5">30 seconds</option>
+                                <option value="0.75">45 seconds</option>
+                                <option value="1" selected>1 minute</option>
+                                <option value="1.5">1 min 30 sec</option>
+                                <option value="2">2 minutes</option>
+                                <option value="3">3 minutes</option>
+                                <option value="5">5 minutes</option>
+                                <option value="10">10 minutes</option>
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                            <input type="number" step="0.01" min="0.01" class="form-input" id="mechTimeCustom" placeholder="Minutes (e.g. 2.5)" oninput="calcMechFlow()" style="margin-top:4px;display:none;">
+                        </div>
+                        <div id="mechResult" style="display:none; background:linear-gradient(135deg,var(--teal),var(--teal-light)); border-radius:12px; padding:20px; margin-top:8px; text-align:center; color:white;">
+                            <div style="font-size:13px; opacity:0.9; margin-bottom:4px;">Calculated Flow Rate</div>
+                            <div id="mechGPM" style="font-size:36px; font-weight:700; letter-spacing:-1px;">—</div>
+                            <div style="font-size:13px; opacity:0.85;">GPM</div>
+                            <div style="display:flex; justify-content:center; gap:24px; margin-top:12px; font-size:12px; opacity:0.85;">
+                                <span>= <span id="mechMGD">—</span> MGD</span>
+                                <span>= <span id="mechGPH">—</span> GPH</span>
+                            </div>
+                            <div style="margin-top:8px; font-size:11px; opacity:0.7;" id="mechCalcDetail">—</div>
+                        </div>
+                        <button onclick="useMechResult()" id="mechUseBtn" style="display:none; width:100%; margin-top:12px; padding:14px; background:var(--gold); color:var(--navy); border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">
+                            ✓ Use This Flow Rate in Test Record
+                        </button>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label">Totalizer Reading (at end)</label>
+                            <input type="text" class="form-input" id="mechTotalizerReading" placeholder="e.g. 0045231">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Open Channel Fields -->
@@ -1366,6 +1400,11 @@
             <div class="form-section">
                 <div class="form-section-title">📝 Calibration & Notes</div>
                 
+                <div class="form-group">
+                    <label class="form-label">Meter Reading</label>
+                    <input type="text" class="form-input" id="formMeterReading">
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Calibration Adjustments</label>
                     <textarea class="form-textarea" id="formCalibration" placeholder="Describe any adjustments made..."></textarea>
@@ -1555,7 +1594,6 @@
                 <button class="map-chip" onclick="filterMapStatus('tested', this)">✓ Tested</button>
                 <button class="map-chip" onclick="filterMapStatus('due', this)">⚠ Due</button>
                 <button class="map-chip" onclick="filterMapStatus('overdue', this)">🚨 Overdue</button>
-                <button class="map-chip" onclick="filterMapStatus('unknown', this)" style="background:#718096;color:white;">? No History</button>
             </div>
             <div id="siteMap" style="height: calc(100vh - 380px); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200);"></div>
             <div class="map-legend" style="display: flex; gap: 16px; justify-content: center; margin: 12px 0; font-size: 12px;">
@@ -2083,7 +2121,6 @@
                     localStorage.setItem('assetDB', JSON.stringify(assetDB));
                     localStorage.setItem('assetDB_updated', new Date().toISOString());
                     console.log(`Loaded ${assetDB.length} assets from Google Sheets`);
-                    processMapData(assetDB);
                     return;
                 }
             } catch (e) {
@@ -2095,7 +2132,6 @@
             if (cached) {
                 assetDB = JSON.parse(cached);
                 console.log(`Loaded ${assetDB.length} assets from cache`);
-                processMapData(assetDB);
                 return;
             }
             
@@ -2261,7 +2297,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         let allCustomerStats = [];
         
         function initTracker() {
-            if (!Array.isArray(assetDB) || assetDB.length === 0) return;
             if (!Array.isArray(assetDB) || assetDB.length === 0) return;
             // Get unique customers from AssetDB
             const customers = [...new Set(assetDB.map(a => a['Customer']).filter(c => c))].sort();
@@ -2930,12 +2965,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                     // Get meters with GPS coordinates
                     const metersWithGPS = assetDB.filter(a => {
                         const gps = a['GPS Coordinates'];
-                        if (!gps || !gps.includes(',')) return false;
-                        const status = (site['Status'] || '').toLowerCase();
-                        if (status === 'inactive' || status === 'decommissioned') return false;
-                        const locName = String(site['Facility/Location'] || '').toLowerCase();
-                        if (locName.includes('(inactive)') || locName.includes('(decommissioned)')) return false;
-                        return true;
+                        return gps && gps.includes(',');
                     });
                     
                     if (metersWithGPS.length === 0) {
@@ -3714,35 +3744,18 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             sheet.innerHTML = `
                 <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
                     <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
-                    <button id="btnTakePhoto" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
-                    <button id="btnChoosePhoto" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
                     <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
                 </div>
             `;
             sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
             document.body.appendChild(sheet);
-
-            // Wire up buttons AFTER sheet is in DOM, hide sheet first then click input
-            document.getElementById('btnTakePhoto').addEventListener('click', function() {
-                sheet.style.display = 'none';
-                const inp = document.getElementById('photoInputCamera');
-                inp.value = '';
-                inp.click();
-            });
-            document.getElementById('btnChoosePhoto').addEventListener('click', function() {
-                sheet.style.display = 'none';
-                const inp = document.getElementById('photoInput');
-                inp.value = '';
-                inp.click();
-            });
         }
 
 
         function handlePhotoCapture(event) {
             const file = event.target.files[0];
-            // Remove the photo sheet if still present
-            const sheet = document.getElementById('photoSheet');
-            if (sheet) sheet.remove();
             if (!file) return;
             
             const reader = new FileReader();
@@ -4516,6 +4529,23 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
 
+function capturePhoto(index) {
+            currentPhotoIndex = index;
+            const sheet = document.createElement('div');
+            sheet.id = 'photoSheet';
+            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+            sheet.innerHTML = `
+                <div style="background:white;width:100%;max-width:400px;border-radius:16px 16px 0 0;padding:16px 16px 32px;">
+                    <div style="text-align:center;margin-bottom:16px;font-weight:600;color:#333;">Add Photo</div>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInputCamera').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">📷 Take Photo</button>
+                    <button onclick="document.getElementById('photoSheet').remove(); document.getElementById('photoInput').click();" style="width:100%;padding:14px;margin-bottom:8px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">🖼️ Choose from Camera Roll</button>
+                    <button onclick="document.getElementById('photoSheet').remove();" style="width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;">Cancel</button>
+                </div>
+            `;
+            sheet.onclick = (e) => { if (e.target === sheet) sheet.remove(); };
+            document.body.appendChild(sheet);
+        }
+
 
 let siteMap = null;
         let mapMarkers = [];
@@ -4567,16 +4597,10 @@ let siteMap = null;
             if (!data || !Array.isArray(data)) return;
             mapSites = data.filter(site => {
                 const gps = site['GPS Coordinates'] || '';
-                if (!gps || !gps.toString().includes(',')) return false;
-                const status = (site['Status'] || '').toLowerCase();
-                if (status === 'inactive' || status === 'decommissioned') return false;
-                const locName = String(site['Facility/Location'] || '').toLowerCase();
-                if (locName.includes('(inactive)') || locName.includes('(decommissioned)')) return false;
-                return true;
+                return gps && gps.toString().includes(',');
             }).map(site => {
                 const coords = parseGPS(site['GPS Coordinates'] || '');
                 if (!coords) return null;
-                const siteStatusResult = getTestStatusBothRounds(site);
                 return {
                     name: site['Facility/Location'] || site['Location'] || 'Unknown',
                     'Facility/Location': site['Facility/Location'] || site['Location'] || '',
@@ -4587,15 +4611,12 @@ let siteMap = null;
                     'Service Frequency': site['Service Frequency'] || '',
                     lat: coords.lat,
                     lng: coords.lng,
-                    status: siteStatusResult.status,
-                    round1Status: siteStatusResult.round1Status,
-                    round2Status: siteStatusResult.round2Status,
-                    isSemi: siteStatusResult.isSemi,
+                    status: getTestStatus(site),
                     serviceType: site['Service Type'] || ''
                 };
             }).filter(s => s !== null);
             populateMapCustomerFilter();
-            if (siteMap) updateMapMarkers();
+            updateMapMarkers();
             if (mapSites.length > 0 && siteMap) {
                 const bounds = L.latLngBounds(mapSites.map(s => [s.lat, s.lng]));
                 siteMap.fitBounds(bounds, { padding: [30, 30] });
@@ -4668,57 +4689,9 @@ let siteMap = null;
             return [];
         }
 
-        function getStatusColor(status) {
-            if (status === 'tested') return '#38a169';
-            if (status === 'due') return '#d69e2e';
-            if (status === 'overdue') return '#e53e3e';
-            if (status === 'unknown') return '#718096';
-            return '#a0aec0';
-        }
-
-        function getTestStatusBothRounds(site) {
-            const freq = (site['Service Frequency'] || '').toLowerCase();
-            const customer = site['Customer'] || '';
-            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi') ||
-                (typeof TWICE_YEARLY_CUSTOMERS !== 'undefined' && TWICE_YEARLY_CUSTOMERS.some(tc => customer.toLowerCase().includes(tc.toLowerCase())));
-
-            if (!isSemi) {
-                const status = getTestStatus(site);
-                return { status, round1Status: status, round2Status: null, isSemi: false };
-            }
-
-            const matches = findHistoryMatches(site);
-            matches.sort((a, b) => new Date(b['Date']||b['Date Tested']||0) - new Date(a['Date']||a['Date Tested']||0));
-
-            if (matches.length === 0) {
-                return { status: 'unknown', round1Status: 'unknown', round2Status: null, isSemi: false };
-            }
-
-            const now = new Date();
-
-            // Last test = left half (green = tested)
-            const lastTestDate = new Date(matches[0]['Date'] || matches[0]['Date Tested']);
-            const round1Status = !isNaN(lastTestDate) ? 'tested' : 'overdue';
-
-            // Next test = last test + 6 months = right half
-            let round2Status = 'overdue';
-            if (!isNaN(lastTestDate)) {
-                const nextDue = new Date(lastTestDate);
-                nextDue.setMonth(nextDue.getMonth() + 6);
-                const daysUntilNext = (nextDue - now) / (1000 * 60 * 60 * 24);
-                if (daysUntilNext < 0) round2Status = 'overdue';
-                else if (daysUntilNext <= 60) round2Status = 'due';
-                else round2Status = 'tested'; // not due yet — show as green/ok
-            }
-
-            const priority = { overdue: 3, due: 2, tested: 1 };
-            const overall = (priority[round1Status]||0) >= (priority[round2Status]||0) ? round1Status : round2Status;
-            return { status: overall, round1Status, round2Status, isSemi: true };
-        }
-
         function getTestStatus(site) {
             const matches = findHistoryMatches(site);
-            if (matches.length === 0) return 'unknown';
+            if (matches.length === 0) return 'overdue';
 
             matches.sort((a, b) => new Date(b['Date']) - new Date(a['Date']));
             const lastTestDate = new Date(matches[0]['Date']);
@@ -4728,9 +4701,7 @@ let siteMap = null;
             const daysSince = (now - lastTestDate) / (1000 * 60 * 60 * 24);
 
             const freq = (site['Service Frequency'] || '').toLowerCase();
-            const customer = site['Customer'] || site['customer'] || '';
-            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi') ||
-                (typeof TWICE_YEARLY_CUSTOMERS !== 'undefined' && TWICE_YEARLY_CUSTOMERS.some(function(tc){ return customer.toLowerCase().includes(tc.toLowerCase()); }));
+            const isSemi = freq.includes('semi') || freq.includes('6 month') || freq.includes('twice') || freq.includes('bi');
 
             // Cycle lengths
             const cycleDays = isSemi ? 183 : 365;  // 6 months or 12 months
@@ -4742,10 +4713,10 @@ let siteMap = null;
             const nextDueDate = lastTestDate.getTime() + (cycleDays * 24 * 60 * 60 * 1000);
             const daysUntilDue = (nextDueDate - now.getTime()) / (1000 * 60 * 60 * 24);
 
-            if (daysUntilDue < 0) return 'overdue';
-            if (daysUntilDue <= 60) return 'due';
-            if (daysSince <= testedDays) return 'tested';
-            return 'tested';
+            if (daysSince <= testedDays) return 'tested';          // green
+            if (daysUntilDue >= 0 && daysUntilDue <= 56) return 'due';  // yellow — due within 8 weeks
+            if (daysUntilDue < 0) return 'overdue';                // red — past due date
+            return 'tested';                                        // between tested threshold and 6 weeks out — still green
         }
 
         function populateMapCustomerFilter() {
@@ -4971,7 +4942,6 @@ let siteMap = null;
             a.click();
         }
         function updateMapMarkers() {
-            if (!siteMap) return;
             mapMarkers.forEach(m => siteMap.removeLayer(m));
             mapMarkers = [];
             const customerFilter = document.getElementById('mapCustomerFilter') ?
@@ -4981,29 +4951,16 @@ let siteMap = null;
                 if (currentMapFilter !== 'all' && site.status !== currentMapFilter) return;
 
                 // Icon: green checkmark, yellow exclamation, red X
-                let iconHtml;
-                if (site.isSemi && site.round2Status) {
-                    // Split circle: left = round 1, right = round 2
-                    const c1 = getStatusColor(site.round1Status);
-                    const c2 = getStatusColor(site.round2Status);
-                    iconHtml = '<div style="width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);overflow:hidden;position:relative;">' +
-                        '<div style="position:absolute;left:0;top:0;width:50%;height:100%;background:' + c1 + ';"></div>' +
-                        '<div style="position:absolute;right:0;top:0;width:50%;height:100%;background:' + c2 + ';"></div>' +
-                        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:900;">2x</div>' +
-                        '</div>';
-                } else {
-                    const iconColor = getStatusColor(site.status);
-                    const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : site.status === 'unknown' ? '?' : '✕';
-                    iconHtml = '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>';
-                }
+                const iconColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
+                const iconSymbol = site.status === 'tested' ? '✔' : site.status === 'due' ? '!' : '✕';
                 const icon = L.divIcon({
                     className: '',
-                    html: iconHtml,
+                    html: '<div style="width:32px;height:32px;border-radius:50%;background:' + iconColor + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;line-height:1;">' + iconSymbol + '</div>',
                     iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
                 });
 
                 const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
-                const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : site.status === 'unknown' ? 'No History' : 'Overdue';
+                const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
                 const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
                 const matches = findHistoryMatches(siteObj);
@@ -5252,82 +5209,301 @@ let siteMap = null;
         // ============================================
         // ── Mechanical Meter Timer ───────────────────────────────────────────────
         let mechTimerInterval = null;
-        let mechTimerCs = 0;
-        let mechTimerRunning = false;
-
-        function toggleMechCalc() {
-            const panel = document.getElementById('mechCalcPanel');
-            const icon = document.getElementById('mechCalcToggleIcon');
-            const open = panel.style.display === 'none';
-            panel.style.display = open ? 'block' : 'none';
-            icon.textContent = open ? '－' : '＋';
-        }
+        let mechTimerCs       = 0;  // centiseconds (1/100 sec)
+        let mechTimerRunning  = false;
 
         function mechTimerStart() {
             if (mechTimerRunning) return;
             mechTimerRunning = true;
             document.getElementById('mechTimerStartBtn').style.display = 'none';
-            document.getElementById('mechTimerStopBtn').style.display = 'inline-block';
+            document.getElementById('mechTimerStopBtn').style.display  = 'block';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
             mechTimerInterval = setInterval(() => {
                 mechTimerCs++;
-                const total = Math.floor(mechTimerCs / 100);
-                const m = String(Math.floor(total / 60)).padStart(2,'0');
-                const s = String(total % 60).padStart(2,'0');
-                const cs = String(mechTimerCs % 100).padStart(2,'0');
+                const totalSec = Math.floor(mechTimerCs / 100);
+                const m  = String(Math.floor(totalSec / 60)).padStart(2, '0');
+                const s  = String(totalSec % 60).padStart(2, '0');
+                const cs = String(mechTimerCs % 100).padStart(2, '0');
                 document.getElementById('mechTimerDisplay').textContent = m + ':' + s + '.' + cs;
-                calcMechFlow();
             }, 10);
         }
 
         function mechTimerStop() {
             if (!mechTimerRunning) return;
-            mechTimerRunning = false;
             clearInterval(mechTimerInterval);
-            document.getElementById('mechTimerStartBtn').style.display = 'inline-block';
-            document.getElementById('mechTimerStopBtn').style.display = 'none';
-            document.getElementById('mechTimerResetBtn').style.display = 'inline-block';
+            mechTimerRunning = false;
+            document.getElementById('mechTimerStopBtn').style.display  = 'none';
+            document.getElementById('mechTimerStartBtn').style.display = 'block';
+            document.getElementById('mechTimerResetBtn').style.display = 'block';
+            // Auto-fill elapsed time in minutes and calculate
+            const minutes = mechTimerCs / 6000;
+            const selEl = document.getElementById('mechTime');
+            if (selEl.tagName === 'SELECT') { selEl.value = 'custom'; document.getElementById('mechTimeCustom').style.display='block'; document.getElementById('mechTimeCustom').value = minutes.toFixed(4); } else { selEl.value = minutes.toFixed(4); }
             calcMechFlow();
         }
 
         function mechTimerReset() {
-            mechTimerStop();
+            clearInterval(mechTimerInterval);
+            mechTimerRunning  = false;
             mechTimerCs = 0;
-            document.getElementById('mechTimerDisplay').textContent = '00:00.00';
+            document.getElementById('mechTimerDisplay').textContent    = '00:00.00';
+            document.getElementById('mechTimerStartBtn').style.display = 'block';
+            document.getElementById('mechTimerStopBtn').style.display  = 'none';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
-            document.getElementById('mechResult').style.display = 'none';
-            document.getElementById('mechUseBtn').style.display = 'none';
+            document.getElementById('mechTime').value = '';
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            resultEl.style.display = 'none';
+            useBtn.style.display   = 'none';
+        }
+
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
         }
 
         function calcMechFlow() {
-            const gallons = parseFloat(document.getElementById('mechGallons').value);
-            const minutes = mechTimerCs / 6000;
-            if (isNaN(gallons) || gallons <= 0 || mechTimerCs === 0) {
-                document.getElementById('mechResult').style.display = 'none';
-                document.getElementById('mechUseBtn').style.display = 'none';
-                return;
+            // Handle custom time input visibility
+            const timeEl = document.getElementById('mechTime');
+            const customEl = document.getElementById('mechTimeCustom');
+            if (timeEl && customEl) {
+                customEl.style.display = timeEl.value === 'custom' ? 'block' : 'none';
             }
+            const start   = parseFloat(document.getElementById('mechStart').value);
+            const end     = parseFloat(document.getElementById('mechEnd').value);
+            const minutes = parseFloat(document.getElementById('mechTime').value);
+            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            if (isNaN(start)||isNaN(end)||isNaN(minutes)||minutes<=0||end<=start) {
+                resultEl.style.display='none'; useBtn.style.display='none'; return;
+            }
+            const gallons = (end - start) * mult;
             const gpm = gallons / minutes;
-            const mgd = gpm * 0.00144;
+            const mgd = gpm * 1440 / 1000000;
             const gph = gpm * 60;
             document.getElementById('mechGPM').textContent = gpm.toFixed(2);
             document.getElementById('mechMGD').textContent = mgd.toFixed(4);
-            document.getElementById('mechGPH').textContent = gph.toFixed(1);
-            document.getElementById('mechResult').style.display = 'block';
-            document.getElementById('mechUseBtn').style.display = 'block';
+            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
+            const mStr = mechTimerCs > 0
+                ? Math.floor(mechTimerCs/6000)+'m '+(Math.floor(mechTimerCs/100)%60)+'.'+(mechTimerCs%100).toString().padStart(2,'0')+'s'
+                : minutes + ' min';
+            document.getElementById('mechCalcDetail').textContent =
+                '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toFixed(2)+' gal ÷ '+mStr;
+            resultEl.style.display='block';
+            useBtn.style.display='block';
         }
 
         function useMechResult() {
             const gpm = document.getElementById('mechGPM').textContent;
-            // Put into Customer Meter - Flow Rate (Before) field
-            const field = document.getElementById('formCusFlowBefore');
-            if (field) {
-                field.value = gpm;
-                field.dispatchEvent(new Event('input'));
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+            if (!cusBefore.value && !cusAfter.value) {
+                cusBefore.value = gpm;
+                showToast(gpm + ' GPM → Customer Before field', 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field', 'success');
+            } else {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            }
+            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
+            const existing = document.getElementById('formNotes').value;
+            const note = 'Mechanical timed test: ' + gpm + ' GPM';
+            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
+        }
+
+        // Updates unit badge labels when units dropdowns change
+        function updateUnitLabels(section) {
+            if (section==='CP') {
+                const fu=document.getElementById('formFlowUnitsCP')?.value||'GPM';
+                ['unitBadgeCPValBefore','unitBadgeCPCusBefore','unitBadgeCPValAfter','unitBadgeCPCusAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=fu;});
+            }
+            if (section==='OC') {
+                const lu=document.getElementById('formLevelUnitsOC')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                ['unitBadgeOCChanBefore','unitBadgeOCMeterBefore','unitBadgeOCChanAfter','unitBadgeOCMeterAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=luS;});
+            }
+            if (section==='CR') {
+                const type=document.getElementById('formMeasurementType')?.value||'Flow';
+                const fu=document.getElementById('formFlowUnitsCR')?.value||'GPM';
+                const lu=document.getElementById('formLevelUnitsCR')?.value||'Inches';
+                const luS=lu==='Inches'?'in':lu==='Feet'?'ft':lu;
+                const unit=type==='Flow'?fu:luS;
+                ['unitBadgeCRMeterBefore','unitBadgeCRChartBefore','unitBadgeCRMeterAfter','unitBadgeCRChartAfter'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=unit;});
             }
         }
 
+        // ============================================
+        // SERVICE WORKER REGISTRATION
+        // ============================================
 
+        
+
+        function toggleMechCalc() {
+            const panel = document.getElementById('mechCalcPanel');
+            const icon  = document.getElementById('mechCalcToggleIcon');
+            const open  = panel.style.display === 'none';
+            panel.style.display = open ? 'block' : 'none';
+            icon.textContent    = open ? '－' : '＋';
+        }
+
+
+        function calcMechFlow() {
+            const start   = parseFloat(document.getElementById('mechStart').value);
+            const end     = parseFloat(document.getElementById('mechEnd').value);
+            const minutes = parseFloat(document.getElementById('mechTime').value);
+            const mult    = parseFloat(document.getElementById('mechMultiplier').value);
+            const resultEl = document.getElementById('mechResult');
+            const useBtn   = document.getElementById('mechUseBtn');
+            if (isNaN(start)||isNaN(end)||end<=start) { resultEl.style.display='none'; useBtn.style.display='none'; return; }
+            const gallons = (end-start)*mult;
+            const gpm = gallons/minutes;
+            const mgd = gpm*1440/1000000;
+            const gph = gpm*60;
+            document.getElementById('mechGPM').textContent = gpm.toFixed(2);
+            document.getElementById('mechMGD').textContent = mgd.toFixed(4);
+            document.getElementById('mechGPH').textContent = Math.round(gph).toLocaleString();
+            document.getElementById('mechCalcDetail').textContent = '('+end+' − '+start+') × '+mult.toLocaleString()+' gal = '+gallons.toLocaleString()+' gal ÷ '+minutes+' min';
+            resultEl.style.display='block';
+            useBtn.style.display='block';
+        }
+
+
+        function useMechResult() {
+            const gpm = document.getElementById('mechGPM').textContent;
+            const totalizer = document.getElementById('mechTotalizerReading').value.trim();
+            const cusBefore = document.getElementById('formCusFlowBefore');
+            const cusAfter  = document.getElementById('formCusFlowAfter');
+            if (!cusBefore.value && !cusAfter.value) {
+                cusBefore.value = gpm;
+                showToast(gpm + ' GPM → Customer Before field', 'success');
+            } else if (cusBefore.value && !cusAfter.value) {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field', 'success');
+            } else {
+                cusAfter.value = gpm;
+                showToast(gpm + ' GPM → Customer After field (overwritten)', 'success');
+            }
+            if (totalizer) document.getElementById('formMeterReading').value = totalizer;
+            const existing = document.getElementById('formNotes').value;
+            const note = 'Mechanical timed test: ' + gpm + ' GPM';
+            document.getElementById('formNotes').value = existing ? existing + '\n' + note : note;
+        }
+
+        // Updates unit badge labels when units dropdowns change
+
+                if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+
+        
+
+        // ── Pipe Charts ──────────────────────────────────────────────────────────
+        var currentPipeChart = 'cs';
+        const PIPE_DATA = {
+            cs: {
+                sizes:[0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,42],
+                od:[0.84,1.05,1.315,1.66,1.9,2.375,2.875,3.5,4,4.5,5.563,6.625,8.625,10.75,12.75,14,16,18,20,22,24,26,28,30,32,34,36,42],
+                schedules:[
+                    {name:'Sch.40',id:[0.622,0.824,1.049,1.38,1.61,2.067,2.469,3.068,3.548,4.026,5.047,6.065,7.981,10.02,11.938,13.124,15,16.876,18.184,null,22.626,null,null,null,null,null,null,null],wall:[0.109,0.113,0.133,0.140,0.145,0.154,0.203,0.216,0.226,0.237,0.258,0.280,0.322,0.365,0.406,0.438,0.500,0.562,0.593,null,0.687,null,null,null,null,null,null,null]},
+                    {name:'Sch.80',id:[0.546,0.742,0.957,1.278,1.5,1.939,2.323,2.9,3.364,3.826,4.813,5.761,7.625,9.564,11.376,12.5,14.314,16.126,17.938,19.75,21.564,null,null,null,null,null,null,null],wall:[0.147,0.154,0.179,0.191,0.200,0.218,0.276,0.300,0.318,0.337,0.375,0.432,0.500,0.593,0.687,0.750,0.843,0.937,1.031,1.125,1.218,null,null,null,null,null,null,null]},
+                    {name:'Standard',id:[0.622,0.824,1.049,1.38,1.61,2.067,2.469,3.068,3.548,4.026,5.047,6.065,7.981,10.02,12,13.25,15.25,17.25,19.25,21.25,23.25,25.25,27.25,29.25,31.25,33.25,35.25,41.25],wall:[0.109,0.113,0.133,0.140,0.145,0.154,0.203,0.216,0.226,0.237,0.258,0.280,0.322,0.365,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375,0.375]},
+                    {name:'XS',id:[0.546,0.742,0.957,1.278,1.5,1.939,2.323,2.9,3.364,3.826,4.813,5.761,7.625,9.75,11.75,13,15,17,19,21,23,25,27,29,31,33,35,41],wall:[0.147,0.154,0.179,0.191,0.200,0.218,0.276,0.300,0.318,0.337,0.375,0.432,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500,0.500]},
+                    {name:'Sch.160',id:[0.466,0.614,0.815,1.160,1.338,1.689,2.125,2.624,null,3.438,4.313,5.189,6.813,8.500,10.126,11.188,12.814,14.438,16.064,17.75,19.314,null,null,null,null,null,null,null],wall:[0.187,0.218,0.250,0.250,0.281,0.343,0.375,0.438,null,0.531,0.625,0.718,0.906,1.125,1.312,1.406,1.593,1.781,1.968,2.125,2.343,null,null,null,null,null,null,null]}
+                ]
+            },
+            ss: {
+                sizes:[0.5,0.75,1,1.25,1.5,2,2.5,3,3.5,4,5,6,8,10,12,14,16,18,20,22,24],
+                od:[0.84,1.05,1.315,1.66,1.9,2.375,2.875,3.5,4,4.5,5.563,6.625,8.625,10.75,12.75,14,16,18,20,22,24],
+                schedules:[
+                    {name:'5S',id:[0.71,0.92,1.185,1.53,1.77,2.245,2.709,3.334,3.834,4.334,5.345,6.407,8.407,10.482,12.438,13.688,15.67,17.67,19.634,21.624,23.563],wall:[0.065,0.065,0.065,0.065,0.065,0.065,0.083,0.083,0.083,0.083,0.109,0.109,0.109,0.134,0.156,0.156,0.165,0.165,0.188,0.188,0.218]},
+                    {name:'10S',id:[0.674,0.884,1.097,1.442,1.682,2.157,2.635,3.26,3.76,4.26,5.295,6.357,8.329,10.42,12.39,13.624,15.624,17.624,19.564,21.564,23.5],wall:[0.083,0.083,0.109,0.109,0.109,0.109,0.12,0.12,0.12,0.12,0.134,0.134,0.148,0.165,0.18,0.188,0.188,0.188,0.218,0.218,0.25]},
+                    {name:'40S',id:[0.622,0.824,1.049,1.38,1.61,2.067,2.469,3.068,3.548,4.026,5.047,6.065,7.981,10.02,12,null,null,null,null,null,null],wall:[0.109,0.113,0.133,0.14,0.145,0.154,0.203,0.216,0.226,0.237,0.258,0.28,0.322,0.365,0.375,null,null,null,null,null,null]},
+                    {name:'80S',id:[0.546,0.742,0.957,1.278,1.5,1.939,2.323,2.9,3.364,3.826,4.813,5.761,7.625,9.75,11.75,null,null,null,null,null,null],wall:[0.147,0.154,0.179,0.191,0.200,0.218,0.276,0.300,0.318,0.337,0.375,0.432,0.500,0.500,0.500,null,null,null,null,null,null]}
+                ]
+            },
+            di: {
+                headers:['Size','O.D.','Cl.50 W','Cl.50 ID','Cl.51 W','Cl.51 ID','Cl.52 W','Cl.52 ID','Cl.53 W','Cl.53 ID'],
+                rows:[[3,3.96,null,null,0.25,3.46,0.28,3.40,0.31,3.34],[4,4.80,null,null,0.26,4.28,0.29,4.22,0.32,4.16],[6,6.90,0.25,6.40,0.28,6.34,0.31,6.28,0.34,6.22],[8,9.05,0.27,8.51,0.30,8.45,0.33,8.39,0.36,8.33],[10,11.10,0.29,10.52,0.32,10.46,0.35,10.40,0.38,10.34],[12,13.20,0.31,12.58,0.34,12.52,0.37,12.46,0.40,12.40],[14,15.30,0.33,14.64,0.36,14.58,0.39,14.52,0.42,14.46],[16,17.40,0.34,16.72,0.37,16.66,0.40,16.60,0.43,16.54],[18,19.50,0.35,18.80,0.38,18.74,0.41,18.68,0.44,18.62],[20,21.60,0.36,20.88,0.39,20.82,0.42,20.76,0.45,20.70],[24,25.80,0.38,25.04,0.41,24.98,0.44,24.92,0.47,24.86],[30,32.00,0.39,31.22,0.43,31.14,0.47,31.06,0.51,30.98],[36,38.30,0.43,37.44,0.48,37.34,0.53,37.24,0.58,37.14],[42,44.50,0.47,43.56,0.53,43.44,0.59,43.32,0.65,43.20],[48,50.80,0.51,49.78,0.58,49.64,0.65,49.50,0.72,49.36]]
+            },
+            sv: {
+                data:[[32,0,1402.4,4601.0],[40,4.4,1423.7,4670.8],[50,10,1447.3,4748.3],[60,15.6,1469.4,4820.5],[70,21.1,1490.2,4888.5],[80,26.7,1509.7,4952.4],[90,32.2,1527.9,5012.1],[100,37.8,1525.0,5003.4],[110,43.3,1534.1,5033.0],[120,48.9,1541.3,5056.8],[130,54.4,1546.9,5075.2],[140,60,1551.0,5088.6],[150,65.6,1553.6,5097.2],[160,71.1,1555.2,5102.0],[170,76.7,1555.6,5103.3],[180,82.2,1554.8,5100.7],[190,87.8,1552.9,5094.5],[200,93.3,1548.4,5079.1],[210,98.9,1544.1,5065.9],[212,100,1543.1,5062.7]]
+            }
+        };
+        function showPipeChart(t){currentPipeChart=t;document.querySelectorAll('#pipeChartScreen .map-chip').forEach(function(b){b.classList.remove('active');});var btn=document.getElementById('pcBtn'+t.charAt(0).toUpperCase()+t.slice(1));if(btn)btn.classList.add('active');var isSV=t==='sv';document.getElementById('pipeChartSearchWrap').style.display=isSV?'none':'block';document.getElementById('svLookupWrap').style.display=isSV?'block':'none';renderPipeChart(t);}
+        function filterPipeChart(){renderPipeChart(currentPipeChart);}
+        function renderPipeChart(type){
+            var el=document.getElementById('pipeChartContent');if(!el)return;
+            var search=(document.getElementById('pipeChartSearch')?document.getElementById('pipeChartSearch').value:'').trim();
+            if(type==='cs'||type==='ss'){
+                var d=PIPE_DATA[type],sizes=d.sizes,idxs=sizes.map(function(s,i){return i;});
+                if(search)idxs=idxs.filter(function(i){return String(sizes[i]).includes(search);});
+                var html='<table style="border-collapse:collapse;white-space:nowrap;"><tr style="background:var(--navy);color:white;position:sticky;top:0;"><th style="padding:6px 8px;">Schedule</th>';
+                idxs.forEach(function(i){html+='<th style="padding:6px 8px;">'+sizes[i]+'"<br><small style="opacity:0.7;">'+d.od[i]+'"</small></th>';});
+                html+='</tr>';
+                d.schedules.forEach(function(s,si){var bg=si%2===0?'white':'#f7fafc';html+='<tr style="background:'+bg+'"><td style="padding:6px 8px;font-weight:600;color:var(--navy);border-right:2px solid #e2e8f0;">'+s.name+'<br><small style="color:#718096;">ID/Wall</small></td>';idxs.forEach(function(i){var id=s.id[i],w=s.wall[i];html+='<td style="padding:6px 8px;text-align:center;">'+(id!=null?'<div style="font-weight:600;">'+id+'"</div><div style="color:#718096;font-size:10px;">'+w+'"</div>':'<span style="color:#e2e8f0;">—</span>')+'</td>';});html+='</tr>';});
+                el.innerHTML=html+'</table>';
+            } else if(type==='di'){
+                var rows=PIPE_DATA.di.rows;if(search)rows=rows.filter(function(r){return String(r[0]).includes(search);});
+                var html='<table style="border-collapse:collapse;width:100%;"><tr style="background:var(--navy);color:white;">';
+                PIPE_DATA.di.headers.forEach(function(h){html+='<th style="padding:6px 8px;">'+h+'</th>';});html+='</tr>';
+                rows.forEach(function(row,i){var bg=i%2===0?'white':'#f7fafc';html+='<tr style="background:'+bg+';text-align:center;">';row.forEach(function(v){html+='<td style="padding:6px 8px;">'+(v!=null?v:'—')+'</td>';});html+='</tr>';});
+                el.innerHTML=html+'</table>';
+            } else if(type==='sv'){
+                var rows=PIPE_DATA.sv.data;var html='<table style="border-collapse:collapse;width:100%;"><tr style="background:var(--navy);color:white;"><th style="padding:6px 10px;">°F</th><th style="padding:6px 10px;">°C</th><th style="padding:6px 10px;">M/S</th><th style="padding:6px 10px;">Ft/S</th></tr>';
+                rows.forEach(function(row,i){var bg=i%2===0?'white':'#f7fafc';html+='<tr style="background:'+bg+';text-align:center;"><td style="padding:6px 10px;">'+row[0]+'</td><td style="padding:6px 10px;">'+row[1]+'</td><td style="padding:6px 10px;font-weight:600;">'+row[2]+'</td><td style="padding:6px 10px;font-weight:600;">'+row[3]+'</td></tr>';});
+                el.innerHTML=html+'</table>';
+            }
+        }
+        function lookupSoundSpeed(){
+            var v=parseFloat(document.getElementById('svTempInput').value),u=document.getElementById('svTempUnit').value;
+            if(isNaN(v)){document.getElementById('svResult').style.display='none';return;}
+            var f=u==='c'?(v*9/5)+32:v,data=PIPE_DATA.sv.data;
+            var exact=data.find(function(r){return r[0]===f;});
+            if(exact){document.getElementById('svResultTemp').textContent=f+'°F/'+exact[1]+'°C';document.getElementById('svResultMS').textContent=exact[2];document.getElementById('svResultFtS').textContent=exact[3];document.getElementById('svInterpolated').textContent='';}
+            else{var lo=null,hi=null;for(var i=0;i<data.length-1;i++){if(data[i][0]<=f&&data[i+1][0]>=f){lo=data[i];hi=data[i+1];break;}}if(!lo){document.getElementById('svResult').style.display='none';return;}var fr=(f-lo[0])/(hi[0]-lo[0]),ms=lo[2]+fr*(hi[2]-lo[2]),fts=lo[3]+fr*(hi[3]-lo[3]);document.getElementById('svResultTemp').textContent=f.toFixed(1)+'°F/'+((f-32)*5/9).toFixed(1)+'°C';document.getElementById('svResultMS').textContent=ms.toFixed(2);document.getElementById('svResultFtS').textContent=fts.toFixed(2);document.getElementById('svInterpolated').textContent='Interpolated '+lo[0]+'–'+hi[0]+'°F';}
+            document.getElementById('svResult').style.display='block';
+        }
     </script>
+<!-- Pipe Charts Screen -->
+        <section class="screen" id="pipeChartScreen">
+            <div class="section-title">📐 Pipe Reference Charts</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+                <button onclick="showPipeChart('cs')" id="pcBtnCs" class="map-chip active">Carbon Steel/PVC</button>
+                <button onclick="showPipeChart('ss')" id="pcBtnSs" class="map-chip">Stainless Steel</button>
+                <button onclick="showPipeChart('di')" id="pcBtnDi" class="map-chip">Ductile Iron</button>
+                <button onclick="showPipeChart('sv')" id="pcBtnSv" class="map-chip">Sound Speed</button>
+            </div>
+            <div id="pipeChartSearchWrap">
+                <input type="number" id="pipeChartSearch" class="form-input" placeholder="Search by pipe size..." oninput="filterPipeChart()" style="margin-bottom:10px;">
+            </div>
+            <div id="svLookupWrap" style="display:none;margin-bottom:10px;">
+                <div style="display:flex;gap:8px;">
+                    <input type="number" id="svTempInput" class="form-input" placeholder="Temperature..." oninput="lookupSoundSpeed()" style="flex:1;">
+                    <select id="svTempUnit" onchange="lookupSoundSpeed()" class="form-select" style="width:80px;">
+                        <option value="f">°F</option><option value="c">°C</option>
+                    </select>
+                </div>
+                <div id="svResult" style="display:none;margin-top:10px;background:var(--navy);color:white;border-radius:12px;padding:16px;">
+                    <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">Sonic Velocity at <span id="svResultTemp"></span></div>
+                    <div style="display:flex;gap:16px;">
+                        <div><div style="font-size:10px;opacity:0.7;">M/S</div><div id="svResultMS" style="font-size:24px;font-weight:700;"></div></div>
+                        <div><div style="font-size:10px;opacity:0.7;">Ft/S</div><div id="svResultFtS" style="font-size:24px;font-weight:700;"></div></div>
+                    </div>
+                    <div style="font-size:11px;opacity:0.6;margin-top:4px;" id="svInterpolated"></div>
+                </div>
+            </div>
+            <div id="pipeChartContent" style="overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 320px);font-size:12px;"></div>
+            <div class="bottom-spacer"></div>
+        </section>
+
 </body>
 </html>
