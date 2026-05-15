@@ -5228,10 +5228,6 @@ let siteMap = null;
             document.getElementById('mechTimerStopBtn').style.display  = 'none';
             document.getElementById('mechTimerStartBtn').style.display = 'block';
             document.getElementById('mechTimerResetBtn').style.display = 'block';
-            // Auto-fill elapsed time in minutes and calculate
-            const minutes = mechTimerCs / 6000;
-            const selEl = document.getElementById('mechTime');
-            if (selEl.tagName === 'SELECT') { selEl.value = 'custom'; document.getElementById('mechTimeCustom').style.display='block'; document.getElementById('mechTimeCustom').value = minutes.toFixed(4); } else { selEl.value = minutes.toFixed(4); }
             calcMechFlow();
         }
 
