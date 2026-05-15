@@ -3300,7 +3300,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'assetSearchScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'pipeChartScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -5453,7 +5453,7 @@ let siteMap = null;
         function renderPipeChart(type){
             var el=document.getElementById('pipeChartContent');if(!el)return;
             var search=(document.getElementById('pipeChartSearch')?document.getElementById('pipeChartSearch').value:'').trim();
-            if(type==='cs'||type==='ss'){
+            if(type==='cs'||type==='ss'||type==='cu'){
                 var d=PIPE_DATA[type],sizes=d.sizes,idxs=sizes.map(function(s,i){return i;});
                 if(search)idxs=idxs.filter(function(i){return String(sizes[i]).includes(search);});
                 var html='<table style="border-collapse:collapse;white-space:nowrap;"><tr style="background:var(--navy);color:white;position:sticky;top:0;"><th style="padding:6px 8px;">Schedule</th>';
