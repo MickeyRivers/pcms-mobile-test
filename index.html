@@ -5239,11 +5239,12 @@ let siteMap = null;
             document.getElementById('mechTimerStartBtn').style.display = 'block';
             document.getElementById('mechTimerStopBtn').style.display  = 'none';
             document.getElementById('mechTimerResetBtn').style.display = 'none';
-            document.getElementById('mechTime').value = '';
             const resultEl = document.getElementById('mechResult');
             const useBtn   = document.getElementById('mechUseBtn');
-            resultEl.style.display = 'none';
-            useBtn.style.display   = 'none';
+            if (resultEl) resultEl.style.display = 'none';
+            if (useBtn) useBtn.style.display = 'none';
+            const gallonsEl = document.getElementById('mechGallons');
+            if (gallonsEl) gallonsEl.value = '';
         }
 
         function toggleMechCalc() {
