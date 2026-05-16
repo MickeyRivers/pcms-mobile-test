@@ -1909,8 +1909,35 @@
 
         function startRoute() {
             if (!_routeStops.length) return;
-            // Open directly — avoid popup blocker from async geolocation callback
-            buildRouteUrl(null, null);
+            // Open window synchronously first (avoids popup blocker)
+            // then redirect it after getting location
+            var win = window.open('', '_blank');
+            var coords = _routeStops.map(function(s) { return parseGpsCoord(s.gps); }).filter(Boolean);
+            var parts = coords.map(function(co) { return co.lat + ',' + co.lng; });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    var origin = pos.coords.latitude + ',' + pos.coords.longitude;
+                    var url;
+                    if (parts.length === 1) {
+                        url = 'https://maps.apple.com/?saddr=My+Location&daddr=' + parts[0] + '&dirflg=d';
+                    } else {
+                        url = 'https://www.google.com/maps/dir/' + encodeURIComponent(origin) + '/' + parts.join('/');
+                    }
+                    win.location.href = url;
+                }, function() {
+                    // No location — start from first stop
+                    var url = parts.length === 1
+                        ? 'https://maps.apple.com/?daddr=' + parts[0] + '&dirflg=d'
+                        : 'https://www.google.com/maps/dir/' + parts.join('/');
+                    win.location.href = url;
+                }, { timeout: 5000 });
+            } else {
+                var url = parts.length === 1
+                    ? 'https://maps.apple.com/?daddr=' + parts[0] + '&dirflg=d'
+                    : 'https://www.google.com/maps/dir/' + parts.join('/');
+                win.location.href = url;
+            }
         }
 
         function parseGpsCoord(gps) {
@@ -1922,21 +1949,23 @@
 
         function buildRouteUrl(startLat, startLng) {
             var coords = _routeStops.map(function(s) { return parseGpsCoord(s.gps); }).filter(Boolean);
-            if (!coords.length) return;
+            if (!coords.length) { alert('No valid GPS coordinates found in route stops.'); return; }
 
-            // Use Apple Maps — works natively on iPhone without popup blocker issues
-            // For multi-stop, chain with +to: 
             var parts = coords.map(function(co) { return co.lat + ',' + co.lng; });
-
             var url;
             if (parts.length === 1) {
                 url = 'https://maps.apple.com/?daddr=' + parts[0] + '&dirflg=d&t=m';
             } else {
-                // Apple Maps multi-stop via comgooglemaps or just open first leg
-                // Most reliable cross-platform: open as Google Maps web with waypoints
                 url = 'https://www.google.com/maps/dir/' + parts.join('/');
             }
-            window.location.href = url;
+            // Use location.assign on a link click to avoid popup blocker
+            var a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
 
