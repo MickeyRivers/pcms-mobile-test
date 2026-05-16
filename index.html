@@ -1909,16 +1909,8 @@
 
         function startRoute() {
             if (!_routeStops.length) return;
-            // Get user location then open Google Maps with all waypoints
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(pos) {
-                    buildRouteUrl(pos.coords.latitude, pos.coords.longitude);
-                }, function() {
-                    buildRouteUrl(null, null);
-                });
-            } else {
-                buildRouteUrl(null, null);
-            }
+            // Open directly — avoid popup blocker from async geolocation callback
+            buildRouteUrl(null, null);
         }
 
         function parseGpsCoord(gps) {
