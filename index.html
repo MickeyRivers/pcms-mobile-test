@@ -1656,7 +1656,7 @@
                     <div style="font-weight:600;font-size:14px;">🗺️ Route: <span id="routeCount">0</span> stops</div>
                     <div style="display:flex;gap:8px;">
                         <button onclick="clearRoute()" style="padding:6px 12px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
-                        <button onclick="startRoute()" style="padding:6px 14px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">▶ Navigate</button>
+                        <a id="routeNavLink" href="#" target="_blank" rel="noopener" style="padding:6px 14px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;">▶ Navigate</a>
                     </div>
                 </div>
                 <div id="routeStops" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;"></div>
@@ -1889,6 +1889,20 @@
             if (!_routeStops.length) { bar.style.display = 'none'; return; }
             bar.style.display = 'block';
             countEl.textContent = _routeStops.length;
+            // Update nav link href
+            var coords = _routeStops.map(function(s) { return parseGpsCoord(s.gps); }).filter(Boolean);
+            if (coords.length) {
+                var parts = coords.map(function(co) { return co.lat + ',' + co.lng; });
+                var url;
+                if (parts.length === 1) {
+                    url = 'https://maps.apple.com/?saddr=Current+Location&daddr=' + parts[0] + '&dirflg=d';
+                } else {
+                    var dest = parts[parts.length - 1];
+                    var wpts = parts.slice(0, -1).join('|');
+                    url = 'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=' + dest + (wpts ? '&waypoints=' + wpts : '') + '&travelmode=driving';
+                }
+                document.getElementById('routeNavLink').href = url;
+            }
             stopsEl.innerHTML = _routeStops.map(function(s, i) {
                 return '<div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:4px 10px;white-space:nowrap;font-size:12px;display:flex;align-items:center;gap:6px;">' +
                     '<span>' + (i+1) + '. ' + (s.name || s.sn) + '</span>' +
@@ -1909,35 +1923,31 @@
 
         function startRoute() {
             if (!_routeStops.length) return;
-            // Open window synchronously first (avoids popup blocker)
-            // then redirect it after getting location
-            var win = window.open('', '_blank');
             var coords = _routeStops.map(function(s) { return parseGpsCoord(s.gps); }).filter(Boolean);
+            if (!coords.length) { alert('No GPS coordinates found.'); return; }
             var parts = coords.map(function(co) { return co.lat + ',' + co.lng; });
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(pos) {
-                    var origin = pos.coords.latitude + ',' + pos.coords.longitude;
-                    var url;
-                    if (parts.length === 1) {
-                        url = 'https://maps.apple.com/?saddr=My+Location&daddr=' + parts[0] + '&dirflg=d';
-                    } else {
-                        url = 'https://www.google.com/maps/dir/' + encodeURIComponent(origin) + '/' + parts.join('/');
-                    }
-                    win.location.href = url;
-                }, function() {
-                    // No location — start from first stop
-                    var url = parts.length === 1
-                        ? 'https://maps.apple.com/?daddr=' + parts[0] + '&dirflg=d'
-                        : 'https://www.google.com/maps/dir/' + parts.join('/');
-                    win.location.href = url;
-                }, { timeout: 5000 });
+            var url;
+            if (parts.length === 1) {
+                // Apple Maps handles current location automatically with saddr=Current+Location
+                url = 'https://maps.apple.com/?saddr=Current+Location&daddr=' + parts[0] + '&dirflg=d';
             } else {
-                var url = parts.length === 1
-                    ? 'https://maps.apple.com/?daddr=' + parts[0] + '&dirflg=d'
-                    : 'https://www.google.com/maps/dir/' + parts.join('/');
-                win.location.href = url;
+                // Google Maps: current location as origin, stops as waypoints
+                var dest = parts[parts.length - 1];
+                var waypoints = parts.slice(0, -1).join('|');
+                url = 'https://www.google.com/maps/dir/?api=1' +
+                    '&origin=My+Location' +
+                    '&destination=' + dest +
+                    (waypoints ? '&waypoints=' + waypoints : '') +
+                    '&travelmode=driving';
             }
+            var a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ document.body.removeChild(a); }, 100);
         }
 
         function parseGpsCoord(gps) {
