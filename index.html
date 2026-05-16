@@ -1648,7 +1648,19 @@
                 </div>
             </div>
             <div id="assetSearchCount" style="font-size:12px;color:var(--gray-500);margin-bottom:8px;padding:0 4px;"></div>
-            <div id="assetSearchResults" style="overflow-y:auto;max-height:calc(100vh - 320px);"></div>
+            <div id="assetSearchResults" style="overflow-y:auto;max-height:calc(100vh - 400px);"></div>
+
+            <!-- Route Builder -->
+            <div id="routeBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navy);color:white;padding:12px 16px;z-index:100;box-shadow:0 -4px 12px rgba(0,0,0,0.3);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="font-weight:600;font-size:14px;">🗺️ Route: <span id="routeCount">0</span> stops</div>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="clearRoute()" style="padding:6px 12px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
+                        <button onclick="startRoute()" style="padding:6px 14px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">▶ Navigate</button>
+                    </div>
+                </div>
+                <div id="routeStops" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;"></div>
+            </div>
             <div class="bottom-spacer"></div>
         </section>
 
@@ -1847,6 +1859,99 @@
         let videoStream = null;
         let assetDB = [];
         var _assetSearchResults = [];
+        var _routeStops = [];
+
+        function addToRoute(idx) {
+            var asset = _assetSearchResults[idx];
+            if (!asset) return;
+            var gps = asset['GPS Coordinates'] || '';
+            if (!gps) return;
+            // Avoid duplicates
+            var sn = String(asset['Serial Number'] || '');
+            if (_routeStops.find(function(s){ return s.sn === sn; })) {
+                showToast('Already in route', 'info');
+                return;
+            }
+            _routeStops.push({
+                sn: sn,
+                name: asset['Facility/Location'] || asset['Location'] || '',
+                customer: asset['Customer'] || '',
+                gps: gps
+            });
+            updateRouteBar();
+            showToast('Added to route (' + _routeStops.length + ' stops)', 'success');
+        }
+
+        function updateRouteBar() {
+            var bar = document.getElementById('routeBar');
+            var countEl = document.getElementById('routeCount');
+            var stopsEl = document.getElementById('routeStops');
+            if (!_routeStops.length) { bar.style.display = 'none'; return; }
+            bar.style.display = 'block';
+            countEl.textContent = _routeStops.length;
+            stopsEl.innerHTML = _routeStops.map(function(s, i) {
+                return '<div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:4px 10px;white-space:nowrap;font-size:12px;display:flex;align-items:center;gap:6px;">' +
+                    '<span>' + (i+1) + '. ' + (s.name || s.sn) + '</span>' +
+                    '<button onclick="removeFromRoute(' + i + ')" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:14px;padding:0;">×</button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function removeFromRoute(idx) {
+            _routeStops.splice(idx, 1);
+            updateRouteBar();
+        }
+
+        function clearRoute() {
+            _routeStops = [];
+            updateRouteBar();
+        }
+
+        function startRoute() {
+            if (!_routeStops.length) return;
+            // Get user location then open Google Maps with all waypoints
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    buildRouteUrl(pos.coords.latitude, pos.coords.longitude);
+                }, function() {
+                    buildRouteUrl(null, null);
+                });
+            } else {
+                buildRouteUrl(null, null);
+            }
+        }
+
+        function parseGpsCoord(gps) {
+            var str = String(gps).trim();
+            var nums = str.match(/-?\d+\.\d+/g);
+            if (nums && nums.length >= 2) return { lat: parseFloat(nums[0]), lng: parseFloat(nums[1]) };
+            return null;
+        }
+
+        function buildRouteUrl(startLat, startLng) {
+            if (_routeStops.length === 1) {
+                var coord = parseGpsCoord(_routeStops[0].gps);
+                if (!coord) return;
+                var url = 'https://maps.google.com/?q=' + coord.lat + ',' + coord.lng;
+                window.open(url, '_blank');
+                return;
+            }
+            // Google Maps multi-stop: origin/destination/waypoints
+            var coords = _routeStops.map(function(s) { return parseGpsCoord(s.gps); }).filter(Boolean);
+            if (!coords.length) return;
+
+            var origin = startLat ? (startLat + ',' + startLng) : (coords[0].lat + ',' + coords[0].lng);
+            var dest = coords[coords.length - 1].lat + ',' + coords[coords.length - 1].lng;
+            var waypoints = coords.slice(0, -1).map(function(c) { return c.lat + ',' + c.lng; }).join('|');
+
+            var url = 'https://www.google.com/maps/dir/?api=1&origin=' + encodeURIComponent(origin) +
+                '&destination=' + encodeURIComponent(dest) +
+                (waypoints ? '&waypoints=' + encodeURIComponent(waypoints) : '') +
+                '&travelmode=driving';
+            window.open(url, '_blank');
+        }
+
+
         let pendingTests = [];
         let testHistory = [];
         let enteredPin = '';
@@ -4802,6 +4907,7 @@ let siteMap = null;
                     '<div style="display:flex;gap:6px;">' +
                     '<button data-idx="' + _idx + '" onclick="assetSearchStartTestByIdx(this.getAttribute(\'data-idx\'))" style="flex:1;padding:8px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">📝 Start Test</button>' +
                     (gps ? '<button onclick="assetSearchNavigate(&quot;' + gps + '&quot;)" style="padding:8px 10px;background:var(--teal);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">📍 Nav</button>' : '') +
+                    (gps ? '<button data-idx="' + _idx + '" onclick="addToRoute(parseInt(this.getAttribute(\'data-idx\')))" style="padding:8px 10px;background:var(--navy);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">➕</button>' : '') +
                     '</div>' +
                     '</div>';
             });
