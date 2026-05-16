@@ -1656,7 +1656,7 @@
                     <div style="font-weight:600;font-size:14px;">🗺️ Route: <span id="routeCount">0</span> stops</div>
                     <div style="display:flex;gap:8px;">
                         <button onclick="clearRoute()" style="padding:6px 12px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
-                        <a id="routeNavLink" href="#" target="_blank" rel="noopener" style="padding:6px 14px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;">▶ Navigate</a>
+                        <a id="routeNavLink" href="#" target="_blank" rel="noopener" onclick="return routeNavClick(event)" style="padding:6px 14px;background:var(--gold);color:var(--navy);border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;">▶ Navigate</a>
                     </div>
                 </div>
                 <div id="routeStops" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;"></div>
@@ -1880,6 +1880,24 @@
             });
             updateRouteBar();
             showToast('Added to route (' + _routeStops.length + ' stops)', 'success');
+        }
+
+        function routeNavClick(e) {
+            var link = document.getElementById('routeNavLink');
+            if (!link || link.href.endsWith('#') || link.href.endsWith('about:blank')) {
+                e.preventDefault();
+                // Rebuild URL and navigate
+                var coords = _routeStops.map(function(s) { return parseGpsCoord(s.gps); }).filter(Boolean);
+                if (!coords.length) { alert('No GPS found in stops'); return false; }
+                var parts = coords.map(function(co) { return co.lat + ',' + co.lng; });
+                var url = parts.length === 1
+                    ? 'https://maps.apple.com/?saddr=Current+Location&daddr=' + parts[0] + '&dirflg=d'
+                    : 'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=' + parts[parts.length-1] + (parts.length > 1 ? '&waypoints=' + parts.slice(0,-1).join('|') : '') + '&travelmode=driving';
+                link.href = url;
+                window.open(url, '_blank');
+                return false;
+            }
+            return true;
         }
 
         function updateRouteBar() {
