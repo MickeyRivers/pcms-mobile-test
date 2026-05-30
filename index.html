@@ -5715,22 +5715,99 @@ let siteMap = null;
                 return (String(s.name||'') + ' ' + String(s.customer||'') + ' ' + String(s.serial||'')).toLowerCase().includes(val);
             }).slice(0, 8);
             if (!matches.length) { suggestions.style.display = 'none'; updateMapMarkers(); return; }
-            suggestions.innerHTML = matches.map(function(s) {
-                return '<div onclick="selectMapSite(' + s.lat + ',' + s.lng + ',' + JSON.stringify(s.name||'').replace(/</g,'&lt;') + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;">' +
-                    '<div style="font-weight:600;">' + (s.name||'') + '</div>' +
-                    '<div style="color:#718096;font-size:11px;">' + (s.customer||'') + ' · SN: ' + (s.serial||'') + '</div>' +
-                    '</div>';
-            }).join('');
+            // Build suggestions using DOM to avoid quote issues
+            suggestions.innerHTML = '';
+            matches.forEach(function(s) {
+                var div = document.createElement('div');
+                div.style.cssText = 'padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:13px;';
+                var name = document.createElement('div');
+                name.style.fontWeight = '600';
+                name.textContent = s.name || '';
+                var sub = document.createElement('div');
+                sub.style.cssText = 'color:#718096;font-size:11px;';
+                sub.textContent = (s.customer||'') + ' · SN: ' + (s.serial||'');
+                div.appendChild(name);
+                div.appendChild(sub);
+                (function(site){ div.addEventListener('click', function(){ selectMapSite(site.lat, site.lng, site.name||'', site.serial||''); }); })(s);
+                suggestions.appendChild(div);
+            });
             suggestions.style.display = 'block';
             updateMapMarkers();
         }
 
-        function selectMapSite(lat, lng, name) {
+        var _mapActionSite = null;
+
+        function selectMapSite(lat, lng, name, serial) {
             document.getElementById('mapSearchInput').value = name;
             document.getElementById('mapSearchSuggestions').style.display = 'none';
             document.getElementById('mapSearchClear').style.display = 'block';
             updateMapMarkers();
             if (siteMap) siteMap.setView([lat, lng], 16);
+
+            _mapActionSite = { lat: lat, lng: lng, name: name, serial: serial };
+
+            var existing = document.getElementById('mapActionSheet');
+            if (existing) existing.remove();
+
+            var sheet = document.createElement('div');
+            sheet.id = 'mapActionSheet';
+            sheet.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+
+            var inner = document.createElement('div');
+            inner.style.cssText = 'background:white;width:100%;max-width:500px;border-radius:16px 16px 0 0;padding:16px 16px 32px;';
+
+            var title = document.createElement('div');
+            title.style.cssText = 'font-weight:700;font-size:15px;color:var(--navy);margin-bottom:4px;';
+            title.textContent = name;
+            inner.appendChild(title);
+
+            var sub = document.createElement('div');
+            sub.style.cssText = 'font-size:12px;color:var(--gray-500);margin-bottom:16px;';
+            sub.textContent = 'SN: ' + serial;
+            inner.appendChild(sub);
+
+            var btnTest = document.createElement('button');
+            btnTest.style.cssText = 'width:100%;padding:14px;margin-bottom:8px;background:var(--gold);color:var(--navy);border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;';
+            btnTest.textContent = '📝 Start Test';
+            btnTest.onclick = mapActionStartTest;
+            inner.appendChild(btnTest);
+
+            if (lat && lng) {
+                var btnNav = document.createElement('a');
+                btnNav.href = 'https://maps.apple.com/?saddr=Current+Location&daddr=' + lat + ',' + lng + '&dirflg=d';
+                btnNav.target = '_blank';
+                btnNav.style.cssText = 'display:block;width:100%;box-sizing:border-box;padding:14px;margin-bottom:8px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;';
+                btnNav.textContent = '📍 Navigate';
+                btnNav.onclick = function(){ sheet.remove(); };
+                inner.appendChild(btnNav);
+            }
+
+            var btnCancel = document.createElement('button');
+            btnCancel.style.cssText = 'width:100%;padding:14px;background:#eee;border:none;border-radius:8px;font-size:15px;cursor:pointer;';
+            btnCancel.textContent = 'Cancel';
+            btnCancel.onclick = function(){ sheet.remove(); };
+            inner.appendChild(btnCancel);
+
+            sheet.appendChild(inner);
+            sheet.onclick = function(e){ if(e.target===sheet) sheet.remove(); };
+            document.body.appendChild(sheet);
+        }
+
+
+        function mapActionStartTest(serial) {
+            document.getElementById('mapActionSheet').remove();
+            var asset = assetDB.find(function(a){ return String(a['Serial Number']||'') === String(serial||''); });
+            if (asset) { populateFromAsset(asset); showScreen('formScreen'); }
+        }
+
+        function mapActionNavigate(lat, lng) {
+            document.getElementById('mapActionSheet').remove();
+            var a = document.createElement('a');
+            a.href = 'https://maps.apple.com/?saddr=Current+Location&daddr=' + lat + ',' + lng + '&dirflg=d';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function clearMapSearch() {
