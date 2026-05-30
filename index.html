@@ -4748,6 +4748,7 @@ let siteMap = null;
         let mapRouteLine = null;
         let mapSites = [];
         let currentMapFilter = 'all';
+        window._mapReady = false;
         let routeStartCoords = null;
         let routeEndCoords = { lat: 29.5478, lng: -98.4936 };
         let plannedRoute = [];
@@ -4777,7 +4778,18 @@ let siteMap = null;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(siteMap);
-            loadMapSites();
+            siteMap.whenReady(function() {
+                window._mapReady = true;
+                loadMapSites().then(function() {
+                    if (mapSites.length > 0) {
+                        var lats = mapSites.map(function(s){ return s.lat; });
+                        var lngs = mapSites.map(function(s){ return s.lng; });
+                        var sw = [Math.min.apply(null,lats), Math.min.apply(null,lngs)];
+                        var ne = [Math.max.apply(null,lats), Math.max.apply(null,lngs)];
+                        siteMap.fitBounds([sw, ne], {padding:[40,40]});
+                    }
+                });
+            });
         }
 
         async function loadMapSites() {
