@@ -4764,14 +4764,20 @@ let siteMap = null;
 
         function initSiteMap() {
             if (siteMap) return;
-            siteMap = L.map('siteMap').setView([29.65, -98.35], 10);
+            siteMap = L.map('siteMap').setView([29.65, -98.35], 7);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(siteMap);
-            loadMapSites();
+            loadMapSites().then(function() {
+                if (mapSites.length > 0) {
+                    var bounds = L.latLngBounds(mapSites.map(function(s){ return [s.lat, s.lng]; }));
+                    siteMap.fitBounds(bounds, { padding: [40, 40] });
+                }
+            });
         }
 
         async function loadMapSites() {
+
             if (!assetDB || assetDB.length === 0) {
                 await loadAssetDB();
             }
