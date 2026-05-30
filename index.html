@@ -1641,18 +1641,28 @@
                         <option value="">All Customers</option>
                     </select>
                     <button id="mapListToggleBtn" onclick="toggleMapListView()" style="padding:8px 12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📋 List</button>
+                    <button id="mapAssignBtn" onclick="toggleMapAssignMode()" style="padding:8px 12px;background:#6b46c1;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">➕ Assign</button>
                 </div>
             </div>
             <div style="position:relative;margin-bottom:10px;">
                 <input type="text" id="mapSearchInput" placeholder="🔍 Search by name, serial, customer..." oninput="mapSearchInput()" class="form-input" style="padding-right:36px;" autocomplete="off">
                 <button onclick="clearMapSearch()" id="mapSearchClear" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;color:var(--gray-400);cursor:pointer;">×</button>
-                <div id="mapSearchSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--gray-300);border-radius:8px;max-height:60vh;overflow-y:auto;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+                <div id="mapSearchSuggestions" style="display:none;position:fixed;left:16px;right:16px;background:white;border:1px solid var(--gray-300);border-radius:8px;max-height:50vh;overflow-y:auto;z-index:5000;box-shadow:0 4px 16px rgba(0,0,0,0.25);"></div>
             </div>
             <div class="map-filter-chips" style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px;">
                 <button class="map-chip active" onclick="filterMapStatus('all', this)">All</button>
                 <button class="map-chip" onclick="filterMapStatus('tested', this)">✓ Tested</button>
                 <button class="map-chip" onclick="filterMapStatus('due', this)">⚠ Due</button>
                 <button class="map-chip" onclick="filterMapStatus('overdue', this)">🚨 Overdue</button>
+            </div>
+            <!-- Assign mode banner -->
+            <div id="assignModeBanner" style="display:none;background:#6b46c1;color:white;padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;display:none;align-items:center;justify-content:space-between;">
+                <span>📍 Tap markers to assign to George</span>
+                <div style="display:flex;gap:8px;">
+                    <span id="assignModeCount" style="background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:12px;font-size:12px;">0 selected</span>
+                    <button onclick="doneMapAssign()" style="background:var(--gold);color:var(--navy);border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Done</button>
+                    <button onclick="cancelMapAssign()" style="background:rgba(255,255,255,0.2);color:white;border:none;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;">Cancel</button>
+                </div>
             </div>
             <div id="siteMap" style="height: calc(100vh - 380px); border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200);"></div>
             <div class="map-legend" style="display: flex; gap: 16px; justify-content: center; margin: 12px 0; font-size: 12px;">
@@ -3493,6 +3503,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Handle form nav visibility
             document.getElementById('formNav').style.display = 
                 screenId === 'formScreen' ? 'flex' : 'none';
+            // Render assignments when navigating there
+            if (screenId === 'assignmentsScreen') renderAssignments();
             
             // Handle camera
             if (screenId === 'scannerScreen') {
@@ -3521,7 +3533,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'pipeChartScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -5223,7 +5235,14 @@ let siteMap = null;
                     iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
                 });
 
-                const marker = L.marker([site.lat, site.lng], { icon }).addTo(siteMap);
+                // In assign mode, highlight selected markers
+                var isSelected = _mapAssignMode && isMapSiteSelected(site.serial);
+                var markerIcon = isSelected ? L.divIcon({
+                    className: '',
+                    html: '<div style="width:36px;height:36px;border-radius:50%;background:#6b46c1;border:4px solid var(--gold);box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;">✓</div>',
+                    iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20]
+                }) : icon;
+                const marker = L.marker([site.lat, site.lng], { icon: markerIcon }).addTo(siteMap);
                 const statusText = site.status === 'tested' ? 'Tested' : site.status === 'due' ? 'Due Soon' : 'Overdue';
                 const statusColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
                 const siteObj = { 'Serial Number': site.serial, 'Facility/Location': site.name, 'Customer': site.customer, 'Service Frequency': site['Service Frequency'] || '' };
@@ -5770,6 +5789,9 @@ let siteMap = null;
                 (function(site){ div.addEventListener('click', function(){ selectMapSite(site.lat, site.lng, site.name||'', site.serial||''); }); })(s);
                 suggestions.appendChild(div);
             });
+            // Position below the search input
+            var inputRect = document.getElementById('mapSearchInput').getBoundingClientRect();
+            suggestions.style.top = (inputRect.bottom + 4) + 'px';
             suggestions.style.display = 'block';
             updateMapMarkers();
         }
@@ -6045,6 +6067,73 @@ let siteMap = null;
 
         // Init on load
         updateAssignmentCount();
+
+
+        // ── Map Assign Mode ───────────────────────────────────────────────────────
+        var _mapAssignMode = false;
+        var _mapAssignSelected = [];
+
+        function toggleMapAssignMode() {
+            _mapAssignMode = !_mapAssignMode;
+            _mapAssignSelected = [];
+            var banner = document.getElementById('assignModeBanner');
+            var btn = document.getElementById('mapAssignBtn');
+            if (_mapAssignMode) {
+                banner.style.display = 'flex';
+                btn.style.background = '#553c9a';
+                btn.textContent = '✕ Cancel';
+                updateMapMarkers();
+            } else {
+                cancelMapAssign();
+            }
+        }
+
+        function cancelMapAssign() {
+            _mapAssignMode = false;
+            _mapAssignSelected = [];
+            document.getElementById('assignModeBanner').style.display = 'none';
+            var btn = document.getElementById('mapAssignBtn');
+            if (btn) { btn.style.background = '#6b46c1'; btn.textContent = '➕ Assign'; }
+            updateMapMarkers();
+        }
+
+        function doneMapAssign() {
+            if (!_mapAssignSelected.length) { cancelMapAssign(); return; }
+            var added = 0;
+            _mapAssignSelected.forEach(function(site) {
+                var sn = String(site.serial || '');
+                if (!_assignments.find(function(a){ return a.serial === sn; })) {
+                    _assignments.push({
+                        serial: sn,
+                        name: site.name || '',
+                        customer: site.customer || '',
+                        lat: site.lat || null,
+                        lng: site.lng || null,
+                        assignedAt: new Date().toISOString()
+                    });
+                    added++;
+                }
+            });
+            saveAssignments();
+            cancelMapAssign();
+            showToast(added + ' site' + (added !== 1 ? 's' : '') + ' assigned to George', 'success');
+        }
+
+        function toggleMapSiteSelection(site) {
+            var sn = String(site.serial || '');
+            var idx = _mapAssignSelected.findIndex(function(s){ return String(s.serial||'') === sn; });
+            if (idx > -1) {
+                _mapAssignSelected.splice(idx, 1);
+            } else {
+                _mapAssignSelected.push(site);
+            }
+            document.getElementById('assignModeCount').textContent = _mapAssignSelected.length + ' selected';
+            updateMapMarkers();
+        }
+
+        function isMapSiteSelected(serial) {
+            return _mapAssignSelected.some(function(s){ return String(s.serial||'') === String(serial||''); });
+        }
 
     </script>
 </body>
