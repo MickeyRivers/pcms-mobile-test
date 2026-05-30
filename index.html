@@ -3429,8 +3429,15 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             if (screenId === 'mapScreen') {
                 setTimeout(() => {
                     initSiteMap();
-                    if (siteMap) siteMap.invalidateSize();
-                }, 100);
+                    if (siteMap) {
+                        siteMap.invalidateSize();
+                        if (mapSites.length > 0) {
+                            updateMapMarkers();
+                            var bounds = L.latLngBounds(mapSites.map(function(s){ return [s.lat, s.lng]; }));
+                            siteMap.fitBounds(bounds, { padding: [40, 40] });
+                        }
+                    }
+                }, 150);
             }
             if (screenId === 'pipeChartScreen') { setTimeout(function(){ renderPipeChart('cs'); }, 50); }
             // Hide all screens
@@ -4768,21 +4775,21 @@ let siteMap = null;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap'
             }).addTo(siteMap);
-            loadMapSites().then(function() {
-                if (mapSites.length > 0) {
-                    var bounds = L.latLngBounds(mapSites.map(function(s){ return [s.lat, s.lng]; }));
-                    siteMap.fitBounds(bounds, { padding: [40, 40] });
-                }
-            });
+            loadMapSites();
         }
 
         async function loadMapSites() {
-
             if (!assetDB || assetDB.length === 0) {
                 await loadAssetDB();
             }
             if (assetDB && assetDB.length > 0) {
                 processMapData(assetDB);
+            }
+            // Always update markers and fit bounds after map is ready
+            if (siteMap && mapSites.length > 0) {
+                updateMapMarkers();
+                var bounds = L.latLngBounds(mapSites.map(function(s){ return [s.lat, s.lng]; }));
+                siteMap.fitBounds(bounds, { padding: [40, 40] });
             }
         }
 
@@ -5143,9 +5150,16 @@ let siteMap = null;
             mapMarkers = [];
             const customerFilter = document.getElementById('mapCustomerFilter') ?
                 document.getElementById('mapCustomerFilter').value : '';
+            const mapSearch = document.getElementById('mapSearchInput') ?
+                document.getElementById('mapSearchInput').value.toLowerCase().trim() : '';
             mapSites.forEach(site => {
                 if (customerFilter && site.customer !== customerFilter) return;
                 if (currentMapFilter !== 'all' && site.status !== currentMapFilter) return;
+                if (mapSearch) {
+                    const hay = (String(site.name||'') + ' ' + String(site.customer||'') + ' ' +
+                                 String(site.serial||'') + ' ' + String(site.serviceType||'')).toLowerCase();
+                    if (!hay.includes(mapSearch)) return;
+                }
 
                 // Icon: green checkmark, yellow exclamation, red X
                 const iconColor = site.status === 'tested' ? '#38a169' : site.status === 'due' ? '#d69e2e' : '#e53e3e';
