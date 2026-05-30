@@ -1641,7 +1641,6 @@
                         <option value="">All Customers</option>
                     </select>
                     <button id="mapListToggleBtn" onclick="toggleMapListView()" style="padding:8px 12px;background:var(--navy);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📋 List</button>
-                    <button id="mapAssignBtn" onclick="toggleMapAssignMode()" style="padding:8px 12px;background:#6b46c1;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">➕ Assign</button>
                 </div>
             </div>
             <div style="position:relative;margin-bottom:10px;">
@@ -1654,6 +1653,7 @@
                 <button class="map-chip" onclick="filterMapStatus('tested', this)">✓ Tested</button>
                 <button class="map-chip" onclick="filterMapStatus('due', this)">⚠ Due</button>
                 <button class="map-chip" onclick="filterMapStatus('overdue', this)">🚨 Overdue</button>
+                <button id="mapAssignBtn" onclick="toggleMapAssignMode()" style="padding:6px 12px;background:#6b46c1;color:white;border:none;border-radius:16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">➕ Assign</button>
             </div>
             <!-- Assign mode banner -->
             <div id="assignModeBanner" style="display:none;background:#6b46c1;color:white;padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:13px;font-weight:600;display:none;align-items:center;justify-content:space-between;">
