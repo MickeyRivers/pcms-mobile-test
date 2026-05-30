@@ -1611,7 +1611,7 @@
             <div style="position:relative;margin-bottom:10px;">
                 <input type="text" id="mapSearchInput" placeholder="🔍 Search by name, serial, customer..." oninput="mapSearchInput()" class="form-input" style="padding-right:36px;" autocomplete="off">
                 <button onclick="clearMapSearch()" id="mapSearchClear" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;color:var(--gray-400);cursor:pointer;">×</button>
-                <div id="mapSearchSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--gray-300);border-radius:8px;max-height:200px;overflow-y:auto;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+                <div id="mapSearchSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid var(--gray-300);border-radius:8px;max-height:60vh;overflow-y:auto;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
             </div>
             <div class="map-filter-chips" style="display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px;">
                 <button class="map-chip active" onclick="filterMapStatus('all', this)">All</button>
@@ -5713,7 +5713,7 @@ let siteMap = null;
             // Find matching sites
             var matches = mapSites.filter(function(s) {
                 return (String(s.name||'') + ' ' + String(s.customer||'') + ' ' + String(s.serial||'')).toLowerCase().includes(val);
-            }).slice(0, 8);
+            }).slice(0, 100);
             if (!matches.length) { suggestions.style.display = 'none'; updateMapMarkers(); return; }
             // Build suggestions using DOM to avoid quote issues
             suggestions.innerHTML = '';
