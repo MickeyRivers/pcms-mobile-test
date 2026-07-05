@@ -3551,7 +3551,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Render assignments when navigating there
             if (screenId === 'assignmentsScreen') renderAssignments();
             if (screenId === 'checklistScreen') renderChecklist();
-            if (screenId === 'notesScreen') renderNotes();
+            if (screenId === 'notesScreen') { if (!_notesLoaded) { loadNotes(); } else { renderNotes(); } }
             
             // Handle camera
             if (screenId === 'scannerScreen') {
@@ -6328,44 +6328,62 @@ let siteMap = null;
 
 
         // ── Notes ─────────────────────────────────────────────────────────────────
-        var _notes = JSON.parse(localStorage.getItem('pcms_notes') || '[]');
+        var _notes = [];
+        var _notesLoaded = false;
+        const NOTES_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
-        function saveNotes() {
-            localStorage.setItem('pcms_notes', JSON.stringify(_notes));
+        async function loadNotes() {
+            try {
+                const res = await fetch(NOTES_URL + '?action=getNotes');
+                const data = await res.json();
+                if (data.success) {
+                    _notes = data.data.sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+                    _notesLoaded = true;
+                    updateNotesCount();
+                    renderNotes();
+                }
+            } catch(e) { console.log('Notes load error:', e); }
+        }
+
+        function updateNotesCount() {
             var open = _notes.filter(function(n){ return !n.done; }).length;
             var el = document.getElementById('notesCount');
             if (el) el.textContent = open + ' note' + (open !== 1 ? 's' : '');
         }
 
-        function addNote() {
+        async function addNote() {
             var input = document.getElementById('notesInput');
             var text = input.value.trim();
             if (!text) return;
-            _notes.unshift({
-                id: Date.now(),
-                text: text,
-                done: false,
-                createdAt: new Date().toISOString(),
-                doneAt: null
-            });
+            var note = { id: Date.now(), text: text, done: false, createdAt: new Date().toISOString(), doneAt: null };
+            _notes.unshift(note);
             input.value = '';
-            saveNotes();
+            updateNotesCount();
             renderNotes();
+            try {
+                await fetch(NOTES_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'addNote', ...note }) });
+            } catch(e) { console.log('Note save error:', e); }
         }
 
-        function toggleNote(id) {
+        async function toggleNote(id) {
             var note = _notes.find(function(n){ return n.id === id; });
             if (!note) return;
             note.done = !note.done;
             note.doneAt = note.done ? new Date().toISOString() : null;
-            saveNotes();
+            updateNotesCount();
             renderNotes();
+            try {
+                await fetch(NOTES_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'updateNote', id: note.id, done: note.done, doneAt: note.doneAt }) });
+            } catch(e) { console.log('Note update error:', e); }
         }
 
-        function deleteNote(id) {
+        async function deleteNote(id) {
             _notes = _notes.filter(function(n){ return n.id !== id; });
-            saveNotes();
+            updateNotesCount();
             renderNotes();
+            try {
+                await fetch(NOTES_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'deleteNote', id: id }) });
+            } catch(e) { console.log('Note delete error:', e); }
         }
 
         function renderNotes() {
@@ -6420,8 +6438,7 @@ let siteMap = null;
             });
         }
 
-        // Init
-        saveNotes();
+        // Init — load on first visit
 
     </script>
 </body>
