@@ -928,6 +928,11 @@
                     <div class="action-label">Assignments</div>
                     <div class="action-subtitle" id="assignmentCount">0 assigned</div>
                 </div>
+                <div class="action-card" onclick="showScreen('checklistScreen')">
+                    <div class="action-icon">✅</div>
+                    <div class="action-label">Checklist</div>
+                    <div class="action-subtitle" id="checklistCount">0 tasks</div>
+                </div>
                 <div class="action-card" onclick="showScreen('trackerScreen')">
                     <div class="action-icon">📊</div>
                     <div class="action-title">Tracker</div>
@@ -1613,6 +1618,33 @@
                 </div>
             </div>
             <div style="height:80px;"></div>
+        </section>
+
+
+        <!-- Checklist Screen -->
+        <section class="screen" id="checklistScreen">
+            <!-- Add task bar -->
+            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:stretch;">
+                <input type="text" id="checklistInput" class="form-input" placeholder="Add a task..." style="flex:1;" onkeydown="if(event.key==='Enter')addChecklistItem()">
+                <select id="checklistPriority" class="form-select" style="width:100px;">
+                    <option value="normal">Normal</option>
+                    <option value="high">🔴 High</option>
+                    <option value="low">🔵 Low</option>
+                </select>
+                <button onclick="addChecklistItem()" style="padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:20px;font-weight:700;cursor:pointer;">+</button>
+            </div>
+
+            <!-- Filter tabs -->
+            <div style="display:flex;gap:6px;margin-bottom:12px;">
+                <button onclick="filterChecklist('all', this)" id="clFilterAll" class="map-chip active">All</button>
+                <button onclick="filterChecklist('high', this)" id="clFilterHigh" class="map-chip">🔴 High</button>
+                <button onclick="filterChecklist('normal', this)" id="clFilterNormal" class="map-chip">Normal</button>
+                <button onclick="filterChecklist('low', this)" id="clFilterLow" class="map-chip">🔵 Low</button>
+                <button onclick="filterChecklist('done', this)" id="clFilterDone" class="map-chip">✓ Done</button>
+            </div>
+
+            <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(100vh - 280px);"></div>
+            <div class="bottom-spacer"></div>
         </section>
 
     </main>
@@ -3505,6 +3537,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 screenId === 'formScreen' ? 'flex' : 'none';
             // Render assignments when navigating there
             if (screenId === 'assignmentsScreen') renderAssignments();
+            if (screenId === 'checklistScreen') renderChecklist();
             
             // Handle camera
             if (screenId === 'scannerScreen') {
@@ -3533,7 +3566,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen' || currentScreen === 'checklistScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -6134,6 +6167,150 @@ let siteMap = null;
         function isMapSiteSelected(serial) {
             return _mapAssignSelected.some(function(s){ return String(s.serial||'') === String(serial||''); });
         }
+
+
+        // ── Checklist ─────────────────────────────────────────────────────────────
+        var _checklist = JSON.parse(localStorage.getItem('pcms_checklist') || '[]');
+        var _clFilter = 'all';
+
+        function saveChecklist() {
+            localStorage.setItem('pcms_checklist', JSON.stringify(_checklist));
+            updateChecklistCount();
+        }
+
+        function updateChecklistCount() {
+            var el = document.getElementById('checklistCount');
+            var open = _checklist.filter(function(t){ return !t.done; }).length;
+            if (el) el.textContent = open + ' task' + (open !== 1 ? 's' : '');
+        }
+
+        function addChecklistItem() {
+            var input = document.getElementById('checklistInput');
+            var title = input.value.trim();
+            if (!title) return;
+            var priority = document.getElementById('checklistPriority').value;
+            _checklist.unshift({
+                id: Date.now(),
+                title: title,
+                priority: priority,
+                done: false,
+                createdAt: new Date().toISOString()
+            });
+            input.value = '';
+            saveChecklist();
+            renderChecklist();
+        }
+
+        function toggleChecklistItem(id) {
+            var item = _checklist.find(function(t){ return t.id === id; });
+            if (item) { item.done = !item.done; item.doneAt = item.done ? new Date().toISOString() : null; }
+            saveChecklist();
+            renderChecklist();
+        }
+
+        function deleteChecklistItem(id) {
+            _checklist = _checklist.filter(function(t){ return t.id !== id; });
+            saveChecklist();
+            renderChecklist();
+        }
+
+        function filterChecklist(filter, btn) {
+            _clFilter = filter;
+            document.querySelectorAll('#checklistScreen .map-chip').forEach(function(b){ b.classList.remove('active'); });
+            if (btn) btn.classList.add('active');
+            renderChecklist();
+        }
+
+        function renderChecklist() {
+            var el = document.getElementById('checklistItems');
+            if (!el) return;
+            updateChecklistCount();
+
+            var items = _checklist.filter(function(t) {
+                if (_clFilter === 'done') return t.done;
+                if (_clFilter === 'high') return !t.done && t.priority === 'high';
+                if (_clFilter === 'normal') return !t.done && t.priority === 'normal';
+                if (_clFilter === 'low') return !t.done && t.priority === 'low';
+                return true; // 'all' shows everything
+            });
+
+            // Sort: high first, then normal, then low
+            var order = { high: 0, normal: 1, low: 2 };
+            items.sort(function(a,b){ return (order[a.priority]||1) - (order[b.priority]||1); });
+
+            if (!items.length) {
+                el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);"><div style="font-size:36px;margin-bottom:8px;">' + (_clFilter === 'done' ? '🎉' : '✅') + '</div><div>' + (_clFilter === 'done' ? 'Nothing completed yet' : 'No tasks here') + '</div></div>';
+                return;
+            }
+
+            el.innerHTML = '';
+            items.forEach(function(t) {
+                var priorityColor = t.priority === 'high' ? '#e53e3e' : t.priority === 'low' ? '#3182ce' : '#718096';
+                var priorityLabel = t.priority === 'high' ? '🔴' : t.priority === 'low' ? '🔵' : '';
+                var card = document.createElement('div');
+                card.style.cssText = 'background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;align-items:center;gap:12px;border-left:4px solid ' + priorityColor + ';' + (t.done ? 'opacity:0.6;' : '');
+
+                var checkbox = document.createElement('div');
+                checkbox.style.cssText = 'width:24px;height:24px;border-radius:50%;border:2px solid ' + priorityColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:' + (t.done ? priorityColor : 'white') + ';';
+                checkbox.textContent = t.done ? '✓' : '';
+                checkbox.style.color = 'white';
+                checkbox.onclick = (function(id){ return function(){ toggleChecklistItem(id); }; })(t.id);
+
+                var textWrap = document.createElement('div');
+                textWrap.style.flex = '1';
+
+                var text = document.createElement('div');
+                text.style.cssText = 'font-size:14px;' + (t.done ? 'text-decoration:line-through;color:#a0aec0;' : 'color:var(--navy);font-weight:500;');
+                text.textContent = (priorityLabel ? priorityLabel + ' ' : '') + t.title;
+                textWrap.appendChild(text);
+
+                if (t.assignedTo) {
+                    var assignTag = document.createElement('div');
+                    assignTag.style.cssText = 'font-size:11px;color:#6b46c1;margin-top:2px;';
+                    assignTag.textContent = '👤 ' + t.assignedTo;
+                    textWrap.appendChild(assignTag);
+                }
+
+                var actions = document.createElement('div');
+                actions.style.cssText = 'display:flex;gap:4px;align-items:center;';
+
+                var btnAssign = document.createElement('button');
+                btnAssign.textContent = '👤';
+                btnAssign.title = 'Assign to George';
+                btnAssign.style.cssText = 'background:none;border:none;font-size:16px;cursor:pointer;padding:2px 4px;opacity:' + (t.assignedTo ? '1' : '0.4') + ';';
+                btnAssign.onclick = (function(id){ return function(){ assignChecklistItem(id); }; })(t.id);
+
+                var del = document.createElement('button');
+                del.textContent = '×';
+                del.style.cssText = 'background:none;border:none;font-size:20px;color:#e53e3e;cursor:pointer;padding:0 4px;opacity:0.5;';
+                del.onclick = (function(id){ return function(){ deleteChecklistItem(id); }; })(t.id);
+
+                actions.appendChild(btnAssign);
+                actions.appendChild(del);
+
+                card.appendChild(checkbox);
+                card.appendChild(textWrap);
+                card.appendChild(actions);
+                el.appendChild(card);
+            });
+        }
+
+        function assignChecklistItem(id) {
+            var item = _checklist.find(function(t){ return t.id === id; });
+            if (!item) return;
+            if (item.assignedTo) {
+                item.assignedTo = null;
+                showToast('Unassigned', 'info');
+            } else {
+                item.assignedTo = 'George Enriquez';
+                showToast('Assigned to George', 'success');
+            }
+            saveChecklist();
+            renderChecklist();
+        }
+
+        // Init
+        updateChecklistCount();
 
     </script>
 </body>
