@@ -6185,17 +6185,37 @@ let siteMap = null;
         var _notesLoaded = false;
         const NOTES_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
 
-        async function loadNotes() {
-            try {
-                var res = await fetch(NOTES_URL + '?action=getNotes&t=' + Date.now());
-                var data = await res.json();
-                if (data.success) {
-                    _notes = (data.data || []).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-                    _notesLoaded = true;
-                    updateNotesCount();
-                    renderNotes();
-                }
-            } catch(e) { console.log('Notes load error:', e); renderNotes(); }
+        function loadNotes() {
+            // Use script tag approach to avoid CORS redirect issue with fetch
+            var callbackName = '_notesCallback_' + Date.now();
+            window[callbackName] = function(data) {
+                try {
+                    var parsed = typeof data === 'string' ? JSON.parse(data) : data;
+                    if (parsed.success) {
+                        _notes = (parsed.data || []).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+                        _notesLoaded = true;
+                        updateNotesCount();
+                        renderNotes();
+                    }
+                } catch(e) { console.log('Notes parse error:', e); }
+                delete window[callbackName];
+            };
+            // Fall back to XHR with no-cors mode via XMLHttpRequest
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', NOTES_URL + '?action=getNotes&t=' + Date.now(), true);
+            xhr.onload = function() {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        _notes = (data.data || []).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+                        _notesLoaded = true;
+                        updateNotesCount();
+                        renderNotes();
+                    }
+                } catch(e) { console.log('Notes load error:', e); }
+            };
+            xhr.onerror = function() { console.log('Notes XHR error'); renderNotes(); };
+            xhr.send();
         }
 
         function updateNotesCount() {
