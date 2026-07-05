@@ -928,10 +928,10 @@
                     <div class="action-label">Assignments</div>
                     <div class="action-subtitle" id="assignmentCount">0 assigned</div>
                 </div>
-                <div class="action-card" onclick="showScreen('checklistScreen')">
-                    <div class="action-icon">✅</div>
-                    <div class="action-label">Checklist</div>
-                    <div class="action-subtitle" id="checklistCount">0 tasks</div>
+                <div class="action-card" onclick="showScreen('notesScreen')">
+                    <div class="action-icon">📝</div>
+                    <div class="action-label">Notes</div>
+                    <div class="action-subtitle" id="notesCount">0 notes</div>
                 </div>
                 <div class="action-card" onclick="showScreen('trackerScreen')">
                     <div class="action-icon">📊</div>
@@ -1644,6 +1644,19 @@
             </div>
 
             <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(100vh - 280px);"></div>
+            <div class="bottom-spacer"></div>
+        </section>
+
+
+        <!-- Notes Screen -->
+        <section class="screen" id="notesScreen">
+            <!-- Add note -->
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <textarea id="notesInput" class="form-input" placeholder="Write a note..." style="flex:1;height:60px;resize:none;font-size:14px;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNote();}"></textarea>
+                <button onclick="addNote()" style="padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:20px;font-weight:700;cursor:pointer;align-self:flex-end;">+</button>
+            </div>
+
+            <div id="notesList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(100vh - 240px);"></div>
             <div class="bottom-spacer"></div>
         </section>
 
@@ -3538,6 +3551,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
             // Render assignments when navigating there
             if (screenId === 'assignmentsScreen') renderAssignments();
             if (screenId === 'checklistScreen') renderChecklist();
+            if (screenId === 'notesScreen') renderNotes();
             
             // Handle camera
             if (screenId === 'scannerScreen') {
@@ -3566,7 +3580,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen' || currentScreen === 'checklistScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen' || currentScreen === 'checklistScreen' || currentScreen === 'notesScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -6311,6 +6325,103 @@ let siteMap = null;
 
         // Init
         updateChecklistCount();
+
+
+        // ── Notes ─────────────────────────────────────────────────────────────────
+        var _notes = JSON.parse(localStorage.getItem('pcms_notes') || '[]');
+
+        function saveNotes() {
+            localStorage.setItem('pcms_notes', JSON.stringify(_notes));
+            var open = _notes.filter(function(n){ return !n.done; }).length;
+            var el = document.getElementById('notesCount');
+            if (el) el.textContent = open + ' note' + (open !== 1 ? 's' : '');
+        }
+
+        function addNote() {
+            var input = document.getElementById('notesInput');
+            var text = input.value.trim();
+            if (!text) return;
+            _notes.unshift({
+                id: Date.now(),
+                text: text,
+                done: false,
+                createdAt: new Date().toISOString(),
+                doneAt: null
+            });
+            input.value = '';
+            saveNotes();
+            renderNotes();
+        }
+
+        function toggleNote(id) {
+            var note = _notes.find(function(n){ return n.id === id; });
+            if (!note) return;
+            note.done = !note.done;
+            note.doneAt = note.done ? new Date().toISOString() : null;
+            saveNotes();
+            renderNotes();
+        }
+
+        function deleteNote(id) {
+            _notes = _notes.filter(function(n){ return n.id !== id; });
+            saveNotes();
+            renderNotes();
+        }
+
+        function renderNotes() {
+            var el = document.getElementById('notesList');
+            if (!el) return;
+            saveNotes();
+
+            if (!_notes.length) {
+                el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);"><div style="font-size:36px;margin-bottom:8px;">📝</div><div>No notes yet</div></div>';
+                return;
+            }
+
+            el.innerHTML = '';
+            _notes.forEach(function(note) {
+                var addedDate = new Date(note.createdAt).toLocaleDateString();
+                var doneDate = note.doneAt ? new Date(note.doneAt).toLocaleDateString() : null;
+
+                var card = document.createElement('div');
+                card.style.cssText = 'background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;gap:12px;align-items:flex-start;' + (note.done ? 'opacity:0.7;' : '');
+
+                // Checkbox circle
+                var check = document.createElement('div');
+                check.style.cssText = 'width:22px;height:22px;border-radius:50%;border:2px solid ' + (note.done ? '#38a169' : 'var(--gray-300)') + ';background:' + (note.done ? '#38a169' : 'white') + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px;color:white;font-size:13px;';
+                check.textContent = note.done ? '✓' : '';
+                check.onclick = (function(id){ return function(){ toggleNote(id); }; })(note.id);
+
+                // Content
+                var content = document.createElement('div');
+                content.style.flex = '1';
+
+                var text = document.createElement('div');
+                text.style.cssText = 'font-size:14px;color:' + (note.done ? '#a0aec0' : 'var(--navy)') + ';' + (note.done ? 'text-decoration:line-through;' : '');
+                text.textContent = note.text;
+
+                var meta = document.createElement('div');
+                meta.style.cssText = 'font-size:11px;color:#a0aec0;margin-top:4px;';
+                meta.textContent = 'Added ' + addedDate + (doneDate ? ' · Completed ' + doneDate : '');
+
+                content.appendChild(text);
+                content.appendChild(meta);
+
+                // Delete
+                var del = document.createElement('button');
+                del.textContent = '×';
+                del.style.cssText = 'background:none;border:none;font-size:18px;color:#e53e3e;cursor:pointer;opacity:0.4;padding:0;flex-shrink:0;';
+                del.onclick = (function(id){ return function(){ deleteNote(id); }; })(note.id);
+
+                card.appendChild(check);
+                card.appendChild(content);
+                card.appendChild(del);
+                el.appendChild(card);
+            });
+        }
+
+        // Init
+        saveNotes();
 
     </script>
 </body>
