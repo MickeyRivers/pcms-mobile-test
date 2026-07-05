@@ -6361,7 +6361,12 @@ let siteMap = null;
             updateNotesCount();
             renderNotes();
             try {
-                await fetch(NOTES_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'addNote', ...note }) });
+                var form = document.createElement('form');
+                form.method = 'POST'; form.action = NOTES_URL; form.target = '_notes_frame';
+                var inp = document.createElement('input'); inp.type='hidden'; inp.name='data';
+                inp.value = JSON.stringify({ action: 'addNote', id: note.id, text: note.text, done: false, createdAt: note.createdAt, doneAt: null });
+                form.appendChild(inp); document.body.appendChild(form); form.submit();
+                setTimeout(function(){ try{document.body.removeChild(form);}catch(e){} }, 2000);
             } catch(e) { console.log('Note save error:', e); }
         }
 
@@ -6373,7 +6378,12 @@ let siteMap = null;
             updateNotesCount();
             renderNotes();
             try {
-                await fetch(NOTES_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'updateNote', id: note.id, done: note.done, doneAt: note.doneAt }) });
+                var form = document.createElement('form');
+                form.method = 'POST'; form.action = NOTES_URL; form.target = '_notes_frame';
+                var inp = document.createElement('input'); inp.type='hidden'; inp.name='data';
+                inp.value = JSON.stringify({ action: 'updateNote', id: note.id, done: note.done, doneAt: note.doneAt });
+                form.appendChild(inp); document.body.appendChild(form); form.submit();
+                setTimeout(function(){ try{document.body.removeChild(form);}catch(e){} }, 2000);
             } catch(e) { console.log('Note update error:', e); }
         }
 
@@ -6382,7 +6392,12 @@ let siteMap = null;
             updateNotesCount();
             renderNotes();
             try {
-                await fetch(NOTES_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ action: 'deleteNote', id: id }) });
+                var form = document.createElement('form');
+                form.method = 'POST'; form.action = NOTES_URL; form.target = '_notes_frame';
+                var inp = document.createElement('input'); inp.type='hidden'; inp.name='data';
+                inp.value = JSON.stringify({ action: 'deleteNote', id: id });
+                form.appendChild(inp); document.body.appendChild(form); form.submit();
+                setTimeout(function(){ try{document.body.removeChild(form);}catch(e){} }, 2000);
             } catch(e) { console.log('Note delete error:', e); }
         }
 
