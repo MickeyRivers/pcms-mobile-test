@@ -928,11 +928,6 @@
                     <div class="action-label">Assignments</div>
                     <div class="action-subtitle" id="assignmentCount">0 assigned</div>
                 </div>
-                <div class="action-card" onclick="showScreen('notesScreen')">
-                    <div class="action-icon">📝</div>
-                    <div class="action-label">Notes</div>
-                    <div class="action-subtitle" id="notesCount">0 notes</div>
-                </div>
                 <div class="action-card" onclick="showScreen('trackerScreen')">
                     <div class="action-icon">📊</div>
                     <div class="action-title">Tracker</div>
@@ -1620,46 +1615,6 @@
             <div style="height:80px;"></div>
         </section>
 
-
-        <!-- Checklist Screen -->
-        <section class="screen" id="checklistScreen">
-            <!-- Add task bar -->
-            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:stretch;">
-                <input type="text" id="checklistInput" class="form-input" placeholder="Add a task..." style="flex:1;" onkeydown="if(event.key==='Enter')addChecklistItem()">
-                <select id="checklistPriority" class="form-select" style="width:100px;">
-                    <option value="normal">Normal</option>
-                    <option value="high">🔴 High</option>
-                    <option value="low">🔵 Low</option>
-                </select>
-                <button onclick="addChecklistItem()" style="padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:20px;font-weight:700;cursor:pointer;">+</button>
-            </div>
-
-            <!-- Filter tabs -->
-            <div style="display:flex;gap:6px;margin-bottom:12px;">
-                <button onclick="filterChecklist('all', this)" id="clFilterAll" class="map-chip active">All</button>
-                <button onclick="filterChecklist('high', this)" id="clFilterHigh" class="map-chip">🔴 High</button>
-                <button onclick="filterChecklist('normal', this)" id="clFilterNormal" class="map-chip">Normal</button>
-                <button onclick="filterChecklist('low', this)" id="clFilterLow" class="map-chip">🔵 Low</button>
-                <button onclick="filterChecklist('done', this)" id="clFilterDone" class="map-chip">✓ Done</button>
-            </div>
-
-            <div id="checklistItems" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(100vh - 280px);"></div>
-            <div class="bottom-spacer"></div>
-        </section>
-
-
-        <!-- Notes Screen -->
-        <section class="screen" id="notesScreen">
-            <!-- Add note -->
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <textarea id="notesInput" class="form-input" placeholder="Write a note..." style="flex:1;height:60px;resize:none;font-size:14px;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addNote();}"></textarea>
-                <button onclick="addNote()" style="padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:8px;font-size:20px;font-weight:700;cursor:pointer;align-self:flex-end;">+</button>
-            </div>
-
-            <div id="notesList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(100vh - 240px);"></div>
-            <div class="bottom-spacer"></div>
-        </section>
-
     </main>
 
     <!-- Bottom Nav for Form -->
@@ -2125,7 +2080,7 @@
         let isSettingPin = false;
         let newPinFirst = '';
         let pendingResetCode = '';
-        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
+        const RESET_CODE_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
         // ============================================
         // PIN SECURITY
@@ -2374,7 +2329,7 @@
         // ASSET DATABASE
         // ============================================
         async function loadAssetDB() {
-            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
+            const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
             
             // Try to fetch fresh data from Google Sheets
             try {
@@ -2413,7 +2368,7 @@
         }
 
         async function loadTestHistory() {
-            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
+            const BASE_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
             try {
                 // Fetch both Field Data and Test History tabs in parallel
@@ -3550,8 +3505,6 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
                 screenId === 'formScreen' ? 'flex' : 'none';
             // Render assignments when navigating there
             if (screenId === 'assignmentsScreen') renderAssignments();
-            if (screenId === 'checklistScreen') renderChecklist();
-            if (screenId === 'notesScreen') { if (!_notesLoaded) { loadNotes(); } else { renderNotes(); } }
             
             // Handle camera
             if (screenId === 'scannerScreen') {
@@ -3580,7 +3533,7 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         document.getElementById('backBtn').addEventListener('click', () => {
             if (currentScreen === 'scannerScreen' || currentScreen === 'formScreen') {
                 showScreen('homeScreen');
-            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen' || currentScreen === 'checklistScreen' || currentScreen === 'notesScreen') {
+            } else if (currentScreen === 'pendingScreen' || currentScreen === 'historyScreen' || currentScreen === 'trackerScreen' || currentScreen === 'mapScreen' || currentScreen === 'flowCalcScreen' || currentScreen === 'pipeChartScreen' || currentScreen === 'assetSearchScreen' || currentScreen === 'assignmentsScreen') {
                 showScreen('homeScreen');
             }
         });
@@ -4509,8 +4462,8 @@ GPS: ${record['GPS Coordinates'] || 'N/A'}
         }
 
         const CLOUD_FUNCTION_URL = 'https://generate-certificate-test2-980517620937.us-central1.run.app';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
-        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
+        const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxTFkWJbYjmtaLWp98SK2YoDZi9Qlf9n3aT6lu-TyOC8epKwOh_mHnDmpblGHO84552xw/exec';
 
         async function syncPending() {
             if (pendingTests.length === 0) {
@@ -6181,279 +6134,6 @@ let siteMap = null;
         function isMapSiteSelected(serial) {
             return _mapAssignSelected.some(function(s){ return String(s.serial||'') === String(serial||''); });
         }
-
-
-        // ── Checklist ─────────────────────────────────────────────────────────────
-        var _checklist = JSON.parse(localStorage.getItem('pcms_checklist') || '[]');
-        var _clFilter = 'all';
-
-        function saveChecklist() {
-            localStorage.setItem('pcms_checklist', JSON.stringify(_checklist));
-            updateChecklistCount();
-        }
-
-        function updateChecklistCount() {
-            var el = document.getElementById('checklistCount');
-            var open = _checklist.filter(function(t){ return !t.done; }).length;
-            if (el) el.textContent = open + ' task' + (open !== 1 ? 's' : '');
-        }
-
-        function addChecklistItem() {
-            var input = document.getElementById('checklistInput');
-            var title = input.value.trim();
-            if (!title) return;
-            var priority = document.getElementById('checklistPriority').value;
-            _checklist.unshift({
-                id: Date.now(),
-                title: title,
-                priority: priority,
-                done: false,
-                createdAt: new Date().toISOString()
-            });
-            input.value = '';
-            saveChecklist();
-            renderChecklist();
-        }
-
-        function toggleChecklistItem(id) {
-            var item = _checklist.find(function(t){ return t.id === id; });
-            if (item) { item.done = !item.done; item.doneAt = item.done ? new Date().toISOString() : null; }
-            saveChecklist();
-            renderChecklist();
-        }
-
-        function deleteChecklistItem(id) {
-            _checklist = _checklist.filter(function(t){ return t.id !== id; });
-            saveChecklist();
-            renderChecklist();
-        }
-
-        function filterChecklist(filter, btn) {
-            _clFilter = filter;
-            document.querySelectorAll('#checklistScreen .map-chip').forEach(function(b){ b.classList.remove('active'); });
-            if (btn) btn.classList.add('active');
-            renderChecklist();
-        }
-
-        function renderChecklist() {
-            var el = document.getElementById('checklistItems');
-            if (!el) return;
-            updateChecklistCount();
-
-            var items = _checklist.filter(function(t) {
-                if (_clFilter === 'done') return t.done;
-                if (_clFilter === 'high') return !t.done && t.priority === 'high';
-                if (_clFilter === 'normal') return !t.done && t.priority === 'normal';
-                if (_clFilter === 'low') return !t.done && t.priority === 'low';
-                return true; // 'all' shows everything
-            });
-
-            // Sort: high first, then normal, then low
-            var order = { high: 0, normal: 1, low: 2 };
-            items.sort(function(a,b){ return (order[a.priority]||1) - (order[b.priority]||1); });
-
-            if (!items.length) {
-                el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);"><div style="font-size:36px;margin-bottom:8px;">' + (_clFilter === 'done' ? '🎉' : '✅') + '</div><div>' + (_clFilter === 'done' ? 'Nothing completed yet' : 'No tasks here') + '</div></div>';
-                return;
-            }
-
-            el.innerHTML = '';
-            items.forEach(function(t) {
-                var priorityColor = t.priority === 'high' ? '#e53e3e' : t.priority === 'low' ? '#3182ce' : '#718096';
-                var priorityLabel = t.priority === 'high' ? '🔴' : t.priority === 'low' ? '🔵' : '';
-                var card = document.createElement('div');
-                card.style.cssText = 'background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;align-items:center;gap:12px;border-left:4px solid ' + priorityColor + ';' + (t.done ? 'opacity:0.6;' : '');
-
-                var checkbox = document.createElement('div');
-                checkbox.style.cssText = 'width:24px;height:24px;border-radius:50%;border:2px solid ' + priorityColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:' + (t.done ? priorityColor : 'white') + ';';
-                checkbox.textContent = t.done ? '✓' : '';
-                checkbox.style.color = 'white';
-                checkbox.onclick = (function(id){ return function(){ toggleChecklistItem(id); }; })(t.id);
-
-                var textWrap = document.createElement('div');
-                textWrap.style.flex = '1';
-
-                var text = document.createElement('div');
-                text.style.cssText = 'font-size:14px;' + (t.done ? 'text-decoration:line-through;color:#a0aec0;' : 'color:var(--navy);font-weight:500;');
-                text.textContent = (priorityLabel ? priorityLabel + ' ' : '') + t.title;
-                textWrap.appendChild(text);
-
-                if (t.assignedTo) {
-                    var assignTag = document.createElement('div');
-                    assignTag.style.cssText = 'font-size:11px;color:#6b46c1;margin-top:2px;';
-                    assignTag.textContent = '👤 ' + t.assignedTo;
-                    textWrap.appendChild(assignTag);
-                }
-
-                var actions = document.createElement('div');
-                actions.style.cssText = 'display:flex;gap:4px;align-items:center;';
-
-                var btnAssign = document.createElement('button');
-                btnAssign.textContent = '👤';
-                btnAssign.title = 'Assign to George';
-                btnAssign.style.cssText = 'background:none;border:none;font-size:16px;cursor:pointer;padding:2px 4px;opacity:' + (t.assignedTo ? '1' : '0.4') + ';';
-                btnAssign.onclick = (function(id){ return function(){ assignChecklistItem(id); }; })(t.id);
-
-                var del = document.createElement('button');
-                del.textContent = '×';
-                del.style.cssText = 'background:none;border:none;font-size:20px;color:#e53e3e;cursor:pointer;padding:0 4px;opacity:0.5;';
-                del.onclick = (function(id){ return function(){ deleteChecklistItem(id); }; })(t.id);
-
-                actions.appendChild(btnAssign);
-                actions.appendChild(del);
-
-                card.appendChild(checkbox);
-                card.appendChild(textWrap);
-                card.appendChild(actions);
-                el.appendChild(card);
-            });
-        }
-
-        function assignChecklistItem(id) {
-            var item = _checklist.find(function(t){ return t.id === id; });
-            if (!item) return;
-            if (item.assignedTo) {
-                item.assignedTo = null;
-                showToast('Unassigned', 'info');
-            } else {
-                item.assignedTo = 'George Enriquez';
-                showToast('Assigned to George', 'success');
-            }
-            saveChecklist();
-            renderChecklist();
-        }
-
-        // Init
-        updateChecklistCount();
-
-
-        // ── Notes ─────────────────────────────────────────────────────────────────
-        var _notes = [];
-        var _notesLoaded = false;
-        const NOTES_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
-
-        async function loadNotes() {
-            try {
-                const res = await fetch(NOTES_URL + '?action=getNotes');
-                const data = await res.json();
-                if (data.success) {
-                    _notes = data.data.sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-                    _notesLoaded = true;
-                    updateNotesCount();
-                    renderNotes();
-                }
-            } catch(e) { console.log('Notes load error:', e); }
-        }
-
-        function updateNotesCount() {
-            var open = _notes.filter(function(n){ return !n.done; }).length;
-            var el = document.getElementById('notesCount');
-            if (el) el.textContent = open + ' note' + (open !== 1 ? 's' : '');
-        }
-
-        async function addNote() {
-            var input = document.getElementById('notesInput');
-            var text = input.value.trim();
-            if (!text) return;
-            var note = { id: Date.now(), text: text, done: false, createdAt: new Date().toISOString(), doneAt: null };
-            _notes.unshift(note);
-            input.value = '';
-            updateNotesCount();
-            renderNotes();
-            try {
-                var form = document.createElement('form');
-                form.method = 'POST'; form.action = NOTES_URL; form.target = '_notes_frame';
-                var inp = document.createElement('input'); inp.type='hidden'; inp.name='data';
-                inp.value = JSON.stringify({ action: 'addNote', id: note.id, text: note.text, done: false, createdAt: note.createdAt, doneAt: null });
-                form.appendChild(inp); document.body.appendChild(form); form.submit();
-                setTimeout(function(){ try{document.body.removeChild(form);}catch(e){} }, 2000);
-            } catch(e) { console.log('Note save error:', e); }
-        }
-
-        async function toggleNote(id) {
-            var note = _notes.find(function(n){ return n.id === id; });
-            if (!note) return;
-            note.done = !note.done;
-            note.doneAt = note.done ? new Date().toISOString() : null;
-            updateNotesCount();
-            renderNotes();
-            try {
-                var form = document.createElement('form');
-                form.method = 'POST'; form.action = NOTES_URL; form.target = '_notes_frame';
-                var inp = document.createElement('input'); inp.type='hidden'; inp.name='data';
-                inp.value = JSON.stringify({ action: 'updateNote', id: note.id, done: note.done, doneAt: note.doneAt });
-                form.appendChild(inp); document.body.appendChild(form); form.submit();
-                setTimeout(function(){ try{document.body.removeChild(form);}catch(e){} }, 2000);
-            } catch(e) { console.log('Note update error:', e); }
-        }
-
-        async function deleteNote(id) {
-            _notes = _notes.filter(function(n){ return n.id !== id; });
-            updateNotesCount();
-            renderNotes();
-            try {
-                var form = document.createElement('form');
-                form.method = 'POST'; form.action = NOTES_URL; form.target = '_notes_frame';
-                var inp = document.createElement('input'); inp.type='hidden'; inp.name='data';
-                inp.value = JSON.stringify({ action: 'deleteNote', id: id });
-                form.appendChild(inp); document.body.appendChild(form); form.submit();
-                setTimeout(function(){ try{document.body.removeChild(form);}catch(e){} }, 2000);
-            } catch(e) { console.log('Note delete error:', e); }
-        }
-
-        function renderNotes() {
-            var el = document.getElementById('notesList');
-            if (!el) return;
-            saveNotes();
-
-            if (!_notes.length) {
-                el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);"><div style="font-size:36px;margin-bottom:8px;">📝</div><div>No notes yet</div></div>';
-                return;
-            }
-
-            el.innerHTML = '';
-            _notes.forEach(function(note) {
-                var addedDate = new Date(note.createdAt).toLocaleDateString();
-                var doneDate = note.doneAt ? new Date(note.doneAt).toLocaleDateString() : null;
-
-                var card = document.createElement('div');
-                card.style.cssText = 'background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;gap:12px;align-items:flex-start;' + (note.done ? 'opacity:0.7;' : '');
-
-                // Checkbox circle
-                var check = document.createElement('div');
-                check.style.cssText = 'width:22px;height:22px;border-radius:50%;border:2px solid ' + (note.done ? '#38a169' : 'var(--gray-300)') + ';background:' + (note.done ? '#38a169' : 'white') + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px;color:white;font-size:13px;';
-                check.textContent = note.done ? '✓' : '';
-                check.onclick = (function(id){ return function(){ toggleNote(id); }; })(note.id);
-
-                // Content
-                var content = document.createElement('div');
-                content.style.flex = '1';
-
-                var text = document.createElement('div');
-                text.style.cssText = 'font-size:14px;color:' + (note.done ? '#a0aec0' : 'var(--navy)') + ';' + (note.done ? 'text-decoration:line-through;' : '');
-                text.textContent = note.text;
-
-                var meta = document.createElement('div');
-                meta.style.cssText = 'font-size:11px;color:#a0aec0;margin-top:4px;';
-                meta.textContent = 'Added ' + addedDate + (doneDate ? ' · Completed ' + doneDate : '');
-
-                content.appendChild(text);
-                content.appendChild(meta);
-
-                // Delete
-                var del = document.createElement('button');
-                del.textContent = '×';
-                del.style.cssText = 'background:none;border:none;font-size:18px;color:#e53e3e;cursor:pointer;opacity:0.4;padding:0;flex-shrink:0;';
-                del.onclick = (function(id){ return function(){ deleteNote(id); }; })(note.id);
-
-                card.appendChild(check);
-                card.appendChild(content);
-                card.appendChild(del);
-                el.appendChild(card);
-            });
-        }
-
-        // Init — load on first visit
 
     </script>
 </body>
