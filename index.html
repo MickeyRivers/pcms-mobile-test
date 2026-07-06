@@ -6186,37 +6186,47 @@ let siteMap = null;
         const NOTES_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
 
         function loadNotes() {
-            // Use script tag approach to avoid CORS redirect issue with fetch
-            var callbackName = '_notesCallback_' + Date.now();
-            window[callbackName] = function(data) {
+            // Load from localStorage - reliable cross-session storage
+            var stored = localStorage.getItem('pcms_notes_v2');
+            if (stored) {
                 try {
-                    var parsed = typeof data === 'string' ? JSON.parse(data) : data;
-                    if (parsed.success) {
-                        _notes = (parsed.data || []).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-                        _notesLoaded = true;
-                        updateNotesCount();
-                        renderNotes();
-                    }
-                } catch(e) { console.log('Notes parse error:', e); }
-                delete window[callbackName];
-            };
-            // Fall back to XHR with no-cors mode via XMLHttpRequest
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', NOTES_URL + '?action=getNotes&t=' + Date.now(), true);
-            xhr.onload = function() {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        _notes = (data.data || []).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
-                        _notesLoaded = true;
-                        updateNotesCount();
-                        renderNotes();
-                    }
-                } catch(e) { console.log('Notes load error:', e); }
-            };
-            xhr.onerror = function() { console.log('Notes XHR error'); renderNotes(); };
-            xhr.send();
+                    _notes = JSON.parse(stored).sort(function(a,b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+                } catch(e) { _notes = []; }
+            }
+            _notesLoaded = true;
+            updateNotesCount();
+            renderNotes();
         }
+
+        function saveNotesLocal() {
+            localStorage.setItem('pcms_notes_v2', JSON.stringify(_notes));
+        }
+
+        function postNoteAction(payload) {
+            // Post to sheets via iframe form (fire and forget)
+            var iframe = document.getElementById('_notesFrame');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = '_notesFrame';
+                iframe.name = '_notesFrame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            var url = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+            form.target = '_notesFrame';
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'data';
+            inp.value = JSON.stringify(payload);
+            form.appendChild(inp);
+            document.body.appendChild(form);
+            form.submit();
+            setTimeout(function(){ try { document.body.removeChild(form); } catch(e){} }, 2000);
+        }
+
 
         function updateNotesCount() {
             var open = _notes.filter(function(n){ return !n.done; }).length;
@@ -6241,6 +6251,7 @@ let siteMap = null;
             var note = { id: Date.now(), text: text, done: false, createdAt: new Date().toISOString(), doneAt: null };
             _notes.unshift(note);
             input.value = '';
+            saveNotesLocal();
             updateNotesCount();
             renderNotes();
             postNoteAction({ action: 'addNote', id: note.id, text: note.text, done: false, createdAt: note.createdAt, doneAt: null });
@@ -6251,6 +6262,7 @@ let siteMap = null;
             if (!note) return;
             note.done = !note.done;
             note.doneAt = note.done ? new Date().toISOString() : null;
+            saveNotesLocal();
             updateNotesCount();
             renderNotes();
             postNoteAction({ action: 'updateNote', id: note.id, done: note.done, doneAt: note.doneAt });
@@ -6258,6 +6270,7 @@ let siteMap = null;
 
         function deleteNote(id) {
             _notes = _notes.filter(function(n){ return n.id !== id; });
+            saveNotesLocal();
             updateNotesCount();
             renderNotes();
             postNoteAction({ action: 'deleteNote', id: id });
