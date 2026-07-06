@@ -1,4 +1,4 @@
-// PCMS Service Worker v70
+// PCMS Service Worker v71
 const CACHE_NAME = 'pcms-v197';
 
 self.addEventListener('install', function(event) {
