@@ -2395,6 +2395,40 @@
         async function loadAssetDB() {
             const ASSETDB_URL = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
             
+            // Try static JSON file first for instant load, then refresh from Apps Script in background
+            try {
+                const staticRes = await fetch('/pcms-mobile-test/assetdb.json');
+                if (staticRes.ok) {
+                    const staticData = await staticRes.json();
+                    if (Array.isArray(staticData) && staticData.length > 0) {
+                        assetDB = staticData;
+                        console.log(`Loaded ${assetDB.length} assets from static JSON`);
+                        processMapData(assetDB);
+                        if (typeof initTracker === 'function') initTracker();
+                        renderRecentActivity();
+                        // Then refresh from Apps Script in background
+                        setTimeout(async function() {
+                            try {
+                                const ASSETDB_URL_BG = 'https://script.google.com/macros/s/AKfycbxqRoEfVnASNAGllNmLV5nxnM9b52NwlEQ5PdyZqj97sSSQDYexy__E2b8XxoNQ9RangA/exec';
+                                const bgRes = await fetch(ASSETDB_URL_BG);
+                                if (bgRes.ok) {
+                                    const bgResult = await bgRes.json();
+                                    const bgData = bgResult.data || bgResult;
+                                    if (Array.isArray(bgData) && bgData.length >= assetDB.length) {
+                                        assetDB = bgData;
+                                        localStorage.setItem('assetDB', JSON.stringify(assetDB));
+                                        console.log(`Background refresh: ${assetDB.length} assets from Apps Script`);
+                                        processMapData(assetDB);
+                                        if (typeof initTracker === 'function') initTracker();
+                                    }
+                                }
+                            } catch(e) { console.log('Background refresh failed:', e); }
+                        }, 3000);
+                        return;
+                    }
+                }
+            } catch(e) { console.log('Static JSON unavailable, using Apps Script'); }
+
             // Try to fetch fresh data from Google Sheets
             try {
                 const response = await fetch(ASSETDB_URL);
